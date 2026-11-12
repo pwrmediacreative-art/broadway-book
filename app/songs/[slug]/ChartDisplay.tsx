@@ -128,11 +128,11 @@ export default function ChartDisplay({ chartText }: { chartText: string }) {
 
       <div className="space-y-5">
         {view.sections.map((s, i) => (
-          <section key={i} className="flex gap-3">
-            <h2 className="w-16 shrink-0 pt-1 text-lg font-bold text-accent">{s.label}</h2>
+          <section key={i} className="flex flex-col gap-1 sm:flex-row sm:gap-3">
+            <h2 className="shrink-0 text-lg font-bold text-accent sm:w-16 sm:pt-1">{s.label}</h2>
             <div className="min-w-0 flex-1 space-y-2">
               {s.rows.map((row, j) => (
-                <div key={j} className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
+                <div key={j} className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
                   {row.map((c, k) => (
                     <Cell key={k} cell={c} chords={chords} />
                   ))}
