@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "check:rls": "node --env-file=.env.local scripts/check-rls.mjs"
+    "check:rls": "node --env-file=.env.local scripts/check-rls.mjs",
+    "check:roles": "node --env-file=.env.local scripts/check-roles.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
