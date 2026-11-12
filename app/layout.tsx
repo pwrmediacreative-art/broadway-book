@@ -1,11 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Atkinson_Hyperlegible, Geist, Geist_Mono, Inter, JetBrains_Mono } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
 import AuthBar from "./AuthBar";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+// Chart fonts players can pick in stage mode.
+const atkinson = Atkinson_Hyperlegible({ variable: "--font-atkinson", subsets: ["latin"], weight: ["400", "700"] });
+const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
+const jbMono = JetBrains_Mono({ variable: "--font-jbmono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Broadway Book",
@@ -20,7 +24,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} ${atkinson.variable} ${inter.variable} ${jbMono.variable} h-full antialiased`}
+    >
       <body className="min-h-full flex flex-col">
         <Suspense fallback={<div className="h-11" />}>
           <AuthBar />

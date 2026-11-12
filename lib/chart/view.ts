@@ -2,18 +2,32 @@ import { getMeta } from "./parse";
 import { beatText } from "./serialize";
 import {
   chordName,
+  degreeToNote,
   keyName,
+  qualityName,
   parseKey,
   renumberBeat,
   shiftKey,
   type Key,
 } from "./transpose";
-import type { BeatItem, ChartDoc, ChartMeta, NumberStyle, RowItem, Tag } from "./types";
+import type { BeatItem, ChartDoc, Degree, ChartMeta, NumberStyle, RowItem, Tag } from "./types";
 
 /** Everything the song page needs to draw a chart in any key / numbering style. */
+/** A chord split for drawing: root, quality (superscript part), slash bass. No modifiers. */
+export interface BeatParts {
+  root: string; // "6", "b7", "F#", "N.C.", "%"
+  qual: string; // "-7", "m7", "sus4"
+  bass: string; // "3", "C#", ""
+}
 export interface BeatView {
-  num: string; // "^<6->~"
-  chord: string; // "^<F#m>~"
+  num: string; // "^<6->~"  (text form, numbers)
+  chord: string; // "^<F#m>~" (text form, chord names)
+  kind: "chord" | "nc" | "repeat";
+  push: boolean;
+  diamond: boolean;
+  end: "" | "fermata" | "stop";
+  n: BeatParts; // numbers, without modifiers
+  c: BeatParts; // chord names, without modifiers
 }
 export type CellView =
   | { kind: "bar"; beats: BeatView[] } // 1 beat = whole bar, 2+ = split bar
@@ -22,6 +36,7 @@ export type CellView =
   | { kind: "change"; text: string };
 export interface SectionView {
   label: string;
+  repeat: number; // [C x2] -> 2
   rows: CellView[][];
 }
 export interface ChartView {
@@ -36,6 +51,8 @@ export interface ViewOptions {
   key?: string | null; // display key; defaults to the chart's key
   style?: NumberStyle; // minor-key numbering style; defaults to the chart's
 }
+
+const degText = (d: Degree) => `${d.acc}${d.degree}`;
 
 function decorate(b: BeatItem, core: string): string {
   if (b.kind === "repeat") return "%";
@@ -63,9 +80,23 @@ export function buildView(doc: ChartDoc, opts: ViewOptions = {}): ChartView {
   const beatView = (b: BeatItem): BeatView => {
     const nb = renumberBeat(b, from, style);
     const num = beatText(nb);
-    if (nb.kind === "repeat") return { num, chord: num };
-    if (nb.kind === "nc" || !current) return { num, chord: decorate(nb, nb.kind === "nc" ? "N.C." : num) };
-    return { num, chord: decorate(nb, chordName(nb, current, style)) };
+    if (nb.kind === "repeat") {
+      const p = { root: "%", qual: "", bass: "" };
+      return { num, chord: num, kind: "repeat", push: false, diamond: false, end: "", n: p, c: p };
+    }
+    const mods = { push: nb.push, diamond: nb.diamond, end: nb.end };
+    if (nb.kind === "nc") {
+      const p = { root: "N.C.", qual: "", bass: "" };
+      return { num, chord: decorate(nb, "N.C."), kind: "nc", ...mods, n: p, c: p };
+    }
+    const n = { root: degText(nb.root), qual: nb.quality, bass: nb.bass ? degText(nb.bass) : "" };
+    if (!current) return { num, chord: decorate(nb, num), kind: "chord", ...mods, n, c: n };
+    const c = {
+      root: degreeToNote(nb.root, current, style),
+      qual: qualityName(nb.quality),
+      bass: nb.bass ? degreeToNote(nb.bass, current, style) : "",
+    };
+    return { num, chord: decorate(nb, chordName(nb, current, style)), kind: "chord", ...mods, n, c };
   };
 
   const change = (t: Tag): CellView => {
@@ -101,19 +132,29 @@ export function buildView(doc: ChartDoc, opts: ViewOptions = {}): ChartView {
     }
   };
 
+  // A tags line standing right before a section label ({mod: +1}) belongs to that section.
+  let pending: CellView[][] = [];
+  const flush = () => {
+    if (pending.length && sections.length) sections.at(-1)!.rows.push(...pending);
+    pending = [];
+  };
   for (const line of doc.lines) {
     if (line.kind === "section") {
       const { name, number, repeat } = line.section;
       sections.push({
         label: `${name}${number ?? ""}${repeat ? ` x${repeat}` : ""}`,
-        rows: line.rows.map((r) => r.map(cell)),
+        repeat: repeat ?? 1,
+        rows: [...pending, ...line.rows.map((r) => r.map(cell))],
       });
+      pending = [];
     } else if (line.kind === "rows") {
+      flush();
       sections.at(-1)!.rows.push(...line.rows.map((r) => r.map(cell)));
     } else if (line.kind === "tags" && sections.length) {
-      sections.at(-1)!.rows.push(line.tags.map(change));
+      pending.push(line.tags.map(change));
     }
   }
+  flush();
 
   return { meta, displayKey: display ? keyName(display) : null, minor, style, sections };
 }

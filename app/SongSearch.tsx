@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { PREF, setPref } from "@/lib/prefs";
 import type { SongListItem } from "@/lib/supabase/server";
 
 const norm = (s: string) =>
@@ -41,6 +42,10 @@ export default function SongSearch({ songs }: { songs: SongListItem[] }) {
           <li key={s.slug}>
             <Link
               href={`/songs/${s.slug}`}
+              onClick={() =>
+                // Remember this list so next/previous song follows it (search results or A-Z).
+                setPref(PREF.nav, JSON.stringify(results.map((r) => ({ slug: r.slug, title: r.title }))), "session")
+              }
               className="flex min-h-16 items-center justify-between gap-3 bg-panel px-4 py-3 active:bg-line"
             >
               <span className="min-w-0">

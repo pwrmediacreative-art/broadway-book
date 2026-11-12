@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
   ChartParseError,
+  SPEEDS,
+  barScale,
+  beatsPerBar,
   buildView,
+  layoutRow,
+  playedBars,
+  pretty,
+  splitQuality,
+  suggestSpeed,
   chordName,
   degreeToNote,
   getMeta,
@@ -207,7 +215,7 @@ describe("view", () => {
     const v = buildView(parseChart(WAGON).doc);
     expect(v.displayKey).toBe("A");
     expect(v.sections.map((s) => s.label)).toEqual(["Intro", "V", "C"]);
-    expect(v.sections[0].rows[0]).toEqual([
+    expect(v.sections[0].rows[0]).toMatchObject([
       { kind: "bar", beats: [{ num: "1", chord: "A" }] },
       { kind: "bar", beats: [{ num: "5", chord: "E" }] },
       { kind: "bar", beats: [{ num: "6-", chord: "F#m" }] },
@@ -219,13 +227,14 @@ describe("view", () => {
     const v = buildView(parseChart(shuffle).doc, { key: "G" });
     expect(v.displayKey).toBe("G");
     const intro = v.sections[0].rows[0];
-    expect(intro[1]).toEqual({ kind: "bar", beats: [{ num: "^1", chord: "^G" }] });
-    const change = v.sections.find((s) => s.label === "B")!.rows.at(-1)!;
-    expect(change).toEqual([{ kind: "change", text: "Up half step → Ab" }]);
+    expect(intro[1]).toMatchObject({ kind: "bar", beats: [{ num: "^1", chord: "^G" }] });
+    // {mod: +1} on the line before [C] opens that section.
     const lastC = v.sections.filter((s) => s.label === "C")[0];
-    expect(lastC.rows[0][0]).toEqual({ kind: "bar", beats: [{ num: "1", chord: "Ab" }] });
+    expect(lastC.rows[0]).toEqual([{ kind: "change", text: "Up half step → Ab" }]);
+    expect(v.sections.find((s) => s.label === "B")!.rows.at(-1)!.at(-1)).toEqual({ kind: "cue", text: "band out" });
+    expect(lastC.rows[1][0]).toMatchObject({ kind: "bar", beats: [{ num: "1", chord: "Ab" }] });
     const outro = v.sections.at(-1)!.rows[0];
-    expect(outro.at(-1)).toEqual({ kind: "bar", beats: [{ num: "<1>~", chord: "<Ab>~" }] });
+    expect(outro.at(-1)).toMatchObject({ kind: "bar", beats: [{ num: "<1>~", chord: "<Ab>~" }] });
   });
 
   it("ignores a display key in the wrong mode", () => {
@@ -244,11 +253,99 @@ describe("view", () => {
     expect(minor.sections[0].rows[0].map((c) => (c.kind === "bar" ? c.beats[0].chord : ""))).toEqual(["Am", "F", "G", "Am"]);
   });
 
+  it("gives structured parts and modifiers for drawing symbols", () => {
+    const v = buildView(parseChart("{key: A}\n[V] ^<57/3>~ 6-7! % NC").doc, { key: "Eb" });
+    const [a, b, c, d] = v.sections[0].rows[0].map((x) => (x.kind === "bar" ? x.beats[0] : null));
+    expect(a).toMatchObject({ kind: "chord", push: true, diamond: true, end: "fermata" });
+    expect(a!.n).toEqual({ root: "5", qual: "7", bass: "3" });
+    expect(a!.c).toEqual({ root: "Bb", qual: "7", bass: "G" });
+    expect(b).toMatchObject({ end: "stop", n: { root: "6", qual: "-7", bass: "" }, c: { root: "C", qual: "m7", bass: "" } });
+    expect(c).toMatchObject({ kind: "repeat", n: { root: "%" } });
+    expect(d).toMatchObject({ kind: "nc", c: { root: "N.C." } });
+    expect(v.sections[0].repeat).toBe(1);
+  });
+
+  it("transposes correctly into Bb, Eb and D", () => {
+    const doc = parseChart(WAGON).doc;
+    const names = (k: string) =>
+      buildView(doc, { key: k }).sections[0].rows[0].map((x) => (x.kind === "bar" ? x.beats[0].chord : ""));
+    expect(names("Bb")).toEqual(["Bb", "F", "Gm", "Eb"]);
+    expect(names("Eb")).toEqual(["Eb", "Bb", "Cm", "Ab"]);
+    expect(names("D")).toEqual(["D", "A", "Bm", "G"]);
+    const shuffle = buildView(parseChart(EXAMPLE_CHARTS[1].text).doc, { key: "Eb" });
+    const bridge = shuffle.sections.find((s) => s.label === "B")!.rows[0];
+    expect(bridge.map((x) => (x.kind === "bar" ? x.beats[0].chord : ""))).toEqual(["Db", "Ab", "Eb", "%"]);
+    const v2 = shuffle.sections.find((s) => s.label === "V")!.rows[1];
+    expect(v2.at(-1)).toMatchObject({ beats: [{ chord: "Eb/G" }] });
+  });
+
   it("shows NC as N.C. in chord mode", () => {
     const v = buildView(parseChart("{key: C}\n[V] NC ^<NC>!").doc);
-    expect(v.sections[0].rows[0]).toEqual([
+    expect(v.sections[0].rows[0]).toMatchObject([
       { kind: "bar", beats: [{ num: "NC", chord: "N.C." }] },
       { kind: "bar", beats: [{ num: "^<NC>!", chord: "^<N.C.>!" }] },
     ]);
+  });
+});
+
+describe("layout", () => {
+  const shuffle = EXAMPLE_CHARTS.find((e) => e.slug === "lower-broadway-shuffle")!.text;
+  const rows = (text: string, key?: string) => buildView(parseChart(text).doc, { key }).sections;
+
+  it("puts bars in 4 columns and wraps long rows", () => {
+    const [line1, line2] = layoutRow(rows("{key: C}\n[V] 1 2 3 4 5 6")[0].rows[0]);
+    expect(line1.bars.map((b) => b.col)).toEqual([0, 1, 2, 3]);
+    expect(line2.bars.map((b) => b.col)).toEqual([0, 1]);
+  });
+
+  it("attaches cues and changes to the bar after them, trailing notes after the last bar", () => {
+    const s = rows(shuffle);
+    const [intro] = layoutRow(s[0].rows[0]);
+    expect(intro.above).toEqual([{ notes: [{ kind: "cue", text: "guitar pickup" }], col: 0, span: 4 }]);
+    const bridge = layoutRow(s.find((x) => x.label === "B")!.rows[1]);
+    expect(bridge[0].after).toEqual({ notes: [{ kind: "cue", text: "band out" }], col: 3, span: 1 });
+    const solo = layoutRow(s.find((x) => x.label === "Solo")!.rows[0]);
+    expect(solo[0].above[0].notes).toEqual([{ kind: "change", text: "Feel: half time" }]);
+    const mod = layoutRow(s.filter((x) => x.label === "C")[0].rows[0]);
+    expect(mod[0].bars).toEqual([]);
+    expect(mod[0].after!.notes[0].kind).toBe("change");
+  });
+
+  it("draws crescendo and decrescendo wedges across the bars that follow", () => {
+    const s = rows(shuffle);
+    const pre = layoutRow(s.find((x) => x.label === "Pre")!.rows[1]);
+    expect(pre[0].hairpins).toEqual([{ dir: "cresc", col: 0, span: 4, from: 0, to: 1 }]);
+    const outro = layoutRow(s.at(-1)!.rows[0]);
+    expect(outro[0].hairpins).toEqual([{ dir: "decresc", col: 0, span: 3, from: 0, to: 1 }]);
+    const wrapped = layoutRow(rows("{key: C}\n[V] << 1 2 3 4 5 6")[0].rows[0]);
+    expect(wrapped[1].hairpins[0]).toMatchObject({ col: 0, span: 2, from: 4 / 6, to: 1 });
+  });
+
+  it("formats accidentals and qualities", () => {
+    expect(pretty("b7")).toBe("♭7");
+    expect(pretty("Bb")).toBe("B♭");
+    expect(pretty("F#")).toBe("F♯");
+    expect(pretty("m7b5")).toBe("m7♭5");
+    expect(pretty("N.C.")).toBe("N.C.");
+    expect(splitQuality("-7")).toEqual(["-", "7"]);
+    expect(splitQuality("m7b5")).toEqual(["m", "7b5"]);
+    expect(splitQuality("maj7")).toEqual(["", "maj7"]);
+  });
+
+  it("shrinks only long bars", () => {
+    const [l] = layoutRow(rows("{key: C}\n[V] 1 (1 1 4 5) 7-7b5")[0].rows[0]);
+    expect(barScale(l.bars[0].cell, false)).toBe(1);
+    expect(barScale(l.bars[1].cell, false)).toBeLessThan(1);
+  });
+
+  it("suggests a scroll speed from BPM and chart length", () => {
+    const v = buildView(parseChart(WAGON).doc);
+    expect(beatsPerBar("4/4")).toBe(4);
+    expect(beatsPerBar("6/8")).toBe(2);
+    expect(playedBars(v)).toBe(24);
+    // 24 bars at 140 bpm = ~41s. 1000px at 40px text = 25em -> ~0.6 em/s -> step 10.
+    expect(suggestSpeed(v, 1000, 40)).toBe(10);
+    expect(suggestSpeed(v, 0, 40)).toBeNull();
+    expect(SPEEDS).toHaveLength(12);
   });
 });
