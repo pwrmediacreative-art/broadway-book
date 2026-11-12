@@ -21,3 +21,4 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Removing someone from ADMIN_EMAILS only takes effect at their next sign-in or /admin visit; add a sync on every signed-in request or a "sync all" job.
 - Account bar is blank for a moment while the browser checks sign-in; could render from a cookie hint.
 - Admin dashboard section cards (Import, Review, Community) are placeholders until those steps.
+- Search isn't typo-tolerant yet ("wagn" finds nothing for Wagon Wheel); add fuzzy matching.
