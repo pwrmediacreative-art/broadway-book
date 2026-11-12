@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { browserClient } from "@/lib/supabase/browser";
+import { createClient } from "@supabase/supabase-js";
 import { safeNext } from "@/lib/auth/roles";
 
 export default function LoginForm() {
@@ -17,12 +17,15 @@ export default function LoginForm() {
     e.preventDefault();
     setState("sending");
     setError("");
-    // Where to land after the email link (read by /auth/callback; same browser only).
+    // Implicit flow (no PKCE): the link carries its own tokens, so it works in any browser
+    // or mail app, not just this one. /auth/confirm turns them into a session cookie.
     const next = safeNext(params.get("next"));
-    document.cookie = `bb_next=${encodeURIComponent(next)}; path=/; max-age=3600; samesite=lax`;
-    const { error } = await browserClient().auth.signInWithOtp({
+    const otp = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+      auth: { flowType: "implicit", persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    });
+    const { error } = await otp.auth.signInWithOtp({
       email: email.trim(),
-      options: { emailRedirectTo: `${location.origin}/auth/callback` },
+      options: { emailRedirectTo: `${location.origin}/auth/confirm?next=${encodeURIComponent(next)}` },
     });
     if (error) {
       setState("idle");
@@ -39,7 +42,7 @@ export default function LoginForm() {
       <div className="rounded-xl border border-line bg-panel p-5 text-lg">
         <p className="font-semibold">Check your email.</p>
         <p className="mt-1 text-muted">
-          We sent a sign-in link to <span className="text-foreground">{email.trim()}</span>. Tap it on this phone.
+          We sent a sign-in link to <span className="text-foreground">{email.trim()}</span>. Tap it to sign in.
         </p>
         <button
           type="button"

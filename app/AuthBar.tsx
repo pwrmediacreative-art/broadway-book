@@ -12,7 +12,11 @@ export default function AuthBar() {
   const pathname = usePathname();
   const [me, setMe] = useState<Me | undefined>(undefined);
 
+  // /auth/* pages handle sign-in tokens themselves; don't let a second client touch them.
+  const authPage = pathname.startsWith("/auth/");
+
   useEffect(() => {
+    if (authPage) return;
     const db = browserClient();
     let alive = true;
     async function load() {
@@ -31,10 +35,10 @@ export default function AuthBar() {
       alive = false;
       sub.subscription.unsubscribe();
     };
-  }, [pathname]);
+  }, [pathname, authPage]);
 
   const link = "inline-flex h-11 items-center px-2 text-base text-muted active:text-foreground";
-  if (pathname === "/login") return <Bar />;
+  if (pathname === "/login" || authPage) return <Bar />;
   if (me === undefined) return <Bar />;
   if (me === null) {
     const next = pathname === "/" ? "" : `?next=${encodeURIComponent(pathname)}`;

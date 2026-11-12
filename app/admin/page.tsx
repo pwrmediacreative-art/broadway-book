@@ -60,7 +60,7 @@ async function Dashboard() {
 
       <ul className="flex flex-col gap-3">
         {SECTIONS.map((sec) => (
-          <li key={sec.path} className="rounded-xl border border-line bg-panel p-4" aria-disabled="true">
+          <li key={sec.path} className="rounded-xl border border-line bg-panel p-4">
             <div className="flex items-baseline justify-between gap-3">
               <h2 className="text-xl font-semibold">{sec.title}</h2>
               <span className="text-sm text-accent">Coming soon</span>

@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 
   let next = "/";
   try {
-    next = safeNext(decodeURIComponent(request.cookies.get("bb_next")?.value ?? "/"));
+    next = safeNext(q.get("next") ?? decodeURIComponent(request.cookies.get("bb_next")?.value ?? "/"));
   } catch {}
   const dest = profile?.display_name ? next : `/profile?next=${encodeURIComponent(next)}`;
   const res = NextResponse.redirect(new URL(dest, request.url));

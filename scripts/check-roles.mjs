@@ -106,6 +106,25 @@ try {
     !asC.body.includes("Open proposals") && (asC.status === 404 || /could not be found|404/i.test(asC.body))
       ? pass(`contributor /admin → not found (${asC.status})`)
       : fail(`contributor /admin: status ${asC.status}, dashboard shown=${asC.body.includes("Open proposals")}`);
+    // Magic link → /auth/confirm → /auth/finish, as a brand-new browser would do it
+    // (default Supabase email, implicit flow: tokens arrive in the URL #fragment).
+    const fresh = await svc.auth.admin.createUser({ email: `roles-check-link-${Date.now()}@example.com`, email_confirm: true });
+    users.push({ id: fresh.data.user.id });
+    const link = await svc.auth.admin.generateLink({ type: "magiclink", email: fresh.data.user.email });
+    const hop = await fetch(link.data.properties.action_link, { redirect: "manual" });
+    const frag = new URLSearchParams((hop.headers.get("location") ?? "").split("#")[1] ?? "");
+    const fin = await fetch(`${baseUrl}/auth/finish`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ access_token: frag.get("access_token"), refresh_token: frag.get("refresh_token"), next: "/songs/x" }),
+    });
+    const finBody = fin.ok ? await fin.json() : {};
+    fin.ok && finBody.dest === "/profile?next=%2Fsongs%2Fx" && (fin.headers.get("set-cookie") ?? "").includes("auth-token")
+      ? pass("magic link signs in from any browser, new user → profile step")
+      : fail(`magic link finish: ${fin.status} ${JSON.stringify(finBody)}`);
+    const bad = await fetch(`${baseUrl}/auth/finish`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ access_token: "x", refresh_token: "y" }) });
+    bad.status === 401 ? pass("forged tokens rejected (401)") : fail(`forged tokens: ${bad.status}`);
+
     // The page re-syncs roles from ADMIN_EMAILS, which demotes this test admin (not on the
     // list) unless the server runs with ADMIN_EMAILS unset. Opt in with CHECK_ADMIN_PAGE=1.
     if (process.env.CHECK_ADMIN_PAGE === "1") {
