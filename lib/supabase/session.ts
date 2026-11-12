@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { parseAdminEmails, roleFor } from "@/lib/auth/roles";
 import { serviceClient } from "./service";
@@ -31,6 +32,9 @@ export interface CurrentUser {
 
 /** The signed-in user and their profile, or null when signed out. */
 export async function getCurrentUser(): Promise<CurrentUser | null> {
+  // Request-time only: the auth client checks token expiry with Date.now(), which Next
+  // refuses during (runtime) prerendering.
+  await connection();
   const db = await sessionClient();
   const {
     data: { user },
