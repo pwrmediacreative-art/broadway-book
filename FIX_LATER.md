@@ -17,3 +17,4 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Unknown song URLs show the 404 page but return HTTP 200 (streamed notFound with Cache Components); fix status code.
 - Add database tests (pgTAP) for the voting trigger: 3 approvals publish, 3 rejections close, admin vote decides.
 - Auto-deploy on push: install the Vercel GitHub app for pwrmediacreative-art, then run `npx vercel git connect` (deploys are via CLI until then).
+- Split bars (e.g. (4 5)) are only underlined; on a phone they can read like two bars. Make them more distinct.
