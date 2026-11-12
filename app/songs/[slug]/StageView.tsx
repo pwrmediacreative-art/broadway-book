@@ -7,6 +7,7 @@ import { PREF, setPref, usePref } from "@/lib/prefs";
 import Chart from "./Chart";
 import { btn, BpmToggle, DisplayControls, off, on } from "./controls";
 import { FONTS, useChartState, useGesture, useSongKeys, useSongNav, type FontId, type Neighbors } from "./hooks";
+import { recordRecent } from "@/lib/search/recent";
 
 const FIT_MIN = 30; // px: smallest size we shrink to so the whole chart fits without scrolling
 const SCROLL_SIZE = 40; // px: size used when it can't fit and has to scroll (if the width allows)
@@ -56,6 +57,7 @@ function useWakeLock() {
 export default function StageView({ slug, title, chartText, neighbors }: { slug: string; title: string; chartText: string; neighbors: Neighbors }) {
   const s = useChartState(slug, chartText);
   const nav = useSongNav(slug, neighbors);
+  useEffect(() => recordRecent(slug), [slug]);
   const router = useRouter();
   const scroller = useRef<HTMLDivElement>(null);
   const chartEl = useRef<HTMLDivElement>(null);

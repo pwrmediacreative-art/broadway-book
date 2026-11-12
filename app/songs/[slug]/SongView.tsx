@@ -7,6 +7,7 @@ import AdminPdfLink from "./AdminPdfLink";
 import Chart from "./Chart";
 import { BpmToggle, DisplayControls, KeyInfo } from "./controls";
 import { FONTS, useChartState, useGesture, useSongKeys, useSongNav, type Neighbors } from "./hooks";
+import { recordRecent } from "@/lib/search/recent";
 
 export interface SongProps {
   slug: string;
@@ -28,6 +29,7 @@ export function enterFullscreen() {
 export default function SongView({ slug, title, artist, isExample, chartText, neighbors }: SongProps) {
   const s = useChartState(slug, chartText);
   const nav = useSongNav(slug, neighbors);
+  useEffect(() => recordRecent(slug), [slug]);
   const router = useRouter();
   const go = (d: -1 | 1) => {
     const t = d > 0 ? nav.next : nav.prev;

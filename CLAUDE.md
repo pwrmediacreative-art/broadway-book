@@ -69,6 +69,7 @@ readable at arm's length and usable with a thumb.
 - `lib/supabase/` – Supabase clients: `server.ts` (anon, cached public reads), `session.ts` (signed-in user,
   `syncRole`), `browser.ts`, `service.ts` (service role, server only, role sync only).
 - `lib/auth/roles.ts` – ADMIN_EMAILS parsing, profile validation, instrument list.
+- `lib/search/` – home search: `pack.ts` (index file format), `engine.ts` (MiniSearch, typo-tolerant), `browse.ts` (filters, sort, facets, URL state), `recent.ts`, `useIndex.ts` (device copy + refresh). Index served by `app/search-index.json/route.ts`.
 - `proxy.ts` – refreshes the session and sends signed-out visitors to /login for `/profile` and `/admin`.
 - `app/` – pages. `/` = song list + search, `/songs/[slug]` = chart, `/login` (magic link),
   `/auth/callback`, `/profile` (display name + instrument), `/admin` (admins only, via `admin_dashboard()`).

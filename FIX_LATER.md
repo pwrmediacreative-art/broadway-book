@@ -31,3 +31,8 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Stage header at 375px: with the key pair and "Next:" shown, long song titles shrink to a few letters; consider a two-line header or shorter Next label.
 - Song page sticky controls now wrap to two rows on a phone (key, 123/ABC, Relative/Parallel, 6-/6m); consider moving 6-/6m into a settings sheet.
 - The old app-wide 1-/6- choice (localStorage `bb.style`) is no longer read; numbering is per song now. Players who had flipped it will see each song as written until they flip again.
+- Search index (`/search-index.json`) refreshes about 1 min after a publish (cache); call `revalidateTag`/`updateTag` from publish actions once the app publishes through server actions.
+- Home song list is now drawn in the browser, so the home HTML has no song links; add a sitemap so search engines still find every chart.
+- Search works offline once the page is open (index saved on the device), but opening the home page offline still needs the service-worker step.
+- A–Z jump strip letters are ~27px tall when all 26 letters exist (under the 44px target); drag-to-scrub makes up for it, but revisit.
+- Fuzzy search forgives typos in whole words and one dropped letter mid-word; consider n-gram matching if players report misses on partial typos.
