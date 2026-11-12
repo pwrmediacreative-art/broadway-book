@@ -17,7 +17,7 @@ import {
 // Every size below is in em, relative to the chart's font size, so the whole chart
 // scales together (song page: fixed size; stage mode: auto-fit or the player's size).
 
-function Caret({ className }: { className: string }) {
+export function Caret({ className }: { className: string }) {
   return (
     <svg viewBox="0 0 20 12" className={className} aria-hidden>
       <polyline points="2,11 10,2 18,11" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
@@ -25,7 +25,7 @@ function Caret({ className }: { className: string }) {
   );
 }
 
-function Fermata({ className }: { className: string }) {
+export function Fermata({ className }: { className: string }) {
   return (
     <svg viewBox="0 0 24 14" className={className} aria-hidden>
       <path d="M2 13 A10 10 0 0 1 22 13" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />

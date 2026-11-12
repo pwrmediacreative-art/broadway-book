@@ -34,12 +34,44 @@ export function keyName(k: Key): string {
   return spell(k.letter, k.pc) + (k.minor ? "m" : "");
 }
 
+/** "A minor", "Bb major". */
+export function keyLongName(k: Key): string {
+  return spell(k.letter, k.pc) + (k.minor ? " minor" : " major");
+}
+
+/** The other key with the same notes: Am <-> C, F#m <-> A, Bb <-> Gm, Ebm <-> Gb. */
+export function relativeKey(k: Key): Key {
+  return k.minor
+    ? { letter: mod(k.letter + 2, 7), pc: mod(k.pc + 3, 12), minor: false }
+    : { letter: mod(k.letter + 5, 7), pc: mod(k.pc + 9, 12), minor: true };
+}
+
+/** The key the numbers count from: a minor song numbered "relative" counts from its relative major. */
+export function numberingKey(key: Key, style: NumberStyle): Key {
+  return key.minor && style === "relative" ? relativeKey(key) : key;
+}
+
+/**
+ * Key as players should read it for the current numbering view, numbering key first.
+ * Am parallel: "A minor (relative to C major)". Am relative: "C major (relative to A minor)".
+ * Major songs: just "E major".
+ */
+export function keyPairLabel(key: Key, style: NumberStyle): string {
+  if (!key.minor) return keyLongName(key);
+  const home = numberingKey(key, style);
+  return `${keyLongName(home)} (relative to ${keyLongName(relativeKey(home))})`;
+}
+
+/** Short form for tight spots and the key picker: "Am (C)" / "C (Am)". */
+export function keyPairShort(key: Key, style: NumberStyle): string {
+  if (!key.minor) return keyName(key);
+  const home = numberingKey(key, style);
+  return `${keyName(home)} (${keyName(relativeKey(home))})`;
+}
+
 /** The note that "1" stands for under a numbering style. */
 function reference(key: Key, style: NumberStyle): { letter: number; pc: number } {
-  if (key.minor && style === "relative") {
-    return { letter: mod(key.letter + 2, 7), pc: mod(key.pc + 3, 12) };
-  }
-  return { letter: key.letter, pc: key.pc };
+  return numberingKey(key, style);
 }
 
 /** Degree + key -> note name. A key: 1=A, 4=D. F key: 4=Bb. E key: b7=D. */
@@ -106,4 +138,23 @@ export function commonKey(pc: number, minor: boolean): Key {
 
 export function shiftKey(k: Key, semitones: number): Key {
   return commonKey(k.pc + semitones, k.minor);
+}
+
+/**
+ * Key picker entries for a song in `original`'s mode, labelled for the numbering view.
+ * Values are always keys in the song's own mode (so picking "D (Bm)" sets the song to Bm);
+ * the song's own key keeps its chart spelling. Relative view is ordered by the major key.
+ */
+export function keyPickerOptions(original: Key, style: NumberStyle): { value: string; label: string; pc: number }[] {
+  const rel = original.minor && style === "relative";
+  return MAJOR_NAMES.map((_, i) => {
+    let k: Key;
+    if (rel) {
+      k = relativeKey(parseKey(MAJOR_NAMES[i])!); // C -> Am, Db -> Bbm, F# -> D#m
+    } else {
+      k = parseKey(keyChoices(original.minor)[i])!;
+    }
+    if (k.pc === original.pc) k = original;
+    return { value: keyName(k), label: keyPairShort(k, style), pc: k.pc };
+  });
 }

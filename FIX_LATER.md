@@ -28,3 +28,6 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Split bars reserve the push/stop mark row even when only one beat has a mark; a little extra height on those lines.
 - Stage light mode: black text on the amber-700 accent buttons is ~4.4:1 contrast; consider white text on accent in light mode.
 - Stage mode: when a chart just fits, the floating Aa button covers the last bar's right edge until controls auto-hide.
+- Stage header at 375px: with the key pair and "Next:" shown, long song titles shrink to a few letters; consider a two-line header or shorter Next label.
+- Song page sticky controls now wrap to two rows on a phone (key, 123/ABC, Relative/Parallel, 6-/6m); consider moving 6-/6m into a settings sheet.
+- The old app-wide 1-/6- choice (localStorage `bb.style`) is no longer read; numbering is per song now. Players who had flipped it will see each song as written until they flip again.

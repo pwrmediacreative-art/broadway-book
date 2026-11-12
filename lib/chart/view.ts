@@ -4,6 +4,9 @@ import {
   chordName,
   degreeToNote,
   keyName,
+  keyPairLabel,
+  keyPairShort,
+  numberingKey,
   qualityName,
   parseKey,
   renumberBeat,
@@ -41,7 +44,10 @@ export interface SectionView {
 }
 export interface ChartView {
   meta: ChartMeta;
-  displayKey: string | null;
+  displayKey: string | null; // the song's key as played ("Am"), what the key picker stores
+  numberKey: string | null; // the key the numbers count from: "C" for Am numbered relative
+  keyLabel: string | null; // "A minor (relative to C major)" / "C major (relative to A minor)" / "E major"
+  keyShort: string | null; // "Am (C)" / "C (Am)" / "E"
   minor: boolean;
   style: NumberStyle;
   sections: SectionView[];
@@ -50,7 +56,13 @@ export interface ChartView {
 export interface ViewOptions {
   key?: string | null; // display key; defaults to the chart's key
   style?: NumberStyle; // minor-key numbering style; defaults to the chart's
+  minorSymbol?: MinorSymbol; // how minor numbers are drawn; display only, default "-"
 }
+
+/** How minor chords show in Numbers view: "6-" or "6m". The stored chart text always uses "-". */
+export type MinorSymbol = "-" | "m";
+
+const minorQual = (q: string, sym: MinorSymbol) => (sym === "m" && q.startsWith("-") ? "m" + q.slice(1) : q);
 
 const degText = (d: Degree) => `${d.acc}${d.degree}`;
 
@@ -73,13 +85,14 @@ export function buildView(doc: ChartDoc, opts: ViewOptions = {}): ChartView {
   const minor = Boolean(original?.minor);
   const style: NumberStyle = minor ? (opts.style ?? meta.numbers) : "minor";
   const from: NumberStyle = minor ? meta.numbers : "minor";
+  const sym: MinorSymbol = opts.minorSymbol ?? "-";
 
   let current = display;
   const sections: SectionView[] = [];
 
   const beatView = (b: BeatItem): BeatView => {
     const nb = renumberBeat(b, from, style);
-    const num = beatText(nb);
+    const num = beatText(nb.kind === "chord" ? { ...nb, quality: minorQual(nb.quality, sym) } : nb);
     if (nb.kind === "repeat") {
       const p = { root: "%", qual: "", bass: "" };
       return { num, chord: num, kind: "repeat", push: false, diamond: false, end: "", n: p, c: p };
@@ -89,7 +102,7 @@ export function buildView(doc: ChartDoc, opts: ViewOptions = {}): ChartView {
       const p = { root: "N.C.", qual: "", bass: "" };
       return { num, chord: decorate(nb, "N.C."), kind: "nc", ...mods, n: p, c: p };
     }
-    const n = { root: degText(nb.root), qual: nb.quality, bass: nb.bass ? degText(nb.bass) : "" };
+    const n = { root: degText(nb.root), qual: minorQual(nb.quality, sym), bass: nb.bass ? degText(nb.bass) : "" };
     if (!current) return { num, chord: decorate(nb, num), kind: "chord", ...mods, n, c: n };
     const c = {
       root: degreeToNote(nb.root, current, style),
@@ -103,14 +116,14 @@ export function buildView(doc: ChartDoc, opts: ViewOptions = {}): ChartView {
     if (t.name === "key") {
       const k = parseKey(t.value)!;
       current = offset ? shiftKey(k, offset) : k;
-      return { kind: "change", text: `Key: ${keyName(current)}` };
+      return { kind: "change", text: `Key: ${keyPairShort(current, style)}` };
     }
     if (t.name === "mod") {
       const n = Number(t.value);
       if (current) current = shiftKey(current, n);
       const dir = n > 0 ? "Up" : "Down";
       const steps = Math.abs(n) === 1 ? "half step" : `${Math.abs(n)} half steps`;
-      return { kind: "change", text: `${dir} ${steps}${current ? ` → ${keyName(current)}` : ""}` };
+      return { kind: "change", text: `${dir} ${steps}${current ? ` → ${keyPairShort(current, style)}` : ""}` };
     }
     if (t.name === "bpm") return { kind: "change", text: `Tempo ${t.value}` };
     if (t.name === "time") return { kind: "change", text: `Time ${t.value}` };
@@ -156,5 +169,14 @@ export function buildView(doc: ChartDoc, opts: ViewOptions = {}): ChartView {
   }
   flush();
 
-  return { meta, displayKey: display ? keyName(display) : null, minor, style, sections };
+  return {
+    meta,
+    displayKey: display ? keyName(display) : null,
+    numberKey: display ? keyName(numberingKey(display, style)) : null,
+    keyLabel: display ? keyPairLabel(display, style) : null,
+    keyShort: display ? keyPairShort(display, style) : null,
+    minor,
+    style,
+    sections,
+  };
 }

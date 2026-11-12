@@ -280,9 +280,9 @@ export default function StageView({ slug, title, chartText, neighbors }: { slug:
         <button onClick={exit} aria-label="Exit stage mode" className="grid size-11 shrink-0 place-items-center rounded-lg text-2xl text-muted active:bg-panel">
           ✕
         </button>
-        <div className="min-w-0 flex-1 truncate">
-          <b>{title}</b>
-          {view.displayKey && <span className="text-muted"> · {pretty(view.displayKey)}</span>}
+        <div className="flex min-w-0 flex-1 items-baseline gap-1">
+          <b className="truncate">{title}</b>
+          {view.keyShort && <span className="shrink-0 whitespace-nowrap text-muted">· {pretty(view.keyShort)}</span>}
         </div>
         <BpmToggle s={s} className="shrink-0 text-sm text-muted" />
         {nav.next && (

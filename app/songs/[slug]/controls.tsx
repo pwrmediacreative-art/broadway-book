@@ -1,31 +1,46 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { beatsPerBar, keyChoices, pretty } from "@/lib/chart";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  beatsPerBar,
+  keyLongName,
+  keyName,
+  keyPickerOptions,
+  parseKey,
+  pretty,
+  relativeKey,
+  type ChartView,
+  type MinorSymbol,
+} from "@/lib/chart";
+import { Caret, Fermata } from "./Chart";
 import type { ChartState } from "./hooks";
 
 export const btn = "h-12 min-w-12 rounded-lg px-4 text-lg font-semibold";
 export const on = "bg-accent text-black";
 export const off = "bg-panel text-foreground border border-line";
 
-/** Key picker, Numbers/Chords toggle and (minor keys) 1- / 6- numbering. */
+/** Key picker, Numbers/Chords, minor symbol (6- / 6m) and, for minor keys, Relative / Parallel. */
 export function DisplayControls({ s }: { s: ChartState }) {
   const view = s.view!;
   const { meta } = view;
+  const original = meta.key ? parseKey(meta.key) : null;
+  const shown = view.displayKey ? parseKey(view.displayKey) : null;
+  const options = original ? keyPickerOptions(original, view.style) : [];
+  const selected = options.find((o) => o.pc === shown?.pc)?.value ?? view.displayKey ?? "";
+  const m = s.minorSymbol;
   return (
     <>
-      {view.displayKey && (
+      {original && (
         <select
-          value={view.displayKey}
+          value={selected}
           onChange={(e) => s.setKey(e.target.value)}
           className={`${btn} ${off} font-mono`}
           aria-label="Key"
         >
-          {!keyChoices(view.minor).includes(view.displayKey) && <option>{view.displayKey}</option>}
-          {keyChoices(view.minor).map((k) => (
-            <option key={k} value={k}>
-              {pretty(k)}
-              {k === meta.key ? " (orig)" : ""}
+          {options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {pretty(o.label)}
+              {o.value === meta.key ? " orig" : ""}
             </option>
           ))}
         </select>
@@ -39,24 +54,135 @@ export function DisplayControls({ s }: { s: ChartState }) {
         </button>
       </div>
       {view.minor && (
-        <div className="flex" role="group" aria-label="Minor key numbering">
-          <button
-            className={`${btn} rounded-r-none ${view.style === "minor" ? on : off}`}
-            onClick={() => s.setStyle("minor")}
-            aria-pressed={view.style === "minor"}
-          >
-            1-
-          </button>
-          <button
-            className={`${btn} rounded-l-none ${view.style === "relative" ? on : off}`}
-            onClick={() => s.setStyle("relative")}
-            aria-pressed={view.style === "relative"}
-          >
-            6-
-          </button>
+        <div className="flex" role="group" aria-label="Minor numbering">
+          {(
+            [
+              ["relative", "Relative", `home ${6}${m}`, "Relative: home is the major key"],
+              ["minor", "Parallel", `home 1${m}`, "Parallel: home is the minor key"],
+            ] as const
+          ).map(([st, label, sub, aria], i) => (
+            <button
+              key={st}
+              className={`flex h-12 flex-col items-center justify-center rounded-lg px-3 leading-tight ${i ? "rounded-l-none" : "rounded-r-none"} ${view.style === st ? on : off}`}
+              onClick={() => s.setStyle(st)}
+              aria-pressed={view.style === st}
+              aria-label={aria}
+            >
+              <span className="text-base font-semibold">{label}</span>
+              <span className="text-xs">{sub}</span>
+            </button>
+          ))}
         </div>
       )}
+      <div className="flex items-center" role="group" aria-label="Minor style">
+        <span className="mr-2 text-sm text-muted">Minor</span>
+        {(["-", "m"] as const).map((sym, i) => (
+          <button
+            key={sym}
+            className={`${btn} px-3 font-mono ${i ? "rounded-l-none" : "rounded-r-none"} ${m === sym ? on : off}`}
+            onClick={() => s.setMinorSymbol(sym)}
+            aria-pressed={m === sym}
+            aria-label={`Show minor as 6${sym === "-" ? " dash" : "m"}`}
+          >
+            6{sym}
+          </button>
+        ))}
+      </div>
     </>
+  );
+}
+
+/** "Key A minor (relative to C major)" + Minor/Major chip with a tap-to-open explainer + symbols legend. */
+export function KeyInfo({ s, children }: { s: ChartState; children?: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const view = s.view!;
+  const label = view.keyLabel;
+  const cut = label ? label.indexOf(" (") : -1;
+  return (
+    <div className="mb-2">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-lg text-muted">
+        {label && (
+          <span>
+            Key <b className="text-foreground">{pretty(cut > 0 ? label.slice(0, cut) : label)}</b>
+            {cut > 0 && <span> {pretty(label.slice(cut + 1))}</span>}
+          </span>
+        )}
+        {label && (
+          <button
+            onClick={() => setOpen(!open)}
+            aria-expanded={open}
+            className="inline-flex h-11 items-center gap-1 rounded-full border border-accent px-3 text-base font-semibold text-accent"
+          >
+            {view.minor ? "Minor" : "Major"} <span aria-hidden>ⓘ</span>
+            <span className="sr-only">: what does this mean?</span>
+          </button>
+        )}
+        {children}
+      </div>
+      {open && view.displayKey && <KeyExplainer view={view} sym={s.minorSymbol} onClose={() => setOpen(false)} />}
+      <Legend s={s} />
+    </div>
+  );
+}
+
+function KeyExplainer({ view, sym, onClose }: { view: ChartView; sym: MinorSymbol; onClose: () => void }) {
+  const k = parseKey(view.displayKey!)!;
+  const other = relativeKey(k);
+  const song = pretty(keyLongName(k));
+  const rel = pretty(keyLongName(other));
+  return (
+    <div className="my-2 rounded-xl border border-line bg-panel p-4 text-lg leading-snug text-foreground">
+      {view.minor ? (
+        <p>
+          This song is in <b>{song}</b>, a minor key. Every minor key uses the same notes as a major key three half
+          steps up, called its <b className="text-accent">relative major</b>: {song} and {rel} share every note.
+          So the chart can count from {pretty(keyName(other))} (Relative, home chord = 6{sym}) or from{" "}
+          {pretty(keyName(k).slice(0, -1))} (Parallel, home chord = 1{sym}). The chords you play are the same either way.
+        </p>
+      ) : (
+        <p>
+          This song is in <b>{song}</b>, a major key: the home chord is 1. Its <b className="text-accent">relative minor</b>{" "}
+          is {rel}, which uses the same notes, so a 6{sym} chord here is the {pretty(keyName(other))} chord.
+        </p>
+      )}
+      <button onClick={onClose} className={`${btn} ${off} mt-3`}>
+        Got it
+      </button>
+    </div>
+  );
+}
+
+/** One-line symbols legend, collapsed by default; open/closed is remembered on the device. */
+export function Legend({ s }: { s: ChartState }) {
+  const items: [ReactNode, string][] = [
+    [`6${s.minorSymbol}`, "minor"],
+    ["♭7", "flat"],
+    ["1/3", "bass note"],
+    ["%", "repeat bar"],
+    [<Caret key="p" className="inline h-[0.6em] w-[0.9em] text-accent" />, "push"],
+    ["◇", "let ring"],
+    [<Fermata key="f" className="inline h-[0.7em] w-[1.1em] text-accent" />, "hold"],
+    [<span key="s" className="inline-block size-[0.5em] rounded-full bg-red-400" />, "stop"],
+  ];
+  return (
+    <div>
+      <button
+        onClick={() => s.setLegend(!s.legend)}
+        aria-expanded={s.legend}
+        className="inline-flex h-11 items-center gap-1 text-base text-muted active:text-foreground"
+      >
+        Symbols {s.legend ? "▾" : "▸"}
+      </button>
+      {s.legend && (
+        <p className="flex flex-wrap gap-x-3 gap-y-1 pb-2 text-lg text-muted">
+          {items.map(([sym, what]) => (
+            <span key={what}>
+              <b className="font-mono text-foreground">{sym}</b> {what}
+            </span>
+          ))}
+        </p>
+      )}
+    </div>
   );
 }
 

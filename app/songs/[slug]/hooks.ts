@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { buildView, parseChart, type NumberStyle } from "@/lib/chart";
+import { buildView, parseChart, type MinorSymbol, type NumberStyle } from "@/lib/chart";
 import { PREF, setPref, usePref } from "@/lib/prefs";
 
 export interface SongLink {
@@ -33,14 +33,17 @@ export function useChartState(slug: string, chartText: string) {
 
   const chords = usePref(PREF.display) === "chords";
   const keyPref = usePref(PREF.key(slug));
-  const stylePref = usePref(PREF.style) as NumberStyle | null;
+  const stylePref = usePref(PREF.numbering(slug));
+  const style: NumberStyle | undefined = stylePref === "minor" || stylePref === "relative" ? stylePref : undefined;
+  const minorSymbol: MinorSymbol = usePref(PREF.minorSymbol) === "-" ? "-" : "m";
+  const legend = usePref(PREF.legend) === "1";
   const fontPref = usePref(PREF.font);
   const font: FontId = fontPref && fontPref in FONTS ? (fontPref as FontId) : "atkinson";
   const pulse = usePref(PREF.pulse) === "1";
 
   const view = useMemo(
-    () => (parsed.doc ? buildView(parsed.doc, { key: keyPref, style: stylePref ?? undefined }) : null),
-    [parsed.doc, keyPref, stylePref],
+    () => (parsed.doc ? buildView(parsed.doc, { key: keyPref, style, minorSymbol }) : null),
+    [parsed.doc, keyPref, style, minorSymbol],
   );
 
   return {
@@ -49,9 +52,14 @@ export function useChartState(slug: string, chartText: string) {
     chords,
     font,
     pulse,
+    minorSymbol,
+    legend,
     setChords: (on: boolean) => setPref(PREF.display, on ? "chords" : "numbers"),
     setKey: (k: string) => setPref(PREF.key(slug), view && k === view.meta.key ? null : k),
-    setStyle: (s: NumberStyle) => setPref(PREF.style, s),
+    // Per song. Choosing the chart's own numbering clears the override.
+    setStyle: (st: NumberStyle) => setPref(PREF.numbering(slug), view && st === view.meta.numbers ? null : st),
+    setMinorSymbol: (m: MinorSymbol) => setPref(PREF.minorSymbol, m),
+    setLegend: (open: boolean) => setPref(PREF.legend, open ? "1" : null),
     setFont: (f: FontId) => setPref(PREF.font, f),
     setPulse: (on: boolean) => setPref(PREF.pulse, on ? "1" : null),
   };

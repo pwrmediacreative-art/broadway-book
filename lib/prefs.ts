@@ -54,13 +54,15 @@ export function usePref(key: string, area: Area = "local"): string | null {
 
 export const PREF = {
   display: "bb.display", // "numbers" | "chords"
-  style: "bb.style", // "minor" | "relative"
+  minorSymbol: "bb.minor", // "-" | "m" (default "m"): how minor numbers are drawn
+  legend: "bb.legend", // "1" = symbols legend open
   font: "bb.font", // FontId
   size: "bb.size", // stage text size in px; unset = auto-fit
   speed: "bb.speed", // last scroll speed 1-12
   pulse: "bb.pulse", // "1" = beat pulse on
   stageTheme: "bb.stageTheme", // "light" | unset = dark (stage mode only)
   key: (slug: string) => `bb.key.${slug}`,
+  numbering: (slug: string) => `bb.numbers.${slug}`, // "minor" | "relative"; unset = as the chart is written
   songSpeed: (slug: string) => `bb.speed.${slug}`,
   nav: "bb.nav", // sessionStorage: [{slug,title}] list the player opened a song from
 } as const;

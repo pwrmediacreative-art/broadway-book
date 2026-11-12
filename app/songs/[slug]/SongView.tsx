@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import AdminPdfLink from "./AdminPdfLink";
 import Chart from "./Chart";
-import { pretty } from "@/lib/chart";
-import { BpmToggle, DisplayControls } from "./controls";
+import { BpmToggle, DisplayControls, KeyInfo } from "./controls";
 import { FONTS, useChartState, useGesture, useSongKeys, useSongNav, type Neighbors } from "./hooks";
 
 export interface SongProps {
@@ -80,16 +79,11 @@ export default function SongView({ slug, title, artist, isExample, chartText, ne
         </p>
       </header>
 
-      <p className="mb-2 flex flex-wrap items-center gap-x-4 text-lg text-muted">
-        {s.view.displayKey && (
-          <span>
-            Key <b className="text-foreground">{pretty(s.view.displayKey)}</b>
-          </span>
-        )}
+      <KeyInfo s={s}>
         <BpmToggle s={s} className="-mx-2" />
         {meta.time && <span>{meta.time}</span>}
         {meta.feel && <span>{meta.feel}</span>}
-      </p>
+      </KeyInfo>
 
       <div className="sticky top-0 z-10 -mx-4 mb-4 flex flex-wrap items-center gap-2 border-b border-line bg-background/95 px-4 py-2 backdrop-blur">
         <DisplayControls s={s} />
