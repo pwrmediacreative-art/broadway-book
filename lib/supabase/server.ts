@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { cacheLife } from "next/cache";
 
 /** Read-only public client (anon key). RLS limits it to published songs. */
 export function publicClient() {
@@ -17,6 +18,8 @@ export interface SongListItem {
 }
 
 export async function listSongs(): Promise<SongListItem[]> {
+  "use cache";
+  cacheLife("minutes");
   const { data, error } = await publicClient()
     .from("songs")
     .select("slug, title, artist, key, is_example")
@@ -27,6 +30,8 @@ export async function listSongs(): Promise<SongListItem[]> {
 }
 
 export async function getSong(slug: string) {
+  "use cache";
+  cacheLife("minutes");
   const { data, error } = await publicClient()
     .from("songs")
     .select("slug, title, artist, key, is_example, current:revisions!songs_current_revision_fk(chart_text)")

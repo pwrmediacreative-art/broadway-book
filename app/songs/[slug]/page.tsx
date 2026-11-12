@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getSong } from "@/lib/supabase/server";
+import { getSong, listSongs } from "@/lib/supabase/server";
 import ChartDisplay from "./ChartDisplay";
 
-export const revalidate = 60;
+export async function generateStaticParams() {
+  const songs = await listSongs();
+  return songs.map((s) => ({ slug: s.slug }));
+}
 
 export async function generateMetadata({ params }: PageProps<"/songs/[slug]">) {
   const { slug } = await params;

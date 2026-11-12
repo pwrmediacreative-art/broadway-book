@@ -14,3 +14,6 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Search is client-side over the full list; fine for ~1,900 songs, revisit if it grows a lot.
 - songs.updated_at is only bumped by publish_chart; add a trigger for other updates.
 - Add the co-owner and owner as admins after first sign-in (one SQL update each).
+- Unknown song URLs show the 404 page but return HTTP 200 (streamed notFound with Cache Components); fix status code.
+- Add database tests (pgTAP) for the voting trigger: 3 approvals publish, 3 rejections close, admin vote decides.
+- Auto-deploy on push: install the Vercel GitHub app for pwrmediacreative-art, then run `npx vercel git connect` (deploys are via CLI until then).

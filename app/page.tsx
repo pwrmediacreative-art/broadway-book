@@ -1,8 +1,6 @@
 import { listSongs } from "@/lib/supabase/server";
 import SongSearch from "./SongSearch";
 
-export const revalidate = 60;
-
 export default async function Home() {
   const songs = await listSongs();
   return (
