@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Broadway Book
 
-## Getting Started
+Free, open-source Nashville Number System charts for musicians playing Lower Broadway
+in Nashville. Pull up a song's number chart on your phone, mid-set, in seconds, and show
+it in any key.
 
-First, run the development server:
+- Anyone can view charts, no login.
+- Signed-in players can suggest edits and vote. An edit goes live after 3 approvals.
+- No lyrics, ever. Just numbers, structure, dynamics and short cues.
+
+Chart format: [docs/CHART_FORMAT.md](docs/CHART_FORMAT.md)
+
+## Run it locally
+
+You need Node 20+ and a Supabase project (the free tier is fine).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/pwrmediacreative-art/broadway-book.git
+cd broadway-book
+npm install
+cp .env.example .env.local   # then fill in your Supabase URL and anon key
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Set up the database (once):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npx supabase login
+npx supabase link --project-ref <your-project-ref>
+npx supabase db push          # runs supabase/migrations (schema, RLS, example songs)
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Tests:
 
-## Learn More
+```bash
+npm test
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Next.js (App Router, TypeScript), Tailwind, Supabase (Postgres, Auth, Row Level
+Security), Vercel.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## License
 
-## Deploy on Vercel
+- **Code:** [MIT](LICENSE).
+- **Chart data** contributed by users: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
+  You can share and adapt charts with credit, under the same license.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Contributions welcome: see [CONTRIBUTING.md](CONTRIBUTING.md) and the
+[Code of Conduct](CODE_OF_CONDUCT.md).
