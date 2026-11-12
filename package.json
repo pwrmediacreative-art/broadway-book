@@ -9,7 +9,9 @@
     "lint": "eslint",
     "test": "vitest run",
     "check:rls": "node --env-file=.env.local scripts/check-rls.mjs",
-    "check:roles": "node --env-file=.env.local scripts/check-roles.mjs"
+    "check:roles": "node --env-file=.env.local scripts/check-roles.mjs",
+    "check:import": "node --env-file=.env.local scripts/check-import.mjs",
+    "dropbox:token": "node --env-file=.env.local scripts/dropbox-token.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser, sessionClient, syncRole } from "@/lib/supabase/session";
 
@@ -23,7 +24,7 @@ interface Stats {
 }
 
 const SECTIONS = [
-  { title: "Import", path: "/admin/import", text: "Read Dropbox PDFs into charts and review the AI's work." },
+  { title: "Import", path: "/admin/import", text: "Read Dropbox PDFs into charts and review the AI's work.", ready: true },
   { title: "Review", path: "/admin/review", text: "Approve or reject proposed chart changes instantly." },
   { title: "Community", path: "/admin/community", text: "See contributors and recent activity." },
 ];
@@ -63,7 +64,13 @@ async function Dashboard() {
           <li key={sec.path} className="rounded-xl border border-line bg-panel p-4">
             <div className="flex items-baseline justify-between gap-3">
               <h2 className="text-xl font-semibold">{sec.title}</h2>
-              <span className="text-sm text-accent">Coming soon</span>
+              {"ready" in sec ? (
+                <Link href={sec.path} className="inline-flex min-h-11 items-center text-lg text-accent">
+                  Open →
+                </Link>
+              ) : (
+                <span className="text-sm text-accent">Coming soon</span>
+              )}
             </div>
             <p className="mt-1 text-lg text-muted">{sec.text}</p>
           </li>

@@ -70,6 +70,8 @@ readable at arm's length and usable with a thumb.
   `syncRole`), `browser.ts`, `service.ts` (service role, server only, role sync only).
 - `lib/auth/roles.ts` – ADMIN_EMAILS parsing, profile validation, instrument list.
 - `lib/search/` – home search: `pack.ts` (index file format), `engine.ts` (MiniSearch, typo-tolerant), `browse.ts` (filters, sort, facets, URL state), `recent.ts`, `useIndex.ts` (device copy + refresh). Index served by `app/search-index.json/route.ts`.
+- `lib/dropbox/client.ts` – server-only Dropbox (refresh token, `listPdfs`, `temporaryLink`). `lib/import/filename.ts` – filename → title/artist.
+  `/admin/import` scans Dropbox into `import_files` via `import_scan_apply()`; `npm run dropbox:token` gets the refresh token once.
 - `proxy.ts` – refreshes the session and sends signed-out visitors to /login for `/profile` and `/admin`.
 - `app/` – pages. `/` = song list + search, `/songs/[slug]` = chart, `/login` (magic link),
   `/auth/callback`, `/profile` (display name + instrument), `/admin` (admins only, via `admin_dashboard()`).

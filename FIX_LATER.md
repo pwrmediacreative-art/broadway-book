@@ -36,3 +36,7 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Search works offline once the page is open (index saved on the device), but opening the home page offline still needs the service-worker step.
 - A–Z jump strip letters are ~27px tall when all 26 letters exist (under the 44px target); drag-to-scrub makes up for it, but revisit.
 - Fuzzy search forgives typos in whole words and one dropped letter mid-word; consider n-gram matching if players report misses on partial typos.
+- Import: a file moved onto a path still held by an old "missing" row would hit the unique path constraint and fail that scan batch.
+- Import: renaming a PDF re-parses import_files.title/artist but leaves its draft song's title as first imported.
+- Import: about 20 names with no spaces around the dash (e.g. "Danger Zone-Kenny Loggins") land in Unparsed; a smarter split could catch them.
+- Import: no way yet to edit a parsed (but wrong) title/artist on /admin/import, only unparsed ones.
