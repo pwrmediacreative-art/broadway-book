@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { pretty, SPEEDS, suggestSpeed } from "@/lib/chart";
 import { PREF, setPref, usePref } from "@/lib/prefs";
 import Chart from "./Chart";
@@ -14,6 +14,18 @@ const MAX_SIZE = 160;
 const PAD_Y = 16; // scroller py-2
 const HIDE_MS = 3500;
 const clampSpeed = (n: number) => Math.min(SPEEDS.length, Math.max(1, Math.round(n)));
+// Stage-only colors: dark (default) is pure black; light is a high-contrast paper look.
+const DARK = { "--background": "#000" } as CSSProperties;
+const LIGHT = {
+  "--background": "#ffffff",
+  "--foreground": "#0a0a0b",
+  "--muted": "#44403c",
+  "--accent": "#b45309",
+  "--panel": "#f5f5f4",
+  "--line": "#a8a29e",
+  "--chg": "#0369a1",
+  colorScheme: "light",
+} as CSSProperties;
 const num = (s: string | null) => (s && Number.isFinite(Number(s)) ? Number(s) : null);
 
 function useWakeLock() {
@@ -48,12 +60,15 @@ export default function StageView({ slug, title, chartText, neighbors }: { slug:
   const scroller = useRef<HTMLDivElement>(null);
   const chartEl = useRef<HTMLDivElement>(null);
   useWakeLock();
+  const theme = usePref(PREF.stageTheme);
 
   // --- text size: auto-fit unless the player set one -------------------------------------
   const manual = num(usePref(PREF.size));
   const [autoSize, setAutoSize] = useState<number | null>(null);
+  const [fitW, setFitW] = useState<number | null>(null); // largest size whose bars still fit the width
   const [tick, setTick] = useState(0); // bumps on resize / font load to re-measure
-  const fontPx = manual ?? autoSize ?? 32;
+  // A manual size never goes past the width fit, so bars stay whole and aligned at any font.
+  const fontPx = manual ? Math.min(manual, fitW ?? manual) : (autoSize ?? 32);
 
   useEffect(() => {
     const box = scroller.current;
@@ -75,7 +90,7 @@ export default function StageView({ slug, title, chartText, neighbors }: { slug:
   useLayoutEffect(() => {
     const box = scroller.current;
     const el = chartEl.current;
-    if (manual || !box || !el) return;
+    if (!box || !el) return;
     const H = box.clientHeight - PAD_Y;
     const bars = () => el.querySelectorAll<HTMLElement>("[data-bar]");
     const set = (px: number) => (el.style.fontSize = `${px}px`);
@@ -90,7 +105,12 @@ export default function StageView({ slug, title, chartText, neighbors }: { slug:
       }
       return lo;
     };
-    const wFit = search(10, MAX_SIZE, fitsW);
+    const wFit = Math.floor(search(10, MAX_SIZE, fitsW));
+    setFitW(wFit);
+    if (manual) {
+      set(Math.min(manual, wFit));
+      return;
+    }
     set(wFit);
     let size = wFit;
     if (!fitsH()) {
@@ -117,7 +137,8 @@ export default function StageView({ slug, title, chartText, neighbors }: { slug:
   const songSpeed = num(usePref(PREF.songSpeed(slug)));
   const deviceSpeed = num(usePref(PREF.speed));
   const [speedOverride, setSpeedOverride] = useState<number | null>(null);
-  const speed = clampSpeed(speedOverride ?? songSpeed ?? suggested ?? deviceSpeed ?? 5);
+  // The player's own speed wins; the BPM suggestion only seeds a device that never set one.
+  const speed = clampSpeed(speedOverride ?? songSpeed ?? deviceSpeed ?? suggested ?? 5);
   const setSpeed = (n: number) => {
     const v = clampSpeed(n);
     setSpeedOverride(v);
@@ -241,19 +262,20 @@ export default function StageView({ slug, title, chartText, neighbors }: { slug:
 
   if (!s.view) {
     return (
-      <div className="fixed inset-0 grid place-items-center bg-black p-6 text-center">
+      <div className="fixed inset-0 grid place-items-center bg-background p-6 text-center" style={theme === "light" ? LIGHT : DARK}>
         <p className="text-xl">This chart has a format error.</p>
       </div>
     );
   }
   const view = s.view;
+  const light = theme === "light";
   const blurButtons = () => {
     const a = document.activeElement;
     if (a instanceof HTMLButtonElement) a.blur(); // so Space never double-fires a focused button
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-black text-foreground" onPointerDownCapture={poke}>
+    <div className="fixed inset-0 z-50 flex flex-col bg-background text-foreground" style={light ? LIGHT : DARK} onPointerDownCapture={poke}>
       <header className="flex h-12 shrink-0 items-center gap-1 border-b border-line/60 pl-1 pr-2 text-base">
         <button onClick={exit} aria-label="Exit stage mode" className="grid size-11 shrink-0 place-items-center rounded-lg text-2xl text-muted active:bg-panel">
           ✕
@@ -276,7 +298,7 @@ export default function StageView({ slug, title, chartText, neighbors }: { slug:
         onWheel={() => playing && setPlaying(false)}
         className="relative min-h-0 flex-1 touch-pan-y select-none overflow-y-auto overflow-x-hidden overscroll-contain px-3 py-2"
       >
-        <Chart rootRef={chartEl} view={view} chords={s.chords} fontFamily={FONTS[s.font].css} style={{ fontSize: fontPx }} />
+        <Chart rootRef={chartEl} view={view} chords={s.chords} fontFamily={FONTS[s.font].css} fontWeight={FONTS[s.font].weight} style={{ fontSize: fontPx }} />
         {scrollable && <div className="h-32" aria-hidden />}
       </div>
 
@@ -297,14 +319,14 @@ export default function StageView({ slug, title, chartText, neighbors }: { slug:
             </div>
             <div className="mb-1 flex items-center justify-between text-lg">
               <label htmlFor="stage-size">Text size</label>
-              <span className="text-muted">{manual ? `${manual}px` : `Auto · ${fontPx}px`}</span>
+              <span className="text-muted">{manual ? `${fontPx}px` : `Auto · ${fontPx}px`}</span>
             </div>
             <div className="mb-4 flex items-center gap-2">
               <input
                 id="stage-size"
                 type="range"
                 min={16}
-                max={MAX_SIZE}
+                max={fitW ?? MAX_SIZE}
                 step={1}
                 value={fontPx}
                 onChange={(e) => setPref(PREF.size, e.target.value)}
@@ -315,16 +337,29 @@ export default function StageView({ slug, title, chartText, neighbors }: { slug:
               </button>
             </div>
             <p className="mb-1 text-lg">Font</p>
-            <div className="mb-4 grid grid-cols-3 gap-2" role="group" aria-label="Font">
+            <div className="mb-4 grid grid-cols-2 gap-2" role="group" aria-label="Font">
               {(Object.keys(FONTS) as FontId[]).map((f) => (
                 <button
                   key={f}
                   onClick={() => s.setFont(f)}
                   aria-pressed={s.font === f}
                   className={`${btn} px-1 ${s.font === f ? on : off}`}
-                  style={{ fontFamily: FONTS[f].css }}
+                  style={{ fontFamily: FONTS[f].css, fontWeight: FONTS[f].weight }}
                 >
                   {FONTS[f].label}
+                </button>
+              ))}
+            </div>
+            <p className="mb-1 text-lg">Screen</p>
+            <div className="mb-4 grid grid-cols-2 gap-2" role="group" aria-label="Screen">
+              {(["dark", "light"] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setPref(PREF.stageTheme, t === "light" ? "light" : null)}
+                  aria-pressed={light === (t === "light")}
+                  className={`${btn} ${light === (t === "light") ? on : off}`}
+                >
+                  {t === "light" ? "Light" : "Dark"}
                 </button>
               ))}
             </div>
@@ -336,10 +371,10 @@ export default function StageView({ slug, title, chartText, neighbors }: { slug:
 
         <div
           className={`flex flex-col gap-1 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 ${
-            scrollable || panel ? "border-t border-line/60 bg-black/90 backdrop-blur" : "pointer-events-none [&_button]:pointer-events-auto"
+            scrollable || panel ? "border-t border-line/60 bg-background/90 backdrop-blur" : "pointer-events-none [&_button]:pointer-events-auto"
           }`}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {scrollable && (
               <>
                 <button
@@ -362,7 +397,7 @@ export default function StageView({ slug, title, chartText, neighbors }: { slug:
                   onClick={() => setPref(PREF.songSpeed(slug), songSpeed === null ? String(speed) : null)}
                   aria-pressed={songSpeed !== null}
                   title="Remember this speed for this song"
-                  className={`h-12 shrink-0 rounded-lg px-2 text-sm font-semibold ${songSpeed !== null ? on : off}`}
+                  className={`h-12 min-w-11 shrink rounded-lg px-2 text-sm font-semibold leading-tight ${songSpeed !== null ? on : off}`}
                 >
                   {songSpeed !== null ? "Song ✓" : "Save song"}
                 </button>

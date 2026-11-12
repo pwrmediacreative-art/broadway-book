@@ -14,9 +14,10 @@ export interface Neighbors {
 }
 
 export const FONTS = {
-  atkinson: { label: "Legible", css: "var(--font-atkinson), system-ui, sans-serif" },
-  inter: { label: "Sans", css: "var(--font-inter), system-ui, sans-serif" },
-  mono: { label: "Mono", css: "var(--font-jbmono), ui-monospace, monospace" },
+  atkinson: { label: "Legible", css: "var(--font-atkinson), system-ui, sans-serif", weight: 700 },
+  inter: { label: "Sans", css: "var(--font-inter), system-ui, sans-serif", weight: 700 },
+  mono: { label: "Mono", css: "var(--font-jbmono), ui-monospace, monospace", weight: 700 },
+  heavy: { label: "Bold", css: "var(--font-inter), system-ui, sans-serif", weight: 900 },
 } as const;
 export type FontId = keyof typeof FONTS;
 
@@ -113,6 +114,9 @@ export function useGesture({ onSwipe, onTap, onDown }: Gesture) {
     onPointerDown: (e: React.PointerEvent) => {
       if (e.button !== 0) return;
       start.current = { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId };
+      // Touch already keeps the pointer here; do the same for mouse/pen so the release still
+      // counts as a tap when controls pop up under the cursor on press.
+      if (e.pointerType !== "touch") e.currentTarget.setPointerCapture?.(e.pointerId);
       onDown?.();
     },
     onPointerUp: (e: React.PointerEvent) => {

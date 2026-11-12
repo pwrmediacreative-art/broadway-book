@@ -59,6 +59,7 @@ export const PREF = {
   size: "bb.size", // stage text size in px; unset = auto-fit
   speed: "bb.speed", // last scroll speed 1-12
   pulse: "bb.pulse", // "1" = beat pulse on
+  stageTheme: "bb.stageTheme", // "light" | unset = dark (stage mode only)
   key: (slug: string) => `bb.key.${slug}`,
   songSpeed: (slug: string) => `bb.speed.${slug}`,
   nav: "bb.nav", // sessionStorage: [{slug,title}] list the player opened a song from

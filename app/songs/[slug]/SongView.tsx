@@ -96,7 +96,7 @@ export default function SongView({ slug, title, artist, isExample, chartText, ne
       </div>
 
       <div {...gesture} className="touch-pan-y">
-        <Chart view={s.view} chords={s.chords} fontFamily={FONTS[s.font].css} style={{ fontSize: "clamp(1.6rem, 7vw, 2.4rem)" }} />
+        <Chart view={s.view} chords={s.chords} fontFamily={FONTS[s.font].css} fontWeight={FONTS[s.font].weight} style={{ fontSize: "clamp(1.6rem, 7vw, 2.4rem)" }} />
       </div>
 
       <nav className="mt-10 grid grid-cols-2 gap-3" aria-label="Other songs">

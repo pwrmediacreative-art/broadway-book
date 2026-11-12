@@ -104,7 +104,7 @@ function Bar({ cell, chords, marks }: { cell: BarCell; chords: boolean; marks: b
 function NoteChip({ n }: { n: Note }) {
   if (n.kind === "change")
     return (
-      <span className="rounded-[0.3em] border-[0.08em] border-sky-300 px-[0.4em] py-[0.12em] text-[0.45em] font-semibold leading-tight text-sky-300">
+      <span className="rounded-[0.3em] border-[0.08em] border-[var(--chg,#7dd3fc)] px-[0.4em] py-[0.12em] text-[0.45em] font-semibold leading-tight text-[var(--chg,#7dd3fc)]">
         {pretty(n.text.replace(/^Key: /, "Key → "))}
       </span>
     );
@@ -175,12 +175,14 @@ export default function Chart({
   view,
   chords,
   fontFamily,
+  fontWeight,
   style,
   rootRef,
 }: {
   view: ChartView;
   chords: boolean;
   fontFamily: string;
+  fontWeight?: number;
   style?: CSSProperties;
   rootRef?: Ref<HTMLDivElement>;
 }) {
@@ -188,7 +190,7 @@ export default function Chart({
     <div
       ref={rootRef}
       className="@container w-full font-bold leading-none tabular-nums"
-      style={{ fontFamily, ...style }}
+      style={{ fontFamily, fontWeight, ...style }}
     >
       <div className="flex flex-col gap-[0.65em]">
         {view.sections.map((s, i) => (

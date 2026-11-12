@@ -26,3 +26,5 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Next/previous song follows the home list or search results; switch to setlist order once setlists exist.
 - Old stage pages stay mounted (hidden) after moving between songs (Cache Components keeps routes); fine now, watch memory on long sets.
 - Split bars reserve the push/stop mark row even when only one beat has a mark; a little extra height on those lines.
+- Stage light mode: black text on the amber-700 accent buttons is ~4.4:1 contrast; consider white text on accent in light mode.
+- Stage mode: when a chart just fits, the floating Aa button covers the last bar's right edge until controls auto-hide.
