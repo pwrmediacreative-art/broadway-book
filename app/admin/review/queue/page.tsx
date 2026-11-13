@@ -114,7 +114,7 @@ async function Queue({ searchParams }: { searchParams: SearchParams }) {
                   <span className="block truncate text-muted">{s.artist ?? "no artist"}</span>
                 </span>
                 <span className="flex shrink-0 flex-wrap justify-end gap-1.5 text-sm">
-                  {s.claimed_name && !s.claimed_by_me && (
+                  {s.claim_expires && s.claimed_by_me === false && (
                     <span className="rounded-full bg-sky-400/25 px-2 py-0.5 font-semibold text-sky-100">{s.claimed_name} reviewing</span>
                   )}
                   {s.flagged && <span className="rounded-full bg-red-500/25 px-2 py-0.5 font-semibold text-red-200">{s.flags} flags</span>}

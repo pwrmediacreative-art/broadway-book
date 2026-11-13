@@ -9,6 +9,7 @@ import type { PDFDocumentProxy } from "pdfjs-dist";
 
 const MIN = 1;
 const MAX = 4;
+const MAX_FIT = 1600; // px: the "100%" page width never exceeds this
 const ZOOM_KEY = "bb_review_zoom";
 const clamp = (z: number) => Math.min(MAX, Math.max(MIN, Math.round(z * 100) / 100));
 const btn = "min-h-11 min-w-11 rounded-lg border border-line px-3 text-lg font-semibold active:bg-line disabled:opacity-40";
@@ -72,9 +73,11 @@ export default function PdfViewer({ src, title }: { src: string; title: string }
   useEffect(() => {
     const el = box.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => setWidth(el.clientWidth));
+    // The box can't grow with its content (min-w-0 up the tree), so this is the pane width.
+    const measure = () => setWidth(Math.min(el.clientWidth, MAX_FIT));
+    const ro = new ResizeObserver(measure);
     ro.observe(el);
-    setWidth(el.clientWidth);
+    measure();
     return () => ro.disconnect();
   }, []);
 
@@ -125,7 +128,7 @@ export default function PdfViewer({ src, title }: { src: string; title: string }
   const pageWidth = Math.max(0, Math.floor(width * zoom) - 2);
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-2">
+    <div className="flex h-full min-h-0 w-full min-w-0 flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2" role="toolbar" aria-label="Zoom the original">
         <button type="button" className={btn} onClick={() => setZoom(zoom - 0.25)} disabled={zoom <= MIN} aria-label="Zoom out">
           −
@@ -143,7 +146,7 @@ export default function PdfViewer({ src, title }: { src: string; title: string }
       </div>
       <div
         ref={box}
-        className="min-h-0 flex-1 overflow-auto rounded-lg bg-neutral-700"
+        className="min-h-0 w-full min-w-0 flex-1 overflow-auto rounded-lg bg-neutral-700"
         style={{ touchAction: "pan-x pan-y" }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}

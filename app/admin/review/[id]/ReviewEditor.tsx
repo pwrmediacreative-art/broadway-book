@@ -401,8 +401,8 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className={`${tab === "original" ? "" : "hidden"} h-[calc(100dvh-13rem)] lg:sticky lg:top-2 lg:block lg:h-[calc(100dvh-1rem)] lg:self-start`}>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className={`${tab === "original" ? "" : "hidden"} h-[calc(100dvh-13rem)] min-w-0 lg:sticky lg:top-2 lg:block lg:h-[calc(100dvh-1rem)] lg:self-start`}>
           {song.import_file_id ? (
             <PdfViewer src={`/admin/import/pdf/${song.import_file_id}?inline=1`} title={song.title} />
           ) : (

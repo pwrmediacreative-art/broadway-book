@@ -129,6 +129,10 @@ try {
   expectErr(await b.db.rpc("review_save_draft", { p_song_id: s1.id, p_chart: FIXED, p_base_revision: s1.rev }), "B can't save a draft on A's song");
   expectErr(await b.db.rpc("review_publish", { p_song_id: s1.id, p_chart: FIXED, p_verified: true, p_base_revision: s1.rev }), "B can't publish A's song");
   expectErr(await b.db.rpc("review_cant_read", { p_song_id: s1.id }), "B can't mark A's song can't-read");
+  const lb = await b.db.rpc("review_list", { p_filter: "needs_review", p_order: "title", p_q: "Claim Check", p_limit: 20, p_offset: 0 });
+  const row = (id) => lb.data?.songs.find((x) => x.id === id);
+  check(!lb.error && row(s1.id)?.claimed_name === "Check Admin A" && row(s1.id)?.claimed_by_me === false, "queue shows B that A is reviewing song 1");
+  check(!lb.error && row(s3.id) && row(s3.id).claimed_name === null && row(s3.id).claim_expires === null, "queue shows nobody on an unclaimed song");
   const nb = await b.db.rpc("review_next", { p_filter: "needs_review", p_order: "title", p_skip: [] });
   check(!nb.error && nb.data !== s1.id, "auto-advance never hands B the song A holds");
 
