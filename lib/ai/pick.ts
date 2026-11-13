@@ -24,3 +24,17 @@ export function pickVaried<T extends Candidate>(all: T[], n: number, rand: () =>
 }
 
 const firstLetter = (c: Candidate) => (c.file_name ?? "").trim().charAt(0).toLowerCase();
+
+/** Full batch: the next chunk, in order, up to maxFiles PDFs and maxBytes in total (always at least one). */
+export function takeChunk<T extends Candidate>(all: T[], maxFiles: number, maxBytes: number): T[] {
+  const out: T[] = [];
+  let bytes = 0;
+  for (const c of all) {
+    if (out.length >= maxFiles) break;
+    const size = c.size ?? 0;
+    if (out.length && bytes + size > maxBytes) break;
+    out.push(c);
+    bytes += size;
+  }
+  return out;
+}

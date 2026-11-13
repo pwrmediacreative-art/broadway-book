@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { dropboxConfigured } from "@/lib/dropbox/client";
 import { worstCaseRetryUsd, worstCaseUsd } from "@/lib/ai/cost";
-import { pickVaried, type Candidate } from "@/lib/ai/pick";
+import { pickVaried, takeChunk, type Candidate } from "@/lib/ai/pick";
 import { AI_MODEL } from "@/lib/ai/prompt";
 import { finishPayload, noTokens } from "@/lib/ai/result";
 import {
@@ -27,10 +27,14 @@ export interface AiState {
   more?: boolean;
   open?: number;
   capped?: boolean;
+  /** The first full-batch chunk is waiting for an admin to check it. */
+  paused?: boolean;
 }
 
 const PILOT_SIZE = 20;
-const CHUNK = 25; // PDFs per Message Batch (each scan is 60–470 KB)
+const CHUNK = 25; // PDFs per Message Batch (most scans are 60–470 KB)
+const CHUNK_BYTES = 100 * 1024 * 1024; // and at most this much PDF per batch (the API takes 256 MB)
+const MAX_OPEN_BATCHES = 8; // batches out at once, so a bad stretch only ties up 200 files
 const PARALLEL = 5;
 const TIME_BUDGET_MS = 240_000; // stay under the page's maxDuration (300 s)
 
@@ -154,18 +158,27 @@ export async function batchStep(prev: AiState): Promise<AiState> {
   const started = Date.now();
   try {
     const collected = await collect(db, cap, started);
-    const sent =
-      Date.now() - started < TIME_BUDGET_MS / 2 ? await sendChunk(db, cap) : { sent: 0, capped: false, left: 1 };
-    const { data: open } = await db.from("ai_readings").select("batch_id").eq("status", "submitted");
-    const openBatches = new Set((open ?? []).map((o) => o.batch_id)).size;
+    const sent: Sent =
+      Date.now() - started < TIME_BUDGET_MS / 2
+        ? await sendChunk(db, cap, await openBatchCount(db))
+        : { sent: 0, capped: false, left: 1, paused: false, full: true };
+    const openBatches = await openBatchCount(db);
     revalidatePath("/admin/import");
     return {
       ok: true,
-      more: sent.left > 0 && !sent.capped,
+      more: sent.left > 0 && !sent.capped && !sent.paused && !sent.full,
       open: openBatches,
       capped: sent.capped,
+      paused: sent.paused,
       summary:
         `Saved ${collected} results, sent ${sent.sent}. ${openBatches} batch${openBatches === 1 ? "" : "es"} processing.` +
+        (sent.paused
+          ? openBatches
+            ? " The first chunk is being read; the run stops after it so you can check those charts."
+            : " First chunk done: check those charts, then press Continue."
+          : sent.full
+            ? ` ${MAX_OPEN_BATCHES} batches out at once; the next goes when one finishes.`
+            : "") +
         (sent.capped && openBatches
           ? ` Waiting for results: the ${usd(cap)} cap counts money held for running batches.`
           : sent.capped
@@ -178,10 +191,37 @@ export async function batchStep(prev: AiState): Promise<AiState> {
   }
 }
 
-async function sendChunk(db: Db, cap: number) {
+interface Sent {
+  sent: number;
+  capped: boolean;
+  left: number;
+  paused: boolean; // waiting for the first-chunk check
+  full: boolean; // MAX_OPEN_BATCHES out already
+}
+
+async function openBatchCount(db: Db): Promise<number> {
+  const { data, error } = await db.from("ai_readings").select("batch_id").eq("status", "submitted");
+  if (error) throw new Error(error.message);
+  return new Set((data ?? []).map((o) => o.batch_id)).size;
+}
+
+/** True while the first full-batch chunk hasn't been checked by an admin. */
+async function firstChunkPending(db: Db): Promise<boolean> {
+  const { data: st, error } = await db.from("ai_state").select("first_chunk_ok_at").single();
+  if (error) throw new Error(error.message);
+  if (st.first_chunk_ok_at) return false;
+  const { count, error: e2 } = await db.from("ai_readings").select("id", { count: "exact", head: true }).eq("mode", "batch");
+  if (e2) throw new Error(e2.message);
+  return (count ?? 0) > 0;
+}
+
+async function sendChunk(db: Db, cap: number, open: number): Promise<Sent> {
   const all = await candidates(db);
-  if (!all.length) return { sent: 0, capped: false, left: 0 };
-  const res = await reserve(db, all.slice(0, CHUNK), "batch", cap);
+  const none = { sent: 0, capped: false, paused: false, full: false };
+  if (!all.length) return { ...none, left: 0 };
+  if (await firstChunkPending(db)) return { ...none, left: all.length, paused: true };
+  if (open >= MAX_OPEN_BATCHES) return { ...none, left: all.length, full: true };
+  const res = await reserve(db, takeChunk(all, CHUNK, CHUNK_BYTES), "batch", cap);
   const items: { id: string; pdfB64: string; fileName: string }[] = [];
   await pool(res.reserved, 8, async (row) => {
     try {
@@ -191,7 +231,7 @@ async function sendChunk(db: Db, cap: number) {
     }
   });
   const left = all.length - res.reserved.length;
-  if (!items.length) return { sent: 0, capped: res.capped, left };
+  if (!items.length) return { ...none, capped: res.capped, left };
   const ids = items.map((x) => x.id);
   let batchId: string;
   try {
@@ -202,7 +242,34 @@ async function sendChunk(db: Db, cap: number) {
   }
   const { error } = await db.rpc("ai_mark_submitted", { p_ids: ids, p_batch_id: batchId });
   if (error) throw new Error(`Batch ${batchId} sent but not recorded: ${error.message}`);
-  return { sent: ids.length, capped: res.capped, left };
+  return { ...none, sent: ids.length, capped: res.capped, left };
+}
+
+/** The admin checked the first chunk's charts: let the rest of the full batch go. */
+export async function confirmFirstChunk(prev: AiState): Promise<AiState> {
+  void prev;
+  const user = await getCurrentUser();
+  if (user?.role !== "admin") return { error: "Admins only." };
+  const db = await sessionClient();
+  const { error } = await db.rpc("ai_confirm_first_chunk");
+  if (error) return { error: error.message };
+  revalidatePath("/admin/import");
+  return { ok: true, summary: "First chunk checked. Press Continue full batch to send the rest." };
+}
+
+/**
+ * "Retry failed": queue every file whose reading ended without a chart (needs manual,
+ * refused, failed) for one more read. The full batch loop then sends them, under the cap.
+ */
+export async function retryFailed(prev: AiState): Promise<AiState> {
+  void prev;
+  const user = await getCurrentUser();
+  if (user?.role !== "admin") return { error: "Admins only." };
+  const db = await sessionClient();
+  const { data, error } = await db.rpc("ai_retry_failed");
+  if (error) return { error: error.message };
+  revalidatePath("/admin/import");
+  return { ok: true, summary: `${data} failed file${data === 1 ? "" : "s"} queued for one more read.` };
 }
 
 interface OpenRow {

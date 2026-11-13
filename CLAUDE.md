@@ -72,6 +72,8 @@ readable at arm's length and usable with a thumb.
 - `lib/search/` – home search: `pack.ts` (index file format), `engine.ts` (MiniSearch, typo-tolerant), `browse.ts` (filters, sort, facets, URL state), `recent.ts`, `useIndex.ts` (device copy + refresh). Index served by `app/search-index.json/route.ts`.
 - `lib/dropbox/client.ts` – server-only Dropbox (refresh token, `listPdfs`, `temporaryLink`). `lib/import/filename.ts` – filename → title/artist.
   `/admin/import` scans Dropbox into `import_files` via `import_scan_apply()`; `npm run dropbox:token` gets the refresh token once.
+  AI reading: `lib/ai/` (prompt, reader, cost, `takeChunk`), `app/admin/import/ai-actions.ts` (pilot, full batch loop, Retry failed, first-chunk check).
+  Rules live in the DB (`20261112200100_ai_reading.sql`, `20261113160000_ai_full_batch.sql`); `npm run check:ai` and `npm run check:batch` check them.
 - `lib/chart/diff.ts` (bar-by-bar diff), `lib/chart/validate.ts` (`checkChart`: parse + long-cue guard + canonical text before any save).
 - `lib/personal/versions.ts` – the player's own chart versions: one request (RLS owner-only), device copy per user, `usePickedChart` (song page, stage, search "Yours" tag).
 - `lib/flags/` – personal flags ("Flag for me"): `ref.ts` (bar reference: section/bar/beat + text as written, `locateBar` for the editor), `store.ts` (device copy signed out, account + device copy signed in, move-to-account). `app/songs/[slug]/Hold.tsx` – press-and-hold (500ms, 10px), bottom sheet, "My flags" list, move banner.

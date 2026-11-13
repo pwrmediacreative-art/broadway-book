@@ -74,3 +74,8 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Press-and-hold flagging has no keyboard or screen-reader way in (mouse/touch hold only).
 - Personal flags: only a per-song "My flags" list; no all-songs list yet.
 - Editor "Editing: …" label shows the beat as written (6-), while the chart may display 6m or a chord name.
+- Full AI batch: "Retry failed" now re-reads needs_manual/refused/failed files (the "no re-read button" line above); there's still no per-file re-read.
+- Full AI batch: two tabs running it at once could each collect the same batch result and pay for its parser retry twice (the saved result is still kept once).
+- Full AI batch: "Retry failed" can be pressed again for files that already failed after a retry; each press is confirmed with the count and cost.
+- `npm run check:batch` refuses to run once a real full batch has started (it would disturb the first-chunk check).
+- Est. remaining uses half the pilot average until the first batch results come back, then the batch average (parser retries at full price push it up a little).

@@ -73,10 +73,14 @@ export interface Tokens {
 }
 export const noTokens = (): Tokens => ({ input_tokens: 0, output_tokens: 0, cache_read_tokens: 0, cache_write_tokens: 0 });
 
-/** Final status for an outcome: a parse error after the retry means a human types it. */
+/**
+ * Final status for a billed reply: a parse error after the retry means a human types it.
+ * So does a billed reply with no chart at all (cut off at max tokens, not valid JSON):
+ * a re-send would likely fail the same way at full price, so there's no automatic retry.
+ */
 export function finishStatus(o: Outcome, retried: boolean): FinishStatus {
   if (o.kind === "ok") return retried ? "ok_after_retry" : "ok";
-  if (o.kind === "parse_error") return "needs_manual";
+  if (o.kind === "parse_error" || o.kind === "error") return "needs_manual";
   return o.kind;
 }
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { costUsd, estimatePages, worstCaseRetryUsd, worstCaseUsd } from "./cost";
-import { pickVaried } from "./pick";
+import { pickVaried, takeChunk } from "./pick";
 import { AI_MAX_TOKENS, READING_SCHEMA, retryText, systemPrompt, userText } from "./prompt";
 import { finishPayload, finishStatus, interpret, noTokens, type ReplyLike } from "./result";
 
@@ -132,8 +132,27 @@ describe("interpret", () => {
     expect(interpret(reply(reading(GOOD), "max_tokens")).kind).toBe("error");
     expect(interpret({ stop_reason: "end_turn", content: [{ type: "text", text: "not json" }] }).kind).toBe("error");
     expect(interpret({ stop_reason: "end_turn", content: [] }).kind).toBe("error");
+    // Billed but no chart: a person types it; no automatic retry.
+    expect(finishStatus(interpret(reply(reading(GOOD), "max_tokens")), false)).toBe("needs_manual");
+    expect(finishStatus({ kind: "refused", error: "x" }, false)).toBe("refused");
     const p = finishPayload({ kind: "refused", error: "Refused (x)" }, 0.01, noTokens());
     expect(p.chart_text).toBeNull();
     expect(p.raw).toBeNull();
+  });
+});
+
+describe("takeChunk", () => {
+  const c = (id: string, size: number) => ({ id, file_name: id, size });
+  it("stops at the file count", () => {
+    const all = Array.from({ length: 40 }, (_, i) => c(`f${i}`, 1000));
+    expect(takeChunk(all, 25, 100e6).map((x) => x.id)).toEqual(all.slice(0, 25).map((x) => x.id));
+  });
+  it("stops before going over the byte limit, keeping order", () => {
+    const all = [c("a", 40e6), c("b", 40e6), c("c", 40e6), c("d", 1)];
+    expect(takeChunk(all, 25, 100e6).map((x) => x.id)).toEqual(["a", "b"]);
+  });
+  it("always takes at least one file, even a huge one", () => {
+    expect(takeChunk([c("big", 300e6), c("b", 1)], 25, 100e6).map((x) => x.id)).toEqual(["big"]);
+    expect(takeChunk([], 25, 100e6)).toEqual([]);
   });
 });

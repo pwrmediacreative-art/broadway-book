@@ -41,6 +41,11 @@ interface AiOverview {
   open_batches: string[];
   pilot_approved_at: string | null;
   pilot: PilotItem[];
+  skipped: { already_read: number; duplicates: number; unnamed: number };
+  batch: { total: number; read: number; failed: number; open: number; cost: number };
+  first_chunk_ok_at: string | null;
+  retryable: number;
+  queued: number;
 }
 interface Overview {
   total: number;
@@ -134,6 +139,22 @@ async function Inventory({ searchParams }: { searchParams: SearchParams }) {
     pilotApproved: Boolean(ai?.pilot_approved_at),
     // Batch is half the standard price; before any batch result, use half the pilot average.
     estPerSong: Number(ai?.batch_avg ?? (ai?.pilot_avg != null ? Number(ai.pilot_avg) / 2 : 0.0275)),
+    skipped: {
+      alreadyRead: Number(ai?.skipped.already_read ?? 0),
+      duplicates: Number(ai?.skipped.duplicates ?? 0),
+      unnamed: Number(ai?.skipped.unnamed ?? 0),
+    },
+    batch: {
+      total: Number(ai?.batch.total ?? 0),
+      read: Number(ai?.batch.read ?? 0),
+      failed: Number(ai?.batch.failed ?? 0),
+      open: Number(ai?.batch.open ?? 0),
+      cost: Number(ai?.batch.cost ?? 0),
+    },
+    pilotCost: (ai?.pilot ?? []).reduce((sum, p) => sum + Number(p.cost_usd ?? 0), 0),
+    firstChunkPending: !ai?.first_chunk_ok_at && Number(ai?.batch.total ?? 0) > 0,
+    retryable: Number(ai?.retryable ?? 0),
+    queued: Number(ai?.queued ?? 0),
   };
 
   return (

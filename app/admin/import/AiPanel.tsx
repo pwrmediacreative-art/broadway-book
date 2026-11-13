@@ -1,8 +1,9 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { approvePilot, batchStep, runPilot, type AiState } from "./ai-actions";
+import { approvePilot, batchStep, confirmFirstChunk, retryFailed, runPilot, type AiState } from "./ai-actions";
 
 export interface AiSummary {
   configured: boolean; // ANTHROPIC_API_KEY + MAX_AI_SPEND_USD + Dropbox
@@ -19,6 +20,13 @@ export interface AiSummary {
   pilotCount: number;
   pilotApproved: boolean;
   estPerSong: number; // batch price
+  skipped: { alreadyRead: number; duplicates: number; unnamed: number };
+  /** Everything the full batch has read so far, across resumes (pilot not included). */
+  batch: { total: number; read: number; failed: number; open: number; cost: number };
+  pilotCost: number;
+  firstChunkPending: boolean;
+  retryable: number; // files "Retry failed" would send again
+  queued: number; // files queued by "Retry failed", not sent yet
 }
 
 const button = "min-h-11 rounded-xl bg-accent px-5 text-lg font-semibold text-black disabled:opacity-60";
@@ -52,9 +60,10 @@ export function AiPanel({ s }: { s: AiSummary }) {
             ["Done", s.done],
             ["Needs manual", s.needsManual],
             ["Failed", s.failed],
+            ["Skipped", s.skipped.alreadyRead + s.skipped.duplicates + s.skipped.unnamed],
             ["In progress", s.processing],
-            ["Spent", `${usd(s.spent)}${s.reserved > 0 ? ` +${usd(s.reserved)} held` : ""}`],
-            ["Est. remaining", `${usd(s.remaining * s.estPerSong)} · ${s.remaining}`],
+            [s.reserved > 0 ? `Spent · ${usd(s.reserved)} held` : "Spent", usd(s.spent)],
+            [`Est. remaining · ${s.remaining} files`, usd(s.remaining * s.estPerSong)],
           ] as const
         ).map(([label, v]) => (
           <div key={label} className="rounded-lg border border-line p-3">
@@ -63,9 +72,10 @@ export function AiPanel({ s }: { s: AiSummary }) {
           </div>
         ))}
       </dl>
-      {s.unnamed > 0 && (
-        <p className="mb-3 text-muted">{s.unnamed} files without a title and artist are skipped until they&apos;re named below.</p>
-      )}
+      <p className="mb-3 text-muted">
+        Skipped: {s.skipped.alreadyRead} already read · {s.skipped.duplicates} duplicate PDFs (read once) ·{" "}
+        {s.skipped.unnamed} with no title/artist (read once they&apos;re named below)
+      </p>
 
       {!s.configured && (
         <p className="mb-3 text-lg">Set ANTHROPIC_API_KEY and MAX_AI_SPEND_USD on the server to start.</p>
@@ -99,10 +109,14 @@ export function AiPanel({ s }: { s: AiSummary }) {
   );
 }
 
-/** Keeps calling batchStep while this page is open. Stop any time; Run again resumes. */
+const reviewQueue = "/admin/review/queue";
+
+/** Keeps calling batchStep while this page is open. Stop any time; Resume continues. */
 function BatchRunner({ s }: { s: AiSummary }) {
   const router = useRouter();
   const [running, setRunning] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [askRetry, setAskRetry] = useState(false);
   const [last, setLast] = useState<AiState>({});
   const stop = useRef(false);
 
@@ -111,7 +125,12 @@ function BatchRunner({ s }: { s: AiSummary }) {
     stop.current = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const tick = async () => {
-      const res = await batchStep({});
+      let res: AiState;
+      try {
+        res = await batchStep({});
+      } catch (e) {
+        res = { error: e instanceof Error ? e.message : "Lost the connection. Press Resume to continue." };
+      }
       setLast(res);
       router.refresh();
       if (stop.current) return;
@@ -129,18 +148,118 @@ function BatchRunner({ s }: { s: AiSummary }) {
     };
   }, [running, router]);
 
-  const finished = s.remaining === 0 && s.processing === 0;
+  const act = async (fn: (p: AiState) => Promise<AiState>) => {
+    setBusy(true);
+    const res = await fn({});
+    setBusy(false);
+    setLast(res);
+    router.refresh();
+    if (res.ok) setRunning(true);
+  };
+
+  const finished = s.remaining === 0 && s.processing === 0 && s.batch.total > 0;
+  const checkFirst = s.firstChunkPending && s.processing === 0;
+  const label = s.batch.total === 0 ? "Run full batch" : "Resume full batch";
+
   return (
-    <div>
-      {finished ? (
-        <p className="text-lg">Every named file has been read. Results are in needs review.</p>
+    <div className="flex flex-col gap-3">
+      {finished && !running && <Summary s={s} />}
+
+      {checkFirst && !running ? (
+        <div className="rounded-lg border border-accent p-3">
+          <p className="mb-2 text-lg">
+            First chunk done: {s.batch.read} read, {s.batch.failed} failed, {usd(s.batch.cost)}. Check those charts in
+            the review queue before the rest is sent.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Link href={reviewQueue} className={`${ghost} inline-flex items-center`}>
+              Open review queue
+            </Link>
+            <button type="button" className={button} disabled={!s.configured || busy} onClick={() => act(confirmFirstChunk)}>
+              {busy ? "Starting…" : "Continue full batch"}
+            </button>
+          </div>
+        </div>
       ) : (
-        <button type="button" className={running ? ghost : button} onClick={() => setRunning((r) => !r)} disabled={!s.configured}>
-          {running ? "Stop" : s.done + s.processing > s.pilotCount ? "Resume full batch" : "Run full batch"}
-        </button>
+        !(finished && !running && s.queued === 0) && (
+          <button
+            type="button"
+            className={running ? ghost : button}
+            onClick={() => setRunning((r) => !r)}
+            disabled={!s.configured || busy}
+          >
+            {running ? "Stop" : label}
+          </button>
+        )
       )}
-      {running && <p className="mt-2 text-muted">Keep this page open. Batches usually finish within an hour.</p>}
+      {running && (
+        <p className="text-muted">
+          Keep this page open; it sends {25} PDFs per batch. Stop any time, and Resume picks up where it left off.
+        </p>
+      )}
+
+      {s.retryable > 0 && !running && !checkFirst && (
+        <div>
+          {askRetry ? (
+            <div className="rounded-lg border border-line p-3">
+              <p className="mb-2 text-lg">
+                Read {s.retryable} failed file{s.retryable === 1 ? "" : "s"} again? About {usd(s.retryable * s.estPerSong)}{" "}
+                at batch price, billed again, under the same cap. Done files are not touched.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  className={button}
+                  disabled={!s.configured || busy}
+                  onClick={() => {
+                    setAskRetry(false);
+                    act(retryFailed);
+                  }}
+                >
+                  {busy ? "Queuing…" : "Yes, retry"}
+                </button>
+                <button type="button" className={ghost} onClick={() => setAskRetry(false)}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button type="button" className={ghost} disabled={!s.configured || busy} onClick={() => setAskRetry(true)}>
+              Retry failed ({s.retryable})
+            </button>
+          )}
+        </div>
+      )}
+
       <Status state={last} />
+    </div>
+  );
+}
+
+function Summary({ s }: { s: AiSummary }) {
+  return (
+    <div className="rounded-lg border border-line p-3">
+      <h3 className="text-xl font-bold">Full batch finished</h3>
+      <dl className="my-2 grid grid-cols-3 gap-3">
+        {(
+          [
+            ["Read", s.batch.read],
+            ["Failed", s.batch.failed],
+            ["Cost", usd(s.batch.cost)],
+          ] as const
+        ).map(([label, v]) => (
+          <div key={label}>
+            <dt className="text-sm text-muted">{label}</dt>
+            <dd className="text-2xl font-bold">{v}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="mb-2 text-muted">
+        Plus the pilot: {s.pilotCount} read, {usd(s.pilotCost)}. Failed means needs manual, refused or not read.
+      </p>
+      <Link href={reviewQueue} className={`${button} inline-flex items-center`}>
+        Open review queue
+      </Link>
     </div>
   );
 }
