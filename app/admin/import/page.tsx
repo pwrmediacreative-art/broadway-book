@@ -2,16 +2,21 @@ import { Suspense, type ReactNode } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { chartFolder, dropboxConfigured } from "@/lib/dropbox/client";
+import { aiConfigured, spendCap } from "@/lib/ai/reader";
 import { getCurrentUser, sessionClient, syncRole } from "@/lib/supabase/session";
+import { AiPanel, type AiSummary } from "./AiPanel";
 import { FixNameForm, ScanButton } from "./forms";
+import { PilotResults, type PilotItem } from "./PilotResults";
 
 export const metadata = { title: "Import · Broadway Book", robots: { index: false } };
+// The AI pilot and batch steps run as Server Actions on this page.
+export const maxDuration = 300;
 
 type SearchParams = Promise<{ q?: string | string[] }>;
 
 export default function ImportPage({ searchParams }: { searchParams: SearchParams }) {
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 pb-16 pt-2">
+    <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-2">
       <Suspense fallback={<p className="text-lg text-muted">Loading…</p>}>
         <Inventory searchParams={searchParams} />
       </Suspense>
@@ -24,6 +29,18 @@ interface FileRow {
   file_name: string | null;
   title: string | null;
   artist: string | null;
+}
+interface AiOverview {
+  spent: number;
+  reserved: number;
+  counts: Record<string, number>;
+  batch_avg: number | null;
+  pilot_avg: number | null;
+  remaining: number;
+  unnamed: number;
+  open_batches: string[];
+  pilot_approved_at: string | null;
+  pilot: PilotItem[];
 }
 interface Overview {
   total: number;
@@ -96,9 +113,32 @@ async function Inventory({ searchParams }: { searchParams: SearchParams }) {
   }
 
   const connected = dropboxConfigured();
+  const { data: aiData } = await db.rpc("ai_overview");
+  const ai = aiData as AiOverview | null;
+  const c = ai?.counts ?? {};
+  const n = (k: string) => Number(c[k] ?? 0);
+  const cap = spendCap();
+  const aiSummary: AiSummary = {
+    configured: connected && aiConfigured() && cap > 0,
+    cap,
+    spent: Number(ai?.spent ?? 0),
+    reserved: Number(ai?.reserved ?? 0),
+    done: n("ok") + n("ok_after_retry"),
+    needsManual: n("needs_manual"),
+    failed: n("error") + n("refused"),
+    processing: n("reserved") + n("submitted"),
+    remaining: Number(ai?.remaining ?? 0),
+    unnamed: Number(ai?.unnamed ?? 0),
+    openBatches: ai?.open_batches.length ?? 0,
+    pilotCount: ai?.pilot.length ?? 0,
+    pilotApproved: Boolean(ai?.pilot_approved_at),
+    // Batch is half the standard price; before any batch result, use half the pilot average.
+    estPerSong: Number(ai?.batch_avg ?? (ai?.pilot_avg != null ? Number(ai.pilot_avg) / 2 : 0.0275)),
+  };
 
   return (
     <>
+    <div className="mx-auto max-w-2xl">
       <Link href="/admin" className="inline-flex min-h-11 items-center text-lg text-accent">
         ← Admin
       </Link>
@@ -130,6 +170,13 @@ async function Inventory({ searchParams }: { searchParams: SearchParams }) {
       <p className="mb-6 text-lg text-muted">
         {o.duplicate_groups} duplicate groups · {o.changed} changed since import · {o.missing} missing from Dropbox
       </p>
+
+      {ai && <AiPanel s={aiSummary} />}
+    </div>
+
+    {ai && <PilotResults items={ai.pilot} avgCost={ai.pilot_avg} />}
+
+    <div className="mx-auto max-w-2xl">
 
       <form method="get" className="mb-6 flex gap-2" role="search">
         <label htmlFor="q" className="sr-only">Search files</label>
@@ -213,6 +260,7 @@ async function Inventory({ searchParams }: { searchParams: SearchParams }) {
           ))}
         </ul>
       </Section>
+    </div>
     </>
   );
 }

@@ -49,3 +49,9 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Editor: preview always shows numbers in the written key; no chords/key toggle inside the editor yet.
 - Editor: no "unsaved changes" warning when leaving the page.
 - DB: anon still has Supabase's default INSERT privilege on proposals/votes (RLS + triggers block it); revoke it in a later migration for defense in depth.
+- AI reading: the chart format can't hold written-out licks/rhythm notation, accents (>), hats, or 1st/2nd endings and repeat signs; the AI writes the closest plain form and flags it UNCLEAR. Needs a format step.
+- AI reading: no review queue yet for needs_review songs (only the pilot list on /admin/import); reviewers need a list + "publish" for AI-read charts.
+- AI reading: files without a title/artist are skipped until named; duplicate PDFs (same content hash) are read once and only the first file's song gets the chart.
+- AI reading: no admin "re-read this file" button; a billed reading (needs_manual, refused, or a stopped run counted as spent) is never re-sent automatically.
+- AI reading: the full batch only advances while /admin/import is open in a tab (no cron); a Vercel cron could collect batches in the background.
+- AI reading: no refusal fallback model (the Batches API rejects `fallbacks`); refusals end as "refused" for a human.

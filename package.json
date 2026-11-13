@@ -12,9 +12,11 @@
     "check:roles": "node --env-file=.env.local scripts/check-roles.mjs",
     "check:community": "node --env-file=.env.local scripts/check-community.mjs",
     "check:import": "node --env-file=.env.local scripts/check-import.mjs",
+    "check:ai": "node --env-file=.env.local scripts/check-ai.mjs",
     "dropbox:token": "node --env-file=.env.local scripts/dropbox-token.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.119.0",
     "minisearch": "^7.2.0",
@@ -31,6 +33,7 @@
     "eslint-config-next": "16.4.6",
     "supabase": "^3.1.0",
     "tailwindcss": "4.3.3",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vercel": "^65.15.0",
     "vitest": "^5.1.0"
