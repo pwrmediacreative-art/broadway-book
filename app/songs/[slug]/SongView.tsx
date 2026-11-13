@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import AddToSetlist from "@/app/setlists/AddToSetlist";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import AdminPdfLink from "./AdminPdfLink";
@@ -81,6 +82,8 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
         <Link href="/" className="inline-flex h-12 items-center text-lg text-muted active:text-foreground">
           ← All songs
         </Link>
+        <div className="flex items-center gap-2">
+        <AddToSetlist slug={slug} title={title} variant="button" />
         <Link
           href={`/songs/${slug}/stage`}
           onClick={enterFullscreen}
@@ -88,6 +91,7 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
         >
           Stage ▸
         </Link>
+        </div>
       </div>
       <header className="mb-1">
         <h1 className="text-3xl font-bold leading-tight">{title}</h1>

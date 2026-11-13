@@ -1,0 +1,193 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { addToSetlist, createSetlist, currentUserId, listMySetlists, type SetlistSummary } from "@/lib/setlists/api";
+import { addToDeviceSetlist, useDeviceSetlist } from "@/lib/setlists/device";
+import { MAX_SONGS } from "@/lib/setlists/play";
+import { btn, gigDate, plain, primary } from "./ui";
+
+/** "Add to setlist": a trigger + a picker sheet (your setlists, or New setlist; signed out: the device list). */
+export default function AddToSetlist({ slug, title, variant }: { slug: string; title: string; variant: "row" | "button" }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      {variant === "row" ? (
+        <button
+          onClick={() => setOpen(true)}
+          aria-label={`Add ${title} to a setlist`}
+          title="Add to setlist"
+          className="flex w-14 shrink-0 items-center justify-center border-l border-line text-3xl text-muted active:bg-line active:text-accent"
+        >
+          +
+        </button>
+      ) : (
+        <button onClick={() => setOpen(true)} className={`${btn} ${plain} h-12 px-3 text-base`}>
+          + Setlist
+        </button>
+      )}
+      {open && <Picker slug={slug} title={title} onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
+type Who = { state: "loading" } | { state: "out" } | { state: "in"; lists: SetlistSummary[] } | { state: "error"; message: string };
+
+function Picker({ slug, title, onClose }: { slug: string; title: string; onClose: () => void }) {
+  const device = useDeviceSetlist();
+  const [who, setWho] = useState<Who>({ state: "loading" });
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState<{ name: string; href: string } | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [newName, setNewName] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        if (!(await currentUserId())) return alive && setWho({ state: "out" });
+        const lists = await listMySetlists();
+        if (alive) setWho({ state: "in", lists });
+      } catch (e) {
+        if (alive) setWho({ state: "error", message: (e as Error).message });
+      }
+    })();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => {
+      alive = false;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+
+  const run = async (fn: () => Promise<{ name: string; href: string }>) => {
+    setBusy(true);
+    setErr(null);
+    try {
+      setDone(await fn());
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const toList = (l: SetlistSummary) =>
+    run(async () => {
+      if (l.count >= MAX_SONGS) throw new Error(`${l.name} is full (${MAX_SONGS} songs).`);
+      await addToSetlist(l.id, slug);
+      return { name: l.name, href: `/setlists/${l.id}` };
+    });
+  const toNew = (name: string) =>
+    run(async () => {
+      const id = await createSetlist(name);
+      await addToSetlist(id, slug);
+      return { name: name.trim() || "New setlist", href: `/setlists/${id}` };
+    });
+  const toDevice = () =>
+    run(async () => {
+      if (!addToDeviceSetlist(slug)) throw new Error(`Your setlist is full (${MAX_SONGS} songs).`);
+      return { name: device?.name || "My setlist", href: "/setlists/device" };
+    });
+
+  const row = "flex min-h-14 w-full items-center justify-between gap-3 rounded-xl border border-line bg-panel px-4 py-2 text-left active:bg-line disabled:opacity-50";
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-end bg-black/70 sm:items-center sm:justify-center" onClick={onClose}>
+      <div
+        role="dialog"
+        aria-label={`Add ${title} to a setlist`}
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-[85dvh] w-full overflow-y-auto rounded-t-2xl border border-line bg-background p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:max-w-md sm:rounded-2xl"
+      >
+        <div className="mb-3 flex items-center gap-2">
+          <h2 className="min-w-0 flex-1 truncate text-xl font-bold">Add “{title}”</h2>
+          <button onClick={onClose} aria-label="Close" className="grid size-11 place-items-center rounded-lg text-2xl text-muted active:bg-panel">
+            ✕
+          </button>
+        </div>
+
+        {done ? (
+          <>
+            <p className="mb-3 text-xl text-accent" aria-live="polite">
+              Added to {done.name} ✓
+            </p>
+            <div className="flex gap-2">
+              <Link href={done.href} className={`${btn} ${plain} flex-1`}>
+                Open setlist
+              </Link>
+              <button onClick={onClose} className={`${btn} ${primary} flex-1`}>
+                Done
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            {err && <p className="mb-3 rounded-lg border border-red-500 p-3 text-lg text-red-300">{err}</p>}
+            {who.state === "loading" && <p className="text-lg text-muted">Loading…</p>}
+            {who.state === "error" && <p className="text-lg text-red-300">{who.message}</p>}
+            {who.state === "out" && (
+              <>
+                <button disabled={busy} onClick={toDevice} className={`${row} mb-3`}>
+                  <span className="min-w-0">
+                    <span className="block truncate text-lg font-semibold">{device?.name || "My setlist"}</span>
+                    <span className="block text-sm text-muted">On this device · {device?.items.length ?? 0} songs</span>
+                  </span>
+                  <span className="text-2xl text-accent">+</span>
+                </button>
+                <p className="text-base text-muted">
+                  <Link href="/login?next=/setlists" className="text-accent underline">
+                    Sign in
+                  </Link>{" "}
+                  for more setlists and live share links.
+                </p>
+              </>
+            )}
+            {who.state === "in" && (
+              <ul className="flex flex-col gap-2">
+                <li>
+                  {newName === null ? (
+                    <button disabled={busy} onClick={() => setNewName("")} className={row}>
+                      <span className="text-lg font-semibold text-accent">+ New setlist</span>
+                    </button>
+                  ) : (
+                    <form
+                      className="flex gap-2"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        void toNew(newName);
+                      }}
+                    >
+                      <input
+                        autoFocus
+                        value={newName}
+                        maxLength={100}
+                        onChange={(e) => setNewName(e.target.value)}
+                        placeholder="Setlist name"
+                        aria-label="New setlist name"
+                        className="h-12 min-w-0 flex-1 rounded-lg border border-line bg-panel px-3 text-lg"
+                      />
+                      <button disabled={busy} className={`${btn} ${primary}`}>
+                        Create
+                      </button>
+                    </form>
+                  )}
+                </li>
+                {who.lists.map((l) => (
+                  <li key={l.id}>
+                    <button disabled={busy} onClick={() => toList(l)} className={row}>
+                      <span className="min-w-0">
+                        <span className="block truncate text-lg font-semibold">{l.name}</span>
+                        <span className="block text-sm text-muted">{[gigDate(l.gig_date), `${l.count} songs`].filter(Boolean).join(" · ")}</span>
+                      </span>
+                      <span className="text-2xl text-accent">+</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

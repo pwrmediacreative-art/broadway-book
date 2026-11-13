@@ -14,6 +14,7 @@
     "check:import": "node --env-file=.env.local scripts/check-import.mjs",
     "check:ai": "node --env-file=.env.local scripts/check-ai.mjs",
     "check:review": "node --env-file=.env.local scripts/check-review.mjs",
+    "check:setlists": "node --env-file=.env.local scripts/check-setlists.mjs",
     "dropbox:token": "node --env-file=.env.local scripts/dropbox-token.mjs"
   },
   "dependencies": {

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { memo, useRef } from "react";
 import type { SongDoc } from "@/lib/search/pack";
 import { useMyVersions } from "@/lib/personal/versions";
+import AddToSetlist from "./setlists/AddToSetlist";
 
 function enterFullscreen() {
   try {
@@ -91,6 +92,7 @@ function SongRow({ d, index, onOpen }: { d: SongDoc; index: number; onOpen: () =
         </span>
         {d.key && <span className="shrink-0 font-mono text-2xl font-bold text-accent">{d.key}</span>}
       </Link>
+      <AddToSetlist slug={d.slug} title={d.title} variant="row" />
       <Link
         href={stage}
         onClick={() => {

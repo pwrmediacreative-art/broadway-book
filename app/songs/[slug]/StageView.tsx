@@ -7,7 +7,7 @@ import { PREF, setPref, usePref } from "@/lib/prefs";
 import Chart from "./Chart";
 import { btn, BpmToggle, DisplayControls, off, on } from "./controls";
 import { usePickedChart } from "@/lib/personal/versions";
-import { FONTS, useChartState, useGesture, useSongKeys, useSongNav, type FontId, type Neighbors } from "./hooks";
+import { FONTS, useChartState, useGesture, useSongKeys, useSongNav, type FontId, type KeyControl, type Neighbors } from "./hooks";
 import { recordRecent } from "@/lib/search/recent";
 
 const FIT_MIN = 30; // px: smallest size we shrink to so the whole chart fits without scrolling
@@ -55,10 +55,33 @@ function useWakeLock() {
   }, []);
 }
 
-export default function StageView({ slug, title, chartText, neighbors }: { slug: string; title: string; chartText: string; neighbors: Neighbors }) {
+/** Setlist play mode: the parent owns the order, the session key and moving between songs. */
+export interface StageSet {
+  count: string; // "3 of 18"
+  next: string | null; // next song's title; null on the last song
+  note: string | null;
+  keyCtl: KeyControl;
+  go: (d: -1 | 1) => boolean; // false when there is no song that way
+  onJump: () => void;
+  onExit: () => void;
+}
+
+export default function StageView({
+  slug,
+  title,
+  chartText,
+  neighbors,
+  set,
+}: {
+  slug: string;
+  title: string;
+  chartText: string;
+  neighbors: Neighbors;
+  set?: StageSet;
+}) {
   // The player's own version, if they have one (one tap on the chip flips to public).
   const pick = usePickedChart(slug, chartText);
-  const s = useChartState(slug, pick.text);
+  const s = useChartState(slug, pick.text, set?.keyCtl);
   const nav = useSongNav(slug, neighbors);
   useEffect(() => recordRecent(slug), [slug]);
   const router = useRouter();
@@ -214,17 +237,22 @@ export default function StageView({ slug, title, chartText, neighbors }: { slug:
     return () => window.clearTimeout(t);
   }, [toast]);
   const go = (d: -1 | 1) => {
+    if (set) {
+      if (!set.go(d)) setToast(d > 0 ? "Last song in the set" : "First song in the set");
+      return;
+    }
     const t = d > 0 ? nav.next : nav.prev;
     if (t) router.push(`/songs/${t.slug}/stage`);
     else setToast(d > 0 ? "Last song in the list" : "First song in the list");
   };
   const exit = () => {
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-    router.push(`/songs/${slug}`);
+    if (set) set.onExit();
+    else router.push(`/songs/${slug}`);
   };
   useEffect(() => {
-    if (nav.next) router.prefetch(`/songs/${nav.next.slug}/stage`);
-  }, [nav.next, router]);
+    if (!set && nav.next) router.prefetch(`/songs/${nav.next.slug}/stage`);
+  }, [set, nav.next, router]);
 
   useSongKeys(go, (e) => {
     if (e.key === " ") {
@@ -282,7 +310,7 @@ export default function StageView({ slug, title, chartText, neighbors }: { slug:
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background text-foreground" style={light ? LIGHT : DARK} onPointerDownCapture={poke}>
       <header className="flex h-12 shrink-0 items-center gap-1 border-b border-line/60 pl-1 pr-2 text-base">
-        <button onClick={exit} aria-label="Exit stage mode" className="grid size-11 shrink-0 place-items-center rounded-lg text-2xl text-muted active:bg-panel">
+        <button onClick={exit} aria-label={set ? "Exit play mode" : "Exit stage mode"} className="grid size-11 shrink-0 place-items-center rounded-lg text-2xl text-muted active:bg-panel">
           ✕
         </button>
         <div className="flex min-w-20 flex-1 items-baseline gap-1">
@@ -299,12 +327,36 @@ export default function StageView({ slug, title, chartText, neighbors }: { slug:
           </button>
         )}
         <BpmToggle s={s} className="shrink-0 text-sm text-muted" />
-        {nav.next && (
-          <button onClick={() => go(1)} className="h-11 min-w-0 max-w-[36%] shrink truncate text-right text-sm text-muted">
-            Next: <span className="text-foreground">{nav.next.title}</span> ›
-          </button>
+        {set ? (
+          <>
+            <button onClick={set.onJump} aria-label="Jump to a song in the set" className="grid size-11 shrink-0 place-items-center rounded-lg text-muted active:bg-panel">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+                <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" />
+              </svg>
+            </button>
+          </>
+        ) : (
+          nav.next && (
+            <button onClick={() => go(1)} className="h-11 min-w-0 max-w-[36%] shrink truncate text-right text-sm text-muted">
+              Next: <span className="text-foreground">{nav.next.title}</span> ›
+            </button>
+          )
         )}
       </header>
+      {set && (
+        <button onClick={() => go(1)} className="flex h-10 shrink-0 items-center gap-2 border-b border-line/60 px-3 text-left text-base text-muted">
+          <span className="shrink-0 font-bold tabular-nums text-foreground">{set.count}</span>
+          <span aria-hidden>·</span>
+          {set.next ? (
+            <span className="min-w-0 truncate">
+              Next: <span className="font-semibold text-foreground">{set.next}</span> ›
+            </span>
+          ) : (
+            <span className="font-semibold text-foreground">Last song</span>
+          )}
+        </button>
+      )}
+      {set?.note && <p className="shrink-0 truncate border-b border-accent/40 bg-accent/15 px-4 py-1.5 text-xl font-bold text-accent">{set.note}</p>}
 
       <div
         ref={scroller}

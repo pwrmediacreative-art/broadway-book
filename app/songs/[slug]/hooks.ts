@@ -21,8 +21,14 @@ export const FONTS = {
 } as const;
 export type FontId = keyof typeof FONTS;
 
+/** Key held by the caller instead of the per-song device pref (setlist play mode: session only). */
+export interface KeyControl {
+  key: string | null;
+  setKey: (k: string | null) => void;
+}
+
 /** Parsed chart + the player's display choices (remembered per device / per song). */
-export function useChartState(slug: string, chartText: string) {
+export function useChartState(slug: string, chartText: string, keyCtl?: KeyControl) {
   const parsed = useMemo(() => {
     try {
       return { doc: parseChart(chartText).doc, error: null };
@@ -32,7 +38,8 @@ export function useChartState(slug: string, chartText: string) {
   }, [chartText]);
 
   const chords = usePref(PREF.display) === "chords";
-  const keyPref = usePref(PREF.key(slug));
+  const devicePref = usePref(PREF.key(slug));
+  const keyPref = keyCtl ? keyCtl.key : devicePref;
   const stylePref = usePref(PREF.numbering(slug));
   const style: NumberStyle | undefined = stylePref === "minor" || stylePref === "relative" ? stylePref : undefined;
   const minorSymbol: MinorSymbol = usePref(PREF.minorSymbol) === "-" ? "-" : "m";
@@ -55,7 +62,7 @@ export function useChartState(slug: string, chartText: string) {
     minorSymbol,
     legend,
     setChords: (on: boolean) => setPref(PREF.display, on ? "chords" : "numbers"),
-    setKey: (k: string) => setPref(PREF.key(slug), view && k === view.meta.key ? null : k),
+    setKey: (k: string) => (keyCtl ? keyCtl.setKey(k) : setPref(PREF.key(slug), view && k === view.meta.key ? null : k)),
     // Per song. Choosing the chart's own numbering clears the override.
     setStyle: (st: NumberStyle) => setPref(PREF.numbering(slug), view && st === view.meta.numbers ? null : st),
     setMinorSymbol: (m: MinorSymbol) => setPref(PREF.minorSymbol, m),

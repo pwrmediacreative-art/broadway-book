@@ -28,7 +28,7 @@ const props = await db.from("proposals").select("id, song_id");
 if (!props.error && props.data.every((p) => published.has(p.song_id))) pass(`anon reads suggestions of published songs only (${props.data.length})`);
 else fail(`proposals read: ${props.error?.message ?? "suggestion on an unpublished song visible"}`);
 
-for (const t of ["import_files", "personal_chart_versions", "notifications", "reports"]) {
+for (const t of ["import_files", "personal_chart_versions", "notifications", "reports", "setlists", "setlist_items"]) {
   const r = await db.from(t).select("*").limit(1);
   if (r.error || r.data.length === 0) pass(`anon can't read ${t}`);
   else fail(`anon read ${t}`);
@@ -67,7 +67,7 @@ else fail("anon called revert_song");
 const setUpd = await db.from("settings").update({ value: 1 }).eq("key", "approvals_needed").select();
 if (setUpd.error || setUpd.data.length === 0) pass("anon update settings blocked");
 else fail("anon UPDATED settings");
-for (const fn of ["publish_chart", "decide_proposal", "admin_decide", "set_setting", "set_blocked", "update_proposal", "withdraw_proposal"]) {
+for (const fn of ["publish_chart", "decide_proposal", "admin_decide", "set_setting", "set_blocked", "update_proposal", "withdraw_proposal", "setlist_save", "setlist_add", "setlist_share"]) {
   const r = await db.rpc(fn, {});
   if (r.error) pass(`anon ${fn} blocked (${r.error.code})`);
   else fail(`anon called ${fn}`);

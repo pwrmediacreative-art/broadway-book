@@ -59,3 +59,12 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Review: no "flag" list for players to see or withdraw their own flags; flags auto-resolve only on a verified publish or "Dismiss flags".
 - Review: a community suggestion merged onto an unverified chart leaves it unverified; only an admin verifies.
 - Review: unchecked bulk publish trusts the reader's confidence; spot-check a few after each bulk run.
+- Setlists: "Save a copy to my setlists" from a shared link not built.
+- Setlists: set break dividers ("Set 2") not built; one flat list for now.
+- Device-setlist snapshot links can't be turned off or updated; share a new link after changes.
+- "Save to my account" quietly drops device-setlist songs that are no longer published.
+- Setlists shipped: the "Setlists UI not started" and "next/previous follows home list" lines above are done for setlist play mode (stage from search still follows the home list).
+- Search rows: the new setlist "+" column narrows titles on 375px phones (more titles truncate).
+- Top bar: signed in on a 375px phone, "Sign out" wraps to two lines now that "Setlists" is in the bar.
+- Setlist editor: minor-key songs show a wide key picker ("Am (C) orig") that squeezes the title.
+- Pages that stream (e.g. /s/[code]) stay on "Loading…" in a hidden/background browser tab until it's shown (React reveal waits for an animation frame); fine for real users.

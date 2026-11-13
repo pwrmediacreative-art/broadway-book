@@ -48,9 +48,14 @@ export default function AuthBar() {
   if (pathname === "/login" || authPage) return <Bar />;
   if (me === undefined) return <Bar />;
   const community = (
-    <Link href="/community" className={`${link} mr-auto`}>
-      Community
-    </Link>
+    <>
+      <Link href="/setlists" className={link}>
+        Setlists
+      </Link>
+      <Link href="/community" className={`${link} mr-auto`}>
+        Community
+      </Link>
+    </>
   );
   if (me === null) {
     const next = pathname === "/" ? "" : `?next=${encodeURIComponent(pathname)}`;
