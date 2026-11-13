@@ -1,6 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
-import { cacheLife } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import type { IndexRow } from "@/lib/search/pack";
+
+/** Cache tag for every public song read; server actions call updateTag(SONGS_TAG) after a publish. */
+export const SONGS_TAG = "songs";
 
 /** Read-only public client (anon key). RLS limits it to published songs. */
 export function publicClient() {
@@ -21,6 +24,7 @@ export interface SongListItem {
 export async function listSongs(): Promise<SongListItem[]> {
   "use cache";
   cacheLife("minutes");
+  cacheTag(SONGS_TAG);
   const { data, error } = await publicClient()
     .from("songs")
     .select("slug, title, artist, key, is_example")
@@ -33,9 +37,10 @@ export async function listSongs(): Promise<SongListItem[]> {
 export async function getSong(slug: string) {
   "use cache";
   cacheLife("minutes");
+  cacheTag(SONGS_TAG);
   const { data, error } = await publicClient()
     .from("songs")
-    .select("slug, title, artist, key, is_example, current:revisions!songs_current_revision_fk(chart_text)")
+    .select("id, slug, title, artist, key, is_example, current_revision_id, current:revisions!songs_current_revision_fk(chart_text)")
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
@@ -49,6 +54,7 @@ export async function getSong(slug: string) {
 export async function listSongIndex(): Promise<IndexRow[]> {
   "use cache";
   cacheLife("minutes");
+  cacheTag(SONGS_TAG);
   const { data, error } = await publicClient()
     .from("songs")
     .select("slug, title, artist, key, bpm, time_sig, feel, tags, is_example")

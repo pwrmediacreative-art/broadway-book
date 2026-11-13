@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/supabase/session";
 import { safeNext } from "@/lib/auth/roles";
@@ -33,6 +34,14 @@ async function Profile({ searchParams }: { searchParams: PageProps<"/profile">["
         next={safeNext(typeof next === "string" ? next : "/")}
         first={first}
       />
+      {!first && (
+        <Link
+          href="/profile/versions"
+          className="mt-8 flex min-h-14 items-center justify-between rounded-xl border border-line bg-panel px-4 text-lg"
+        >
+          My versions <span className="text-muted">Songs you changed for yourself ›</span>
+        </Link>
+      )}
     </>
   );
 }

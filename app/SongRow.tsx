@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { memo, useRef } from "react";
 import type { SongDoc } from "@/lib/search/pack";
+import { useMyVersions } from "@/lib/personal/versions";
 
 function enterFullscreen() {
   try {
@@ -24,6 +25,8 @@ function SongRow({ d, index, onOpen }: { d: SongDoc; index: number; onOpen: () =
   const start = useRef({ x: 0, y: 0 });
   const cancel = () => window.clearTimeout(timer.current);
   const meta = [d.bpm && `${d.bpm} bpm`, d.time, d.feel].filter(Boolean).join(" · ");
+  // Personal versions come from the player's own account, never from the search index.
+  const yours = useMyVersions().list.some((v) => v.slug === d.slug);
 
   return (
     <li id={`r${index}`} className="flex scroll-mt-20 items-stretch bg-panel">
@@ -67,6 +70,11 @@ function SongRow({ d, index, onOpen }: { d: SongDoc; index: number; onOpen: () =
               <span className="text-sm">
                 {d.artist ? " · " : ""}
                 {meta}
+              </span>
+            )}
+            {yours && (
+              <span className="ml-2 rounded bg-violet-400/25 px-1.5 py-0.5 text-xs font-semibold uppercase text-violet-100">
+                Yours
               </span>
             )}
             {d.ex && (

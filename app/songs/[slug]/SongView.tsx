@@ -8,9 +8,12 @@ import Chart from "./Chart";
 import { BpmToggle, DisplayControls, KeyInfo } from "./controls";
 import { FONTS, useChartState, useGesture, useSongKeys, useSongNav, type Neighbors } from "./hooks";
 import { recordRecent } from "@/lib/search/recent";
+import { usePickedChart } from "@/lib/personal/versions";
+import { OpenBadge, PersonalBar, SongActions, useOpenCount } from "./Community";
 
 export interface SongProps {
   slug: string;
+  songId: string;
   title: string;
   artist: string | null;
   isExample: boolean;
@@ -26,8 +29,11 @@ export function enterFullscreen() {
   }
 }
 
-export default function SongView({ slug, title, artist, isExample, chartText, neighbors }: SongProps) {
-  const s = useChartState(slug, chartText);
+export default function SongView({ slug, songId, title, artist, isExample, chartText, neighbors }: SongProps) {
+  // The signed-in player's own version replaces the public chart (they can flip back).
+  const pick = usePickedChart(slug, chartText);
+  const openCount = useOpenCount(songId);
+  const s = useChartState(slug, pick.text);
   const nav = useSongNav(slug, neighbors);
   useEffect(() => recordRecent(slug), [slug]);
   const router = useRouter();
@@ -48,8 +54,10 @@ export default function SongView({ slug, title, artist, isExample, chartText, ne
         <div className="rounded-xl border border-red-500 p-4">
           <p className="font-semibold">This chart has a format error.</p>
           <p className="text-muted">{s.error}</p>
-          <pre className="mt-3 whitespace-pre-wrap font-mono text-lg">{chartText}</pre>
+          <pre className="mt-3 whitespace-pre-wrap font-mono text-lg">{pick.text}</pre>
         </div>
+        <PersonalBar slug={slug} songId={songId} pick={pick} publicText={chartText} />
+        <SongActions slug={slug} songId={songId} pick={pick} />
       </main>
     );
   }
@@ -78,8 +86,10 @@ export default function SongView({ slug, title, artist, isExample, chartText, ne
               Example
             </span>
           )}
+          <OpenBadge slug={slug} count={openCount} />
         </p>
       </header>
+      <PersonalBar slug={slug} songId={songId} pick={pick} publicText={chartText} />
 
       <KeyInfo s={s}>
         <BpmToggle s={s} className="-mx-2" />
@@ -94,6 +104,8 @@ export default function SongView({ slug, title, artist, isExample, chartText, ne
       <div {...gesture} className="touch-pan-y">
         <Chart view={s.view} chords={s.chords} fontFamily={FONTS[s.font].css} fontWeight={FONTS[s.font].weight} style={{ fontSize: "clamp(1.6rem, 7vw, 2.4rem)" }} />
       </div>
+
+      <SongActions slug={slug} songId={songId} pick={pick} />
 
       <nav className="mt-10 grid grid-cols-2 gap-3" aria-label="Other songs">
         {nav.prev ? (

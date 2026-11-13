@@ -19,14 +19,15 @@ interface Stats {
   songs: number;
   published: number;
   open_proposals: number;
+  open_reports: number;
   imports: number;
   people: number;
 }
 
 const SECTIONS = [
   { title: "Import", path: "/admin/import", text: "Read Dropbox PDFs into charts and review the AI's work.", ready: true },
-  { title: "Review", path: "/admin/review", text: "Approve or reject proposed chart changes instantly." },
-  { title: "Community", path: "/admin/community", text: "See contributors and recent activity." },
+  { title: "Suggestions", path: "/community", text: "Open suggestions. Admins can approve now or close from each one.", ready: true },
+  { title: "Community", path: "/admin/community", text: "Vote rules, reports and blocked players.", ready: true },
 ];
 
 async function Dashboard() {
@@ -50,7 +51,7 @@ async function Dashboard() {
           ["Songs", s.songs],
           ["Published", s.published],
           ["Open proposals", s.open_proposals],
-          ["People", s.people],
+          ["Open reports", s.open_reports ?? 0],
         ].map(([label, n]) => (
           <div key={label} className="rounded-xl border border-line bg-panel p-4">
             <dt className="text-sm text-muted">{label}</dt>

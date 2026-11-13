@@ -22,6 +22,7 @@ export default async function SongPage({ params }: PageProps<"/songs/[slug]">) {
   return (
     <SongView
       slug={song.slug}
+      songId={song.id}
       title={song.title}
       artist={song.artist}
       isExample={song.is_example}

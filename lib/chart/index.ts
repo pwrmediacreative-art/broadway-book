@@ -5,3 +5,7 @@ export { serializeChart, beatText, itemText } from "./serialize";
 export * from "./transpose";
 export * from "./view";
 export * from "./layout";
+export { diffCharts, diffDocs, flattenChart } from "./diff";
+export type { ChartDiff, DiffRow, DiffCell, DiffState } from "./diff";
+export { checkChart, normalizeChartText, MAX_CUE_WORDS } from "./validate";
+export type { ChartCheck } from "./validate";

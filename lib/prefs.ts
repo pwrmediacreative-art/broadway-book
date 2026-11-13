@@ -64,5 +64,6 @@ export const PREF = {
   key: (slug: string) => `bb.key.${slug}`,
   numbering: (slug: string) => `bb.numbers.${slug}`, // "minor" | "relative"; unset = as the chart is written
   songSpeed: (slug: string) => `bb.speed.${slug}`,
+  showPublic: (slug: string) => `bb.public.${slug}`, // sessionStorage: "1" = show the public chart, not my version
   nav: "bb.nav", // sessionStorage: [{slug,title}] list the player opened a song from
 } as const;

@@ -6,6 +6,7 @@ import { pretty, SPEEDS, suggestSpeed } from "@/lib/chart";
 import { PREF, setPref, usePref } from "@/lib/prefs";
 import Chart from "./Chart";
 import { btn, BpmToggle, DisplayControls, off, on } from "./controls";
+import { usePickedChart } from "@/lib/personal/versions";
 import { FONTS, useChartState, useGesture, useSongKeys, useSongNav, type FontId, type Neighbors } from "./hooks";
 import { recordRecent } from "@/lib/search/recent";
 
@@ -55,7 +56,9 @@ function useWakeLock() {
 }
 
 export default function StageView({ slug, title, chartText, neighbors }: { slug: string; title: string; chartText: string; neighbors: Neighbors }) {
-  const s = useChartState(slug, chartText);
+  // The player's own version, if they have one (one tap on the chip flips to public).
+  const pick = usePickedChart(slug, chartText);
+  const s = useChartState(slug, pick.text);
   const nav = useSongNav(slug, neighbors);
   useEffect(() => recordRecent(slug), [slug]);
   const router = useRouter();
@@ -282,10 +285,19 @@ export default function StageView({ slug, title, chartText, neighbors }: { slug:
         <button onClick={exit} aria-label="Exit stage mode" className="grid size-11 shrink-0 place-items-center rounded-lg text-2xl text-muted active:bg-panel">
           ✕
         </button>
-        <div className="flex min-w-0 flex-1 items-baseline gap-1">
+        <div className="flex min-w-20 flex-1 items-baseline gap-1">
           <b className="truncate">{title}</b>
           {view.keyShort && <span className="shrink-0 whitespace-nowrap text-muted">· {pretty(view.keyShort)}</span>}
         </div>
+        {pick.mine && (
+          <button
+            onClick={() => pick.setShowPublic(pick.usingMine)}
+            aria-label={pick.usingMine ? "Showing your version. Tap to view the public version" : "Showing the public version. Tap to view yours"}
+            className={`h-11 shrink-0 self-center rounded-md px-1 text-[0.7rem] font-bold uppercase ${pick.usingMine ? "text-violet-300" : "text-muted"}`}
+          >
+            {pick.usingMine ? "Yours" : "Public"}
+          </button>
+        )}
         <BpmToggle s={s} className="shrink-0 text-sm text-muted" />
         {nav.next && (
           <button onClick={() => go(1)} className="h-11 min-w-0 max-w-[36%] shrink truncate text-right text-sm text-muted">

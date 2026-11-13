@@ -40,3 +40,12 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Import: renaming a PDF re-parses import_files.title/artist but leaves its draft song's title as first imported.
 - Import: about 20 names with no spaces around the dash (e.g. "Danger Zone-Kenny Loggins") land in Unparsed; a smarter split could catch them.
 - Import: no way yet to edit a parsed (but wrong) title/artist on /admin/import, only unparsed ones.
+- Community: lowering approvals_needed doesn't merge suggestions that already have enough votes until the next vote lands.
+- Community: updating a suggestion deletes its old votes (and their comments); keep them as history instead.
+- Community: reports are limited to one per player per target, but there's no overall per-hour cap yet.
+- Community: /community loads up to 200 open suggestions and filters on the page; paginate when it grows.
+- Community: the notification bell only refreshes on navigation (no live push).
+- Community: imports and other publishes outside the community actions don't call updateTag, so song pages can lag a few minutes.
+- Editor: preview always shows numbers in the written key; no chords/key toggle inside the editor yet.
+- Editor: no "unsaved changes" warning when leaving the page.
+- DB: anon still has Supabase's default INSERT privilege on proposals/votes (RLS + triggers block it); revoke it in a later migration for defense in depth.
