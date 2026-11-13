@@ -78,8 +78,16 @@ describe("index file", () => {
       feel: null,
       tags: ["country", "singalong"],
       ex: false,
+      uv: false,
     });
     expect(unpackIndex({ v: 2, s: [] })).toBeNull();
+  });
+
+  it("carries the unverified flag", () => {
+    const row = { ...REAL[0], unverified: true };
+    const [d] = unpackIndex(JSON.parse(JSON.stringify(packIndex([row]))))!;
+    expect(d.uv).toBe(true);
+    expect(packIndex([row]).s[0]).toHaveLength(10);
   });
 });
 

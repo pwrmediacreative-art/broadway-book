@@ -7,6 +7,7 @@ import { browserClient } from "@/lib/supabase/browser";
 import { loadMyVersions, type usePickedChart } from "@/lib/personal/versions";
 import { deletePersonal, keepPersonal } from "@/app/community/actions";
 import BarDiff, { DiffSummary } from "@/app/community/BarDiff";
+import FlagButton from "./FlagButton";
 
 type Pick = ReturnType<typeof usePickedChart>;
 
@@ -182,6 +183,7 @@ export function SongActions({ slug, songId, pick }: { slug: string; songId: stri
         </div>
       )}
       {err && <p className="text-lg text-red-300">{err}</p>}
+      <FlagButton slug={slug} songId={songId} />
       <Link href={`/songs/${slug}/history`} className="inline-flex min-h-11 items-center text-lg text-muted underline">
         Chart history
       </Link>

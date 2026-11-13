@@ -55,3 +55,7 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - AI reading: no admin "re-read this file" button; a billed reading (needs_manual, refused, or a stopped run counted as spent) is never re-sent automatically.
 - AI reading: the full batch only advances while /admin/import is open in a tab (no cron); a Vercel cron could collect batches in the background.
 - AI reading: no refusal fallback model (the Batches API rejects `fallbacks`); refusals end as "refused" for a human.
+- Review: the stage view doesn't show the "Unverified" badge (song page and search results do).
+- Review: no "flag" list for players to see or withdraw their own flags; flags auto-resolve only on a verified publish or "Dismiss flags".
+- Review: a community suggestion merged onto an unverified chart leaves it unverified; only an admin verifies.
+- Review: unchecked bulk publish trusts the reader's confidence; spot-check a few after each bulk run.

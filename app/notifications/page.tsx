@@ -23,17 +23,18 @@ export default function NotificationsPage() {
 
 interface Row {
   id: string;
-  kind: "merged" | "closed" | "out_of_date";
+  kind: "merged" | "closed" | "out_of_date" | "flagged";
   created_at: string;
   read_at: string | null;
   proposal: { id: string; note: string | null; status: string } | null;
-  song: { slug: string; title: string } | null;
+  song: { id: string; slug: string; title: string } | null;
 }
 
 const TEXT: Record<Row["kind"], [string, string]> = {
   merged: ["✓", "Your suggestion went live"],
   closed: ["✕", "Your suggestion was closed"],
   out_of_date: ["!", "The chart changed under your suggestion. Update it so voting can continue"],
+  flagged: ["⚑", "Players flagged this chart as wrong. Check it in the review queue"],
 };
 
 async function List() {
@@ -42,7 +43,7 @@ async function List() {
   const db = await sessionClient();
   const { data } = await db
     .from("notifications")
-    .select("id, kind, created_at, read_at, proposal:proposals(id, note, status), song:songs(slug, title)")
+    .select("id, kind, created_at, read_at, proposal:proposals(id, note, status), song:songs(id, slug, title)")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(50);
@@ -55,11 +56,19 @@ async function List() {
       {unread && <MarkRead />}
       <ul className="flex flex-col gap-3">
         {rows.map((r) => {
-          const [icon, text] = TEXT[r.kind];
+          const [icon, text] = TEXT[r.kind] ?? ["•", "Update"];
           return (
             <li key={r.id}>
               <Link
-                href={r.proposal ? `/community/${r.proposal.id}` : r.song ? `/songs/${r.song.slug}` : "/community"}
+                href={
+                  r.kind === "flagged" && r.song
+                    ? `/admin/review/${r.song.id}`
+                    : r.proposal
+                      ? `/community/${r.proposal.id}`
+                      : r.song
+                        ? `/songs/${r.song.slug}`
+                        : "/community"
+                }
                 className={`flex gap-3 rounded-xl border p-4 active:bg-line ${r.read_at ? "border-line" : "border-accent bg-panel"}`}
               >
                 <span className="text-2xl" aria-hidden>

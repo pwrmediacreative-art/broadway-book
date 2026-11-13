@@ -19,6 +19,7 @@ export interface SongListItem {
   artist: string | null;
   key: string | null;
   is_example: boolean;
+  unverified: boolean;
 }
 
 export async function listSongs(): Promise<SongListItem[]> {
@@ -27,7 +28,7 @@ export async function listSongs(): Promise<SongListItem[]> {
   cacheTag(SONGS_TAG);
   const { data, error } = await publicClient()
     .from("songs")
-    .select("slug, title, artist, key, is_example")
+    .select("slug, title, artist, key, is_example, unverified")
     .eq("status", "published")
     .order("title");
   if (error) throw error;
@@ -40,7 +41,7 @@ export async function getSong(slug: string) {
   cacheTag(SONGS_TAG);
   const { data, error } = await publicClient()
     .from("songs")
-    .select("id, slug, title, artist, key, is_example, current_revision_id, current:revisions!songs_current_revision_fk(chart_text)")
+    .select("id, slug, title, artist, key, is_example, unverified, current_revision_id, current:revisions!songs_current_revision_fk(chart_text)")
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
@@ -57,7 +58,7 @@ export async function listSongIndex(): Promise<IndexRow[]> {
   cacheTag(SONGS_TAG);
   const { data, error } = await publicClient()
     .from("songs")
-    .select("slug, title, artist, key, bpm, time_sig, feel, tags, is_example")
+    .select("slug, title, artist, key, bpm, time_sig, feel, tags, is_example, unverified")
     .eq("status", "published")
     .order("title");
   if (error) throw error;

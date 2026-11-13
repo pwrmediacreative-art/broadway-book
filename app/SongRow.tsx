@@ -77,6 +77,11 @@ function SongRow({ d, index, onOpen }: { d: SongDoc; index: number; onOpen: () =
                 Yours
               </span>
             )}
+            {d.uv && (
+              <span className="ml-2 rounded bg-amber-400/20 px-1.5 py-0.5 text-xs font-semibold uppercase text-amber-200">
+                Unverified
+              </span>
+            )}
             {d.ex && (
               <span className="ml-2 rounded bg-accent/20 px-1.5 py-0.5 text-xs font-semibold uppercase text-accent">
                 Example

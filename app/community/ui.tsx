@@ -29,7 +29,7 @@ export function StatusPill({ status, stale }: { status: string; stale?: boolean 
 
 export const SOURCE_LABEL: Record<string, string> = {
   import: "Imported",
-  ai: "AI read",
+  ai: "Imported", // players never see how an import was read
   human: "Edited",
   community: "Community",
 };

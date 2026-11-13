@@ -1,5 +1,5 @@
 // The search index file: every published song as a short array, so ~1,900 songs stay small.
-// Row = [slug, title, artist, key, bpm, time, feel, tags ("a,b"), example (1)].
+// Row = [slug, title, artist, key, bpm, time, feel, tags ("a,b"), example (1), unverified (1)].
 // Missing values are "" / 0, and trailing empties are dropped.
 
 export const INDEX_URL = "/search-index.json";
@@ -14,6 +14,8 @@ export interface SongDoc {
   feel: string | null;
   tags: string[];
   ex: boolean;
+  /** Published before anyone checked it against the original chart. */
+  uv: boolean;
 }
 
 /** One `songs` row as the server reads it. */
@@ -27,6 +29,7 @@ export interface IndexRow {
   feel: string | null;
   tags: string[] | null;
   is_example: boolean;
+  unverified?: boolean;
 }
 
 type Cell = string | number;
@@ -49,6 +52,7 @@ export function packIndex(rows: IndexRow[]): PackedIndex {
         r.feel ?? "",
         (r.tags ?? []).join(","),
         r.is_example ? 1 : 0,
+        r.unverified ? 1 : 0,
       ];
       while (row.length > 2 && (row[row.length - 1] === "" || row[row.length - 1] === 0)) row.pop();
       return row;
@@ -72,5 +76,6 @@ export function unpackIndex(p: unknown): SongDoc[] | null {
       feel: str(r[6]),
       tags: str(r[7])?.split(",").filter(Boolean) ?? [],
       ex: r[8] === 1,
+      uv: r[9] === 1,
     }));
 }

@@ -22,9 +22,12 @@ interface Stats {
   open_reports: number;
   imports: number;
   people: number;
+  needs_review?: number;
+  flagged?: number;
 }
 
 const SECTIONS = [
+  { title: "Review charts", path: "/admin/review", text: "Check imported charts against their PDFs, publish them, and handle player flags.", ready: true },
   { title: "Import", path: "/admin/import", text: "Read Dropbox PDFs into charts and review the AI's work.", ready: true },
   { title: "Suggestions", path: "/community", text: "Open suggestions. Admins can approve now or close from each one.", ready: true },
   { title: "Community", path: "/admin/community", text: "Vote rules, reports and blocked players.", ready: true },
@@ -52,6 +55,8 @@ async function Dashboard() {
           ["Published", s.published],
           ["Open proposals", s.open_proposals],
           ["Open reports", s.open_reports ?? 0],
+          ["To review", s.needs_review ?? 0],
+          ["Flagged songs", s.flagged ?? 0],
         ].map(([label, n]) => (
           <div key={label} className="rounded-xl border border-line bg-panel p-4">
             <dt className="text-sm text-muted">{label}</dt>

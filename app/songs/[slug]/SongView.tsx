@@ -17,6 +17,7 @@ export interface SongProps {
   title: string;
   artist: string | null;
   isExample: boolean;
+  unverified?: boolean;
   chartText: string;
   neighbors: Neighbors;
 }
@@ -29,7 +30,18 @@ export function enterFullscreen() {
   }
 }
 
-export default function SongView({ slug, songId, title, artist, isExample, chartText, neighbors }: SongProps) {
+export function UnverifiedBadge({ className = "" }: { className?: string }) {
+  return (
+    <span
+      title="Not checked against the original chart yet. Flag it or suggest a fix if something's off."
+      className={`rounded bg-amber-400/20 px-1.5 py-0.5 text-xs font-semibold uppercase text-amber-200 ${className}`}
+    >
+      Unverified
+    </span>
+  );
+}
+
+export default function SongView({ slug, songId, title, artist, isExample, unverified, chartText, neighbors }: SongProps) {
   // The signed-in player's own version replaces the public chart (they can flip back).
   const pick = usePickedChart(slug, chartText);
   const openCount = useOpenCount(songId);
@@ -86,6 +98,7 @@ export default function SongView({ slug, songId, title, artist, isExample, chart
               Example
             </span>
           )}
+          {unverified && <UnverifiedBadge className="ml-2" />}
           <OpenBadge slug={slug} count={openCount} />
         </p>
       </header>

@@ -83,7 +83,7 @@ async function History({ params }: { params: PageProps<"/songs/[slug]/history">[
               </div>
               <p className="mt-1 text-lg">
                 <b>{r.author?.display_name || (r.source === "import" || r.source === "ai" ? "Import" : "A player")}</b>
-                {r.note && <> · “{r.note}”</>}
+                {r.note && r.source !== "ai" && <> · “{r.note}”</>}
               </p>
               {pid && (
                 <Link href={`/community/${pid}`} className="inline-flex min-h-11 items-center text-accent">
