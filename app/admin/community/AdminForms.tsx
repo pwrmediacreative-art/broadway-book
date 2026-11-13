@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { resolveReport, setBlocked, setSetting } from "@/app/community/actions";
+import { resolveReport, setBlocked, setReviewer, setSetting } from "@/app/community/actions";
 
 export function SettingsForm({ settings }: { settings: { key: string; value: number; label: string }[] }) {
   const router = useRouter();
@@ -80,6 +80,34 @@ export function BlockToggle({ userId, blocked, name }: { userId: string; blocked
         className={`min-h-12 rounded-xl border px-4 text-lg disabled:opacity-40 ${blocked ? "border-line" : "border-red-500/60 text-red-300"}`}
       >
         {blocked ? "Unblock" : "Block"}
+      </button>
+      {err && <span className="w-full text-red-300">{err}</span>}
+    </>
+  );
+}
+
+export function ReviewerToggle({ userId, on, name }: { userId: string; on: boolean; name: string }) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [err, setErr] = useState<string | null>(null);
+  return (
+    <>
+      <button
+        disabled={pending}
+        onClick={() => {
+          const q = on
+            ? `Stop ${name} reviewing imports?`
+            : `Make ${name} a trusted reviewer? They can publish imported charts from /admin/review and get a Reviewer badge.`;
+          if (!window.confirm(q)) return;
+          start(async () => {
+            const r = await setReviewer(userId, !on);
+            if (!r.ok) return setErr(r.error);
+            router.refresh();
+          });
+        }}
+        className={`min-h-12 rounded-xl border px-4 text-lg disabled:opacity-40 ${on ? "border-line" : "border-sky-400/60 text-sky-200"}`}
+      >
+        {on ? "Remove reviewer" : "Make reviewer"}
       </button>
       {err && <span className="w-full text-red-300">{err}</span>}
     </>

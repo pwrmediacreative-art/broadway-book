@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { getCurrentUser, sessionClient } from "@/lib/supabase/session";
-import { StatusPill, when } from "./ui";
+import { StatusPill, when, ReviewerBadge } from "./ui";
 
 export const metadata = { title: "Community · Broadway Book" };
 
@@ -36,7 +36,7 @@ interface Row {
   created_at: string;
   author_id: string;
   out_of_date: boolean;
-  author: { display_name: string | null } | null;
+  author: { display_name: string | null; reviewer: boolean } | null;
   song: { slug: string; title: string; artist: string | null };
   votes: { voter_id: string; value: "approve" | "reject" }[];
 }
@@ -53,7 +53,7 @@ async function List({ searchParams }: { searchParams: PageProps<"/community">["s
   let query = db
     .from("proposals")
     .select(
-      "id, note, created_at, author_id, out_of_date, author:profiles!proposals_author_id_fkey(display_name), song:songs!inner(slug, title, artist), votes(voter_id, value)",
+      "id, note, created_at, author_id, out_of_date, author:profiles!proposals_author_id_fkey(display_name, reviewer), song:songs!inner(slug, title, artist), votes(voter_id, value)",
     )
     .eq("status", "open")
     .order("created_at", { ascending: false })
@@ -149,7 +149,8 @@ async function List({ searchParams }: { searchParams: PageProps<"/community">["s
                   </div>
                   <p className="mt-2 text-lg">“{r.note}”</p>
                   <p className="mt-1 text-sm text-muted">
-                    {r.author?.display_name || "A player"} · {when(r.created_at)} · <span className="text-emerald-300">✓ {yes}</span>{" "}
+                    {r.author?.display_name || "A player"}
+                    <ReviewerBadge on={r.author?.reviewer} /> · {when(r.created_at)} · <span className="text-emerald-300">✓ {yes}</span>{" "}
                     <span className="text-red-300">✕ {no}</span>
                   </p>
                 </Link>

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { bulkUnverified } from "./actions";
+import { bulkUnverified } from "../actions";
 
 const input = "min-h-11 w-24 rounded-lg border border-line bg-background px-3 text-lg";
 

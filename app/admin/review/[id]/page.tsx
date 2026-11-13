@@ -1,39 +1,36 @@
 import { Suspense } from "react";
-import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
-import { getCurrentUser, sessionClient } from "@/lib/supabase/session";
+import { notFound } from "next/navigation";
+import { isUuid } from "@/lib/review/queue";
+import { reviewContext } from "../access";
+import ReviewHeader from "../ReviewHeader";
 import ReviewEditor, { type ReviewSong } from "./ReviewEditor";
 
 export const metadata = { title: "Review chart · Broadway Book", robots: { index: false } };
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+type SearchParams = Promise<{ f?: string | string[]; o?: string | string[] }>;
 
-export default function ReviewSongPage({ params }: { params: Promise<{ id: string }> }) {
+export default function ReviewSongPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: SearchParams }) {
   return (
     <main className="mx-auto w-full max-w-7xl px-4 pb-16 pt-2">
       <Suspense fallback={<p className="text-lg text-muted">Loading…</p>}>
-        <Review params={params} />
+        <Review params={params} searchParams={searchParams} />
       </Suspense>
     </main>
   );
 }
 
-async function Review({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const user = await getCurrentUser();
-  if (!user) redirect(`/login?next=${encodeURIComponent(`/admin/review/${id}`)}`);
-  if (!UUID.test(id)) notFound();
-  const db = await sessionClient();
+async function Review({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: SearchParams }) {
+  const [{ id }, sp] = await Promise.all([params, searchParams]);
+  const { db, prefs, progress } = await reviewContext(`/admin/review/${id}`, sp);
+  if (!progress || !isUuid(id)) notFound();
   const { data, error } = await db.rpc("review_song", { p_song_id: id });
-  if (error || !data) notFound(); // non-admins and unknown songs
+  if (error || !data) notFound(); // non-reviewers and unknown songs
   const song = data as ReviewSong;
-  if (!song.chart_text) {
-    return (
-      <p className="mt-6 text-lg">
-        This song has no chart yet. <Link href="/admin/review" className="text-accent">Back to the queue</Link>
-      </p>
-    );
-  }
-  // key: a fresh editor per song and per revision (after a publish, the next song loads clean)
-  return <ReviewEditor key={`${song.id}:${song.revision_id}`} song={song} />;
+  return (
+    <>
+      <ReviewHeader prefs={prefs} progress={progress} page="song" />
+      {/* key: a fresh editor per song and per revision */}
+      <ReviewEditor key={`${song.id}:${song.revision_id}`} song={song} prefs={prefs} />
+    </>
+  );
 }

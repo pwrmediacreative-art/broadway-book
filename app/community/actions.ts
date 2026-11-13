@@ -184,6 +184,14 @@ export async function setBlocked(userId: string, blocked: boolean): Promise<Resu
   return error ? fail(error) : { ok: true };
 }
 
+/** Admins: make a player a trusted reviewer (or stop). The database refuses non-admins. */
+export async function setReviewer(userId: string, on: boolean): Promise<Result> {
+  const { db, user } = await signedIn();
+  if (!user) return NOT_SIGNED_IN;
+  const { error } = await db.rpc("set_reviewer", { p_user_id: userId, p_on: on });
+  return error ? fail(error) : { ok: true };
+}
+
 export async function resolveReport(id: string): Promise<Result> {
   const { db, user } = await signedIn();
   if (!user) return NOT_SIGNED_IN;

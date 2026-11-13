@@ -40,3 +40,13 @@ export const btn = {
   danger: "inline-flex min-h-12 items-center justify-center rounded-xl border border-red-500/60 px-4 text-lg text-red-300 active:bg-red-500/20 disabled:opacity-40",
   link: "inline-flex min-h-11 items-center text-lg text-accent",
 };
+
+/** Shown next to trusted reviewers' names on community pages. */
+export function ReviewerBadge({ on }: { on: boolean | null | undefined }) {
+  if (!on) return null;
+  return (
+    <span className="ml-1 inline-block rounded bg-sky-400/20 px-1.5 py-0.5 align-middle text-xs font-semibold uppercase tracking-wide text-sky-200">
+      Reviewer
+    </span>
+  );
+}

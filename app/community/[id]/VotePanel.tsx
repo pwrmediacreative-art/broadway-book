@@ -4,14 +4,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { adminDecide, report, setBlocked, vote, withdrawProposal, type Result } from "../actions";
-import { btn, when } from "../ui";
+import { btn, when, ReviewerBadge } from "../ui";
 
 export interface VoteRow {
   voter_id: string;
   value: "approve" | "reject";
   comment: string | null;
   created_at: string;
-  voter: { display_name: string | null } | null;
+  voter: { display_name: string | null; reviewer?: boolean } | null;
 }
 
 interface Props {
@@ -182,7 +182,8 @@ export default function VotePanel(p: Props) {
           {p.votes.map((v) => (
             <li key={v.voter_id} className="text-lg">
               <span className={v.value === "approve" ? "text-emerald-300" : "text-red-300"}>{v.value === "approve" ? "✓" : "✕"}</span>{" "}
-              <b>{v.voter?.display_name || "A player"}</b> <span className="text-sm text-muted">{when(v.created_at)}</span>
+              <b>{v.voter?.display_name || "A player"}</b>
+              <ReviewerBadge on={v.voter?.reviewer} /> <span className="text-sm text-muted">{when(v.created_at)}</span>
               {v.comment && <p className="ml-5 text-muted">“{v.comment}”</p>}
               {v.comment && p.me && v.voter_id !== p.me.id && (
                 <button className="ml-5 min-h-11 text-sm text-muted underline" onClick={() => setReporting({ voterId: v.voter_id })}>

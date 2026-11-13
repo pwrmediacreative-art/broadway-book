@@ -15,6 +15,7 @@
     "check:ai": "node --env-file=.env.local scripts/check-ai.mjs",
     "check:review": "node --env-file=.env.local scripts/check-review.mjs",
     "check:setlists": "node --env-file=.env.local scripts/check-setlists.mjs",
+    "check:claims": "node --env-file=.env.local scripts/check-claims.mjs",
     "dropbox:token": "node --env-file=.env.local scripts/dropbox-token.mjs"
   },
   "dependencies": {
@@ -23,6 +24,7 @@
     "@supabase/supabase-js": "^2.119.0",
     "minisearch": "^7.2.0",
     "next": "16.4.6",
+    "pdfjs-dist": "^4.10.38",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },

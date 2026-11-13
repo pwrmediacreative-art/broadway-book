@@ -178,6 +178,7 @@ export default function Chart({
   fontWeight,
   style,
   rootRef,
+  marks,
 }: {
   view: ChartView;
   chords: boolean;
@@ -185,6 +186,8 @@ export default function Chart({
   fontWeight?: number;
   style?: CSSProperties;
   rootRef?: Ref<HTMLDivElement>;
+  /** Review screen only: outline these rows ("section-row") and report taps on them. */
+  marks?: { rows: Set<string>; active: string | null; onTap: (row: string) => void };
 }) {
   return (
     <div
@@ -202,9 +205,29 @@ export default function Chart({
               </span>
             </h2>
             <div className="flex min-w-0 flex-1 flex-col gap-[0.3em]">
-              {s.rows.flatMap((row, j) =>
-                layoutRow(row).map((line, k) => <Line key={`${j}-${k}`} line={line} chords={chords} />),
-              )}
+              {marks
+                ? s.rows.map((row, j) => {
+                    const id = `${i}-${j}`;
+                    const lines = layoutRow(row).map((line, k) => <Line key={k} line={line} chords={chords} />);
+                    if (!marks.rows.has(id)) return <div key={j} data-row={id} className="flex flex-col gap-[0.3em]">{lines}</div>;
+                    return (
+                      <button
+                        key={j}
+                        type="button"
+                        data-row={id}
+                        onClick={() => marks.onTap(id)}
+                        aria-label="Unclear spot: show it in the editor"
+                        className={`flex flex-col gap-[0.3em] rounded-[0.2em] text-left outline outline-[0.08em] outline-offset-[0.12em] ${
+                          marks.active === id ? "bg-amber-400/25 outline-amber-300" : "bg-amber-400/10 outline-amber-400/80"
+                        }`}
+                      >
+                        {lines}
+                      </button>
+                    );
+                  })
+                : s.rows.flatMap((row, j) =>
+                    layoutRow(row).map((line, k) => <Line key={`${j}-${k}`} line={line} chords={chords} />),
+                  )}
             </div>
           </section>
         ))}

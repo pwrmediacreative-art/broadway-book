@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { diffCharts, type ChartDiff } from "@/lib/chart";
 import { getCurrentUser, sessionClient } from "@/lib/supabase/session";
 import BarDiff, { DiffSummary } from "../BarDiff";
-import { StatusPill, when } from "../ui";
+import { StatusPill, when, ReviewerBadge } from "../ui";
 import VotePanel, { type VoteRow } from "./VotePanel";
 
 export const metadata = { title: "Suggestion · Broadway Book" };
@@ -34,7 +34,7 @@ interface Row {
   base_revision_id: string | null;
   author_id: string;
   out_of_date: boolean;
-  author: { display_name: string | null; blocked: boolean } | null;
+  author: { display_name: string | null; blocked: boolean; reviewer: boolean } | null;
   song: { slug: string; title: string; artist: string | null; current_revision_id: string | null } | null;
 }
 
@@ -47,7 +47,7 @@ async function Proposal({ params }: { params: PageProps<"/community/[id]">["para
   const { data } = await db
     .from("proposals")
     .select(
-      "id, song_id, chart_text, note, status, created_at, updated_at, decided_at, base_revision_id, author_id, out_of_date, author:profiles!proposals_author_id_fkey(display_name, blocked), song:songs(slug, title, artist, current_revision_id)",
+      "id, song_id, chart_text, note, status, created_at, updated_at, decided_at, base_revision_id, author_id, out_of_date, author:profiles!proposals_author_id_fkey(display_name, blocked, reviewer), song:songs(slug, title, artist, current_revision_id)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -60,7 +60,7 @@ async function Proposal({ params }: { params: PageProps<"/community/[id]">["para
       : Promise.resolve({ data: null }),
     db
       .from("votes")
-      .select("voter_id, value, comment, created_at, voter:profiles(display_name)")
+      .select("voter_id, value, comment, created_at, voter:profiles(display_name, reviewer)")
       .eq("proposal_id", id)
       .order("created_at"),
     db.from("settings").select("key, value"),
@@ -94,7 +94,8 @@ async function Proposal({ params }: { params: PageProps<"/community/[id]">["para
 
       <section className="mb-5 rounded-xl border border-line bg-panel p-4">
         <p className="text-sm text-muted">
-          {author} wrote{p.updated_at !== p.created_at && <> · updated {when(p.updated_at)}</>}
+          {author}
+          <ReviewerBadge on={p.author?.reviewer} /> wrote{p.updated_at !== p.created_at && <> · updated {when(p.updated_at)}</>}
         </p>
         <p className="mt-1 text-xl">“{p.note}”</p>
       </section>

@@ -68,3 +68,6 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Top bar: signed in on a 375px phone, "Sign out" wraps to two lines now that "Setlists" is in the bar.
 - Setlist editor: minor-key songs show a wide key picker ("Am (C) orig") that squeezes the title.
 - Pages that stream (e.g. /s/[code]) stay on "Loading…" in a hidden/background browser tab until it's shown (React reveal waits for an animation frame); fine for real users.
+- Lyrics guard only checks quoted cues; `#` comment lines in charts/drafts aren't checked for lyric lines.
+- Review claims: in `next dev` (React strict mode) the double mount can release a fresh claim until the next 4-minute renewal.
+- Review: can't-read PDFs with no title/artist can't be opened from /admin/review/queue until their name is fixed on /admin/import.

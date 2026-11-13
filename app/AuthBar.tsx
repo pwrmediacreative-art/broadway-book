@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { browserClient } from "@/lib/supabase/browser";
 
-type Me = { name: string; admin: boolean; unread: number } | null;
+type Me = { name: string; admin: boolean; reviewer: boolean; unread: number } | null;
 const READ_EVENT = "bb:notifications-read"; // fired by /notifications once it marks all read
 
 /** Small top-right sign-in link / account links. Never blocks the chart. */
@@ -26,10 +26,15 @@ export default function AuthBar() {
       } = await db.auth.getSession();
       if (!session) return alive && setMe(null);
       const [{ data }, { count }] = await Promise.all([
-        db.from("profiles").select("display_name, role").eq("id", session.user.id).maybeSingle(),
+        db.from("profiles").select("display_name, role, reviewer").eq("id", session.user.id).maybeSingle(),
         db.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", session.user.id).is("read_at", null),
       ]);
-      if (alive) setMe({ name: data?.display_name || "Profile", admin: data?.role === "admin", unread: count ?? 0 });
+      if (alive) setMe({
+          name: data?.display_name || "Profile",
+          admin: data?.role === "admin",
+          reviewer: data?.reviewer === true,
+          unread: count ?? 0,
+        });
     }
     load();
     const onRead = () => setMe((m) => (m ? { ...m, unread: 0 } : m));
@@ -88,6 +93,11 @@ export default function AuthBar() {
       {me.admin && (
         <Link href="/admin" className={`${link} text-accent`}>
           Admin
+        </Link>
+      )}
+      {me.reviewer && !me.admin && (
+        <Link href="/admin/review" className={`${link} text-accent`}>
+          Review
         </Link>
       )}
       <Link href="/profile" className={`${link} max-w-[8rem] truncate`}>
