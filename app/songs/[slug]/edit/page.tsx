@@ -26,7 +26,13 @@ async function Edit({
   const { slug } = await params;
   const sp = await searchParams;
   const user = await getCurrentUser();
-  if (!user) redirect(`/login?next=${encodeURIComponent(`/songs/${slug}/edit`)}`);
+  // Keep the query (?proposal=… or the held bar ?s=&b=&p=) through sign-in.
+  const qs = new URLSearchParams(Object.entries(sp).flatMap(([k, v]) => (typeof v === "string" ? [[k, v]] : []))).toString();
+  if (!user) redirect(`/login?next=${encodeURIComponent(`/songs/${slug}/edit${qs ? `?${qs}` : ""}`)}`);
+  // From press-and-hold "Suggest an edit": open on that bar.
+  const int = (v: unknown) => (typeof v === "string" && /^\d{1,4}$/.test(v) ? Number(v) : null);
+  const [fs, fb, fp] = [int(sp.s), int(sp.b), int(sp.p)];
+  const focus = fs !== null && fb !== null && fp !== null ? { section: fs, bar: fb, beat: fp, from: sp.from === "mine" ? ("mine" as const) : ("public" as const) } : null;
 
   // Fresh (uncached) read: the editor must start from the live revision.
   const db = await sessionClient();
@@ -72,7 +78,8 @@ async function Edit({
       publicText={publicText}
       publicRevisionId={song.current_revision_id}
       proposal={proposal}
-      intent={sp.intent === "suggest" ? "suggest" : null}
+      intent={sp.intent === "suggest" || focus ? "suggest" : null}
+      focus={proposal ? null : focus}
     />
   );
 }

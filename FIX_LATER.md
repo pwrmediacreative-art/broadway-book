@@ -71,3 +71,6 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Lyrics guard only checks quoted cues; `#` comment lines in charts/drafts aren't checked for lyric lines.
 - Review claims: in `next dev` (React strict mode) the double mount can release a fresh claim until the next 4-minute renewal.
 - Review: can't-read PDFs with no title/artist can't be opened from /admin/review/queue until their name is fixed on /admin/import.
+- Press-and-hold flagging has no keyboard or screen-reader way in (mouse/touch hold only).
+- Personal flags: only a per-song "My flags" list; no all-songs list yet.
+- Editor "Editing: …" label shows the beat as written (6-), while the chart may display 6m or a chord name.

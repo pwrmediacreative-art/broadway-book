@@ -74,6 +74,8 @@ readable at arm's length and usable with a thumb.
   `/admin/import` scans Dropbox into `import_files` via `import_scan_apply()`; `npm run dropbox:token` gets the refresh token once.
 - `lib/chart/diff.ts` (bar-by-bar diff), `lib/chart/validate.ts` (`checkChart`: parse + long-cue guard + canonical text before any save).
 - `lib/personal/versions.ts` – the player's own chart versions: one request (RLS owner-only), device copy per user, `usePickedChart` (song page, stage, search "Yours" tag).
+- `lib/flags/` – personal flags ("Flag for me"): `ref.ts` (bar reference: section/bar/beat + text as written, `locateBar` for the editor), `store.ts` (device copy signed out, account + device copy signed in, move-to-account). `app/songs/[slug]/Hold.tsx` – press-and-hold (500ms, 10px), bottom sheet, "My flags" list, move banner.
+  Table `personal_flags` (`20261113140000_personal_flags.sql`, owner-only RLS); `npm run check:flags` checks it. Stage caps: `MAX_STAGE_SIZE` (75px) and `MAX_SPEED` (6) in `lib/chart/layout.ts`.
 - `app/community/` – `/community` list, `/community/[id]` suggestion (bar diff, votes, admin approve/close), `actions.ts` (all community + personal-version server actions), `BarDiff.tsx`.
   `/songs/[slug]/edit` (editor: "Just for me" / "Suggest for everyone"), `/songs/[slug]/history` (revisions + admin revert), `/notifications`, `/profile/versions`, `/admin/community` (settings, reports, blocks).
   Rules live in the DB (`20261112190000_community_edits.sql`): `settings` thresholds, stale check, vote/proposal limits, blocking. `npm run check:community` checks them.

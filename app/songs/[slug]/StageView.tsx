@@ -2,20 +2,19 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
-import { pretty, SPEEDS, suggestSpeed } from "@/lib/chart";
+import { clampSpeed, clampStageSize, MAX_SPEED, MAX_STAGE_SIZE, pretty, SPEEDS, suggestSpeed } from "@/lib/chart";
 import { PREF, setPref, usePref } from "@/lib/prefs";
 import Chart from "./Chart";
 import { btn, BpmToggle, DisplayControls, off, on } from "./controls";
 import { usePickedChart } from "@/lib/personal/versions";
 import { FONTS, useChartState, useGesture, useSongKeys, useSongNav, type FontId, type KeyControl, type Neighbors } from "./hooks";
 import { recordRecent } from "@/lib/search/recent";
+import { HoldSheet, useHold, useHoldMarks, withHold, type Spot } from "./Hold";
 
 const FIT_MIN = 30; // px: smallest size we shrink to so the whole chart fits without scrolling
 const SCROLL_SIZE = 40; // px: size used when it can't fit and has to scroll (if the width allows)
-const MAX_SIZE = 160;
 const PAD_Y = 16; // scroller py-2
 const HIDE_MS = 3500;
-const clampSpeed = (n: number) => Math.min(SPEEDS.length, Math.max(1, Math.round(n)));
 // Stage-only colors: dark (default) is pure black; light is a high-contrast paper look.
 const DARK = { "--background": "#000" } as CSSProperties;
 const LIGHT = {
@@ -91,7 +90,12 @@ export default function StageView({
   const theme = usePref(PREF.stageTheme);
 
   // --- text size: auto-fit unless the player set one -------------------------------------
-  const manual = num(usePref(PREF.size));
+  const savedSize = num(usePref(PREF.size));
+  const manual = clampStageSize(savedSize);
+  // Old devices may have saved a size above the cap (or junk): rewrite it once so it stays capped.
+  useEffect(() => {
+    if (savedSize !== manual) setPref(PREF.size, manual === null ? null : String(manual));
+  }, [savedSize, manual]);
   const [autoSize, setAutoSize] = useState<number | null>(null);
   const [fitW, setFitW] = useState<number | null>(null); // largest size whose bars still fit the width
   const [tick, setTick] = useState(0); // bumps on resize / font load to re-measure
@@ -133,7 +137,8 @@ export default function StageView({
       }
       return lo;
     };
-    const wFit = Math.floor(search(10, MAX_SIZE, fitsW));
+    set(MAX_STAGE_SIZE);
+    const wFit = fitsW() ? MAX_STAGE_SIZE : Math.floor(search(10, MAX_STAGE_SIZE, fitsW));
     setFitW(wFit);
     if (manual) {
       set(Math.min(manual, wFit));
@@ -162,8 +167,15 @@ export default function StageView({
     setSuggested(suggestSpeed(s.view, dist, fontPx));
   }, [fontPx, s.view, s.chords, s.font, tick, autoSize]);
 
-  const songSpeed = num(usePref(PREF.songSpeed(slug)));
-  const deviceSpeed = num(usePref(PREF.speed));
+  const savedSongSpeed = num(usePref(PREF.songSpeed(slug)));
+  const savedDeviceSpeed = num(usePref(PREF.speed));
+  const songSpeed = savedSongSpeed === null ? null : clampSpeed(savedSongSpeed);
+  const deviceSpeed = savedDeviceSpeed === null ? null : clampSpeed(savedDeviceSpeed);
+  // Saved speeds from before the cap: rewrite them so storage never holds more than MAX_SPEED.
+  useEffect(() => {
+    if (savedDeviceSpeed !== null && savedDeviceSpeed !== deviceSpeed) setPref(PREF.speed, String(deviceSpeed));
+    if (savedSongSpeed !== null && savedSongSpeed !== songSpeed) setPref(PREF.songSpeed(slug), String(songSpeed));
+  }, [slug, savedDeviceSpeed, deviceSpeed, savedSongSpeed, songSpeed]);
   const [speedOverride, setSpeedOverride] = useState<number | null>(null);
   // The player's own speed wins; the BPM suggestion only seeds a device that never set one.
   const speed = clampSpeed(speedOverride ?? songSpeed ?? deviceSpeed ?? suggested ?? 5);
@@ -236,7 +248,9 @@ export default function StageView({
     const t = window.setTimeout(() => setToast(null), 1500);
     return () => window.clearTimeout(t);
   }, [toast]);
+  const [spot, setSpot] = useState<Spot | null>(null); // press-and-hold sheet
   const go = (d: -1 | 1) => {
+    setSpot(null);
     if (set) {
       if (!set.go(d)) setToast(d > 0 ? "Last song in the set" : "First song in the set");
       return;
@@ -269,7 +283,8 @@ export default function StageView({
       return true;
     }
     if (e.key === "Escape") {
-      if (panel) setPanel(false);
+      if (spot) setSpot(null);
+      else if (panel) setPanel(false);
       else exit();
       return true;
     }
@@ -279,7 +294,10 @@ export default function StageView({
   // Touching the chart pauses at once. A tap (no drag) plays again; a drag stays paused.
   const wasPlaying = useRef(false);
   const closedPanel = useRef(false);
-  const gesture = useGesture({
+  // Press and hold a chord: opens the sheet over stage mode. A hold is never a tap or a swipe.
+  const hold = useHold(s.view, s.chords, setSpot);
+  const marks = useHoldMarks(slug, s.view, spot);
+  const tapSwipe = useGesture({
     onDown: () => {
       wasPlaying.current = playing;
       closedPanel.current = panel;
@@ -288,10 +306,11 @@ export default function StageView({
       poke();
     },
     onTap: () => {
-      if (!wasPlaying.current && !closedPanel.current) play();
+      if (!hold.held() && !wasPlaying.current && !closedPanel.current) play();
     },
-    onSwipe: go,
+    onSwipe: (d) => !hold.held() && go(d),
   });
+  const gesture = withHold(tapSwipe, hold.handlers);
 
   if (!s.view) {
     return (
@@ -364,9 +383,11 @@ export default function StageView({
         onWheel={() => playing && setPlaying(false)}
         className="relative min-h-0 flex-1 touch-pan-y select-none overflow-y-auto overflow-x-hidden overscroll-contain px-3 py-2"
       >
-        <Chart rootRef={chartEl} view={view} chords={s.chords} fontFamily={FONTS[s.font].css} fontWeight={FONTS[s.font].weight} style={{ fontSize: fontPx }} />
+        <Chart rootRef={chartEl} view={view} chords={s.chords} fontFamily={FONTS[s.font].css} fontWeight={FONTS[s.font].weight} style={{ fontSize: fontPx }} hold={marks} />
         {scrollable && <div className="h-32" aria-hidden />}
       </div>
+
+      {spot && <HoldSheet slug={slug} spot={spot} onMine={pick.usingMine} onClose={() => setSpot(null)} onSwipe={(d) => go(d)} />}
 
       {toast && (
         <div className="pointer-events-none absolute inset-x-0 top-16 z-20 text-center">
@@ -392,7 +413,7 @@ export default function StageView({
                 id="stage-size"
                 type="range"
                 min={16}
-                max={fitW ?? MAX_SIZE}
+                max={Math.min(fitW ?? MAX_STAGE_SIZE, MAX_STAGE_SIZE)}
                 step={1}
                 value={fontPx}
                 onChange={(e) => setPref(PREF.size, e.target.value)}
@@ -487,7 +508,7 @@ export default function StageView({
                 id="stage-speed"
                 type="range"
                 min={1}
-                max={SPEEDS.length}
+                max={MAX_SPEED}
                 step={1}
                 value={speed}
                 onChange={(e) => setSpeed(Number(e.target.value))}

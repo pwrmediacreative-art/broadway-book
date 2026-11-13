@@ -25,6 +25,7 @@ export interface BeatParts {
 export interface BeatView {
   num: string; // "^<6->~"  (text form, numbers)
   chord: string; // "^<F#m>~" (text form, chord names)
+  src: string; // the beat exactly as written in the chart text: same in every key, style and display
   kind: "chord" | "nc" | "repeat";
   push: boolean;
   diamond: boolean;
@@ -91,25 +92,26 @@ export function buildView(doc: ChartDoc, opts: ViewOptions = {}): ChartView {
   const sections: SectionView[] = [];
 
   const beatView = (b: BeatItem): BeatView => {
+    const src = beatText(b);
     const nb = renumberBeat(b, from, style);
     const num = beatText(nb.kind === "chord" ? { ...nb, quality: minorQual(nb.quality, sym) } : nb);
     if (nb.kind === "repeat") {
       const p = { root: "%", qual: "", bass: "" };
-      return { num, chord: num, kind: "repeat", push: false, diamond: false, end: "", n: p, c: p };
+      return { num, src, chord: num, kind: "repeat", push: false, diamond: false, end: "", n: p, c: p };
     }
     const mods = { push: nb.push, diamond: nb.diamond, end: nb.end };
     if (nb.kind === "nc") {
       const p = { root: "N.C.", qual: "", bass: "" };
-      return { num, chord: decorate(nb, "N.C."), kind: "nc", ...mods, n: p, c: p };
+      return { num, src, chord: decorate(nb, "N.C."), kind: "nc", ...mods, n: p, c: p };
     }
     const n = { root: degText(nb.root), qual: minorQual(nb.quality, sym), bass: nb.bass ? degText(nb.bass) : "" };
-    if (!current) return { num, chord: decorate(nb, num), kind: "chord", ...mods, n, c: n };
+    if (!current) return { num, src, chord: decorate(nb, num), kind: "chord", ...mods, n, c: n };
     const c = {
       root: degreeToNote(nb.root, current, style),
       qual: qualityName(nb.quality),
       bass: nb.bass ? degreeToNote(nb.bass, current, style) : "",
     };
-    return { num, chord: decorate(nb, chordName(nb, current, style)), kind: "chord", ...mods, n, c };
+    return { num, src, chord: decorate(nb, chordName(nb, current, style)), kind: "chord", ...mods, n, c };
   };
 
   const change = (t: Tag): CellView => {

@@ -51,9 +51,25 @@ function Name({ b, chords }: { b: BeatView; chords: boolean }) {
   );
 }
 
-function Beat({ b, chords, marks }: { b: BeatView; chords: boolean; marks: boolean }) {
+/** Long-press support (song page + stage): which beats carry a personal flag, which one is held. */
+export interface HoldMarks {
+  flagged: Set<string>; // "section.bar.beat" (lib/flags/ref refKey)
+  selected: string | null;
+}
+type BeatSpot = { id: string; hold: HoldMarks } | null;
+
+function Beat({ b, chords, marks, spot }: { b: BeatView; chords: boolean; marks: boolean; spot?: BeatSpot }) {
+  const selected = spot && spot.hold.selected === spot.id;
   return (
-    <span className="inline-flex flex-col items-start px-[0.1em]">
+    <span
+      data-beat={spot?.id}
+      className={`relative inline-flex flex-col items-start px-[0.1em] ${
+        spot ? "select-none [-webkit-touch-callout:none]" : ""
+      } ${selected ? "rounded-[0.12em] bg-accent/35 outline outline-[0.06em] outline-accent" : ""}`}
+    >
+      {spot?.hold.flagged.has(spot.id) && (
+        <span className="absolute right-0 top-0 size-[0.24em] rounded-full bg-violet-400 ring-[0.03em] ring-black" aria-label="flagged" role="img" />
+      )}
       {marks && (
         <span className="relative h-[0.42em] w-full min-w-[0.5em]" aria-hidden>
           {b.push && <Caret className="absolute bottom-0 left-0 h-[0.36em] w-[0.55em] text-accent" />}
@@ -82,10 +98,10 @@ function Beat({ b, chords, marks }: { b: BeatView; chords: boolean; marks: boole
   );
 }
 
-function Bar({ cell, chords, marks }: { cell: BarCell; chords: boolean; marks: boolean }) {
+function Bar({ cell, chords, marks, spot }: { cell: BarCell; chords: boolean; marks: boolean; spot?: { id: string; hold: HoldMarks } | null }) {
   const beats = cell.beats.map((b, i) => (
     <span key={i} className={i ? "border-l-[0.05em] border-foreground/45" : ""}>
-      <Beat b={b} chords={chords} marks={marks} />
+      <Beat b={b} chords={chords} marks={marks} spot={spot && { id: `${spot.id}.${i}`, hold: spot.hold }} />
     </span>
   ));
   return (
@@ -131,7 +147,20 @@ function Wedge({ h }: { h: Hairpin }) {
   );
 }
 
-function Line({ line, chords }: { line: GridLine; chords: boolean }) {
+/** Where each bar sits: "section.bar", counting bars only (matches lib/flags/ref). */
+type BarIds = { ids: Map<BarCell, string>; hold: HoldMarks } | null;
+
+function barIds(view: ChartView, hold: HoldMarks | undefined): BarIds {
+  if (!hold) return null;
+  const ids = new Map<BarCell, string>();
+  view.sections.forEach((s, i) => {
+    let n = 0;
+    for (const row of s.rows) for (const c of row) if (c.kind === "bar") ids.set(c, `${i}.${n++}`);
+  });
+  return { ids, hold };
+}
+
+function Line({ line, chords, bars }: { line: GridLine; chords: boolean; bars?: BarIds }) {
   if (!line.bars.length) {
     return (
       <div className="flex flex-wrap items-center gap-[0.25em]">
@@ -153,7 +182,7 @@ function Line({ line, chords }: { line: GridLine; chords: boolean }) {
       ))}
       {line.bars.map((x) => (
         <div key={x.col} data-bar className="min-w-0 self-end overflow-hidden" style={{ gridColumn: x.col + 1, gridRow: 2 }}>
-          <Bar cell={x.cell} chords={chords} marks={marks} />
+          <Bar cell={x.cell} chords={chords} marks={marks} spot={bars && { id: bars.ids.get(x.cell)!, hold: bars.hold }} />
         </div>
       ))}
       {line.after && (
@@ -179,6 +208,7 @@ export default function Chart({
   style,
   rootRef,
   marks,
+  hold,
 }: {
   view: ChartView;
   chords: boolean;
@@ -188,7 +218,10 @@ export default function Chart({
   rootRef?: Ref<HTMLDivElement>;
   /** Review screen only: outline these rows ("section-row") and report taps on them. */
   marks?: { rows: Set<string>; active: string | null; onTap: (row: string) => void };
+  /** Song page and stage mode: tag beats for press-and-hold and draw personal flag markers. */
+  hold?: HoldMarks;
 }) {
+  const bars = barIds(view, hold);
   return (
     <div
       ref={rootRef}
@@ -226,7 +259,7 @@ export default function Chart({
                     );
                   })
                 : s.rows.flatMap((row, j) =>
-                    layoutRow(row).map((line, k) => <Line key={`${j}-${k}`} line={line} chords={chords} />),
+                    layoutRow(row).map((line, k) => <Line key={`${j}-${k}`} line={line} chords={chords} bars={bars} />),
                   )}
             </div>
           </section>

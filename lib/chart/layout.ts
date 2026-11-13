@@ -128,6 +128,17 @@ export function barScale(cell: BarCell, chords: boolean): number {
 
 /** Auto-scroll speeds, in em (chart text heights) per second. 12 steps, very slow to fast. */
 export const SPEEDS = [0.05, 0.08, 0.11, 0.15, 0.2, 0.26, 0.33, 0.42, 0.53, 0.66, 0.82, 1.0];
+/** Fastest speed level players can pick (1-based into SPEEDS). Change this one number to raise or lower the cap. */
+export const MAX_SPEED = 6;
+/** Largest stage-mode text size in px, for auto-fit, the size slider and saved sizes. */
+export const MAX_STAGE_SIZE = 75;
+/** A saved stage size: null when unset or junk, else capped at MAX_STAGE_SIZE. */
+export function clampStageSize(saved: number | null): number | null {
+  if (saved === null || !Number.isFinite(saved) || saved <= 0) return null;
+  return Math.min(MAX_STAGE_SIZE, saved);
+}
+/** Any stored or suggested speed, clamped to 1..MAX_SPEED. */
+export const clampSpeed = (n: number) => Math.min(MAX_SPEED, Math.max(1, Math.round(n)));
 
 /** Beats per bar for timing: 4/4 -> 4, 3/4 -> 3, 6/8 and 12/8 -> 2 and 4 (felt in dotted quarters). */
 export function beatsPerBar(time: string | null): number {
@@ -159,7 +170,7 @@ export function suggestSpeed(view: ChartView, distancePx: number, fontPx: number
   const seconds = (bars * beatsPerBar(view.meta.time) * 60) / bpm;
   const emPerSec = distancePx / fontPx / seconds;
   let best = 0;
-  for (let i = 1; i < SPEEDS.length; i++) {
+  for (let i = 1; i < Math.min(MAX_SPEED, SPEEDS.length); i++) {
     if (Math.abs(SPEEDS[i] - emPerSec) < Math.abs(SPEEDS[best] - emPerSec)) best = i;
   }
   return best + 1;

@@ -9,6 +9,7 @@ import { loadMyVersions, useMyVersions } from "@/lib/personal/versions";
 import { propose, savePersonal, updateProposal } from "@/app/community/actions";
 import BarDiff, { DiffSummary } from "@/app/community/BarDiff";
 import Chart from "../Chart";
+import { locateBar, refAt, refKey, sectionBars, spotLabel, type BarRef } from "@/lib/flags/ref";
 import { FONTS } from "../hooks";
 
 interface Props {
@@ -17,11 +18,13 @@ interface Props {
   publicRevisionId: string | null;
   proposal: { id: string; chart_text: string; note: string; base_text: string | null; stale: boolean } | null;
   intent: "suggest" | null;
+  /** Opened from a long-press "Suggest an edit": the held spot and which chart it was on. */
+  focus?: { section: number; bar: number; beat: number; from: "public" | "mine" } | null;
 }
 
 type Msg = { ok: boolean; text: string; stale?: boolean } | null;
 
-export default function Editor({ song, publicText, publicRevisionId, proposal, intent }: Props) {
+export default function Editor({ song, publicText, publicRevisionId, proposal, intent, focus = null }: Props) {
   const router = useRouter();
   const { list, ready } = useMyVersions();
   const mine = list.find((v) => v.song_id === song.id) ?? null;
@@ -37,11 +40,11 @@ export default function Editor({ song, publicText, publicRevisionId, proposal, i
 
   // Start from the player's own version when they have one (unless editing a suggestion).
   useEffect(() => {
-    if (proposal || touched.current || !mine) return;
+    if (proposal || touched.current || !mine || focus?.from === "public") return;
     setText(mine.chart_text);
     setNote(intent === "suggest" ? (mine.note ?? "") : "");
     setSource("mine");
-  }, [mine, proposal, intent]);
+  }, [mine, proposal, intent, focus]);
 
   const check = useMemo(() => checkChart(text), [text]);
   const publicDoc = useMemo(() => parseChart(publicText).doc, [publicText]);
@@ -56,6 +59,30 @@ export default function Editor({ song, publicText, publicRevisionId, proposal, i
     }
   }, [proposal, publicText]);
   const unchanged = !!diff && diff.changedRows === 0;
+
+  // Long-press "Suggest an edit": once the starting chart is settled, select that bar in the
+  // chart text and scroll it into view, outline it in the preview, then focus the note.
+  const spot = useMemo<{ ref: BarRef; split: boolean } | null>(() => {
+    const ref = focus && view ? refAt(view, focus.section, focus.bar, focus.beat) : null;
+    return ref && view ? { ref, split: (sectionBars(view, ref.section)[ref.bar]?.length ?? 1) > 1 } : null;
+  }, [focus, view]);
+  const focused = useRef(false);
+  useEffect(() => {
+    if (!focus || focused.current || touched.current) return;
+    if (focus.from === "mine" && (!ready || (mine && source !== "mine"))) return;
+    focused.current = true;
+    const v = view;
+    const ref = v && refAt(v, focus.section, focus.bar, focus.beat);
+    const at = ref && locateBar(text, focus.section, focus.bar);
+    const box = document.getElementById("chart") as HTMLTextAreaElement | null;
+    if (ref && at && box) {
+      box.setSelectionRange(at.start, at.end);
+      const line = text.slice(0, at.start).split("\n").length - 1;
+      const lh = parseFloat(getComputedStyle(box).lineHeight) || 28;
+      box.scrollTop = Math.max(0, line * lh - box.clientHeight / 3);
+    }
+    document.getElementById("note")?.focus();
+  }, [focus, ready, mine, source, view, text]);
 
   const edit = (t: string) => {
     touched.current = true;
@@ -207,7 +234,14 @@ export default function Editor({ song, publicText, publicRevisionId, proposal, i
           <div className="min-h-40 rounded-xl border border-line p-3">
             {tab === "preview" ? (
               view ? (
-                <Chart view={view} chords={false} fontFamily={FONTS.atkinson.css} fontWeight={FONTS.atkinson.weight} style={{ fontSize: "clamp(1.3rem, 5.5vw, 1.9rem)" }} />
+                <Chart
+                  view={view}
+                  chords={false}
+                  fontFamily={FONTS.atkinson.css}
+                  fontWeight={FONTS.atkinson.weight}
+                  style={{ fontSize: "clamp(1.3rem, 5.5vw, 1.9rem)" }}
+                  hold={spot ? { flagged: new Set(), selected: refKey(spot.ref) } : undefined}
+                />
               ) : (
                 <p className="text-lg text-muted">Fix the format error to see the preview.</p>
               )
@@ -226,6 +260,11 @@ export default function Editor({ song, publicText, publicRevisionId, proposal, i
       </div>
 
       <label className="mt-5 flex flex-col gap-1">
+        {spot && (
+          <span className="text-lg text-accent">
+            Editing: {spotLabel(spot.ref, spot.split)} ({spot.ref.text})
+          </span>
+        )}
         <span className="text-lg font-semibold">
           Note <span className="font-normal text-muted">{proposal ? "(required)" : "(required for everyone, optional just for you)"}</span>
         </span>

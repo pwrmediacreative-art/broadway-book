@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   ChartParseError,
   SPEEDS,
+  MAX_SPEED,
+  clampSpeed,
+  MAX_STAGE_SIZE,
+  clampStageSize,
   barScale,
   beatsPerBar,
   buildView,
@@ -343,9 +347,24 @@ describe("layout", () => {
     expect(beatsPerBar("4/4")).toBe(4);
     expect(beatsPerBar("6/8")).toBe(2);
     expect(playedBars(v)).toBe(24);
-    // 24 bars at 140 bpm = ~41s. 1000px at 40px text = 25em -> ~0.6 em/s -> step 10.
-    expect(suggestSpeed(v, 1000, 40)).toBe(10);
+    // 24 bars at 140 bpm = ~41s. 1000px at 40px text = 25em -> ~0.6 em/s -> step 10, capped at 6.
+    expect(suggestSpeed(v, 1000, 40)).toBe(MAX_SPEED);
+    // 200px at 40px = 5em over 41s = ~0.12 em/s -> step 3 (under the cap).
+    expect(suggestSpeed(v, 200, 40)).toBe(3);
     expect(suggestSpeed(v, 0, 40)).toBeNull();
     expect(SPEEDS).toHaveLength(12);
+  });
+
+  it("caps scroll speed and stage text size", () => {
+    expect(MAX_SPEED).toBe(6);
+    expect(clampSpeed(12)).toBe(6);
+    expect(clampSpeed(7)).toBe(6);
+    expect(clampSpeed(0)).toBe(1);
+    expect(clampSpeed(4.4)).toBe(4);
+    expect(MAX_STAGE_SIZE).toBe(75);
+    expect(clampStageSize(160)).toBe(75);
+    expect(clampStageSize(50)).toBe(50);
+    expect(clampStageSize(null)).toBeNull();
+    expect(clampStageSize(NaN)).toBeNull();
   });
 });

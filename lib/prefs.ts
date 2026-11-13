@@ -57,13 +57,14 @@ export const PREF = {
   minorSymbol: "bb.minor", // "-" | "m" (default "m"): how minor numbers are drawn
   legend: "bb.legend", // "1" = symbols legend open
   font: "bb.font", // FontId
-  size: "bb.size", // stage text size in px; unset = auto-fit
-  speed: "bb.speed", // last scroll speed 1-12
+  size: "bb.size", // stage text size in px, max MAX_STAGE_SIZE; unset = auto-fit
+  speed: "bb.speed", // last scroll speed 1..MAX_SPEED (lib/chart/layout.ts); higher saved values are clamped
   pulse: "bb.pulse", // "1" = beat pulse on
   stageTheme: "bb.stageTheme", // "light" | unset = dark (stage mode only)
   key: (slug: string) => `bb.key.${slug}`,
   numbering: (slug: string) => `bb.numbers.${slug}`, // "minor" | "relative"; unset = as the chart is written
   songSpeed: (slug: string) => `bb.speed.${slug}`,
   showPublic: (slug: string) => `bb.public.${slug}`, // sessionStorage: "1" = show the public chart, not my version
+  flagsLater: "bb.flags.later", // sessionStorage: "1" = "Not now" on moving this phone's flags to the account
   nav: "bb.nav", // sessionStorage: [{slug,title}] list the player opened a song from
 } as const;

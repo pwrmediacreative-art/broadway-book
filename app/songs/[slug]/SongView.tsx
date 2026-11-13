@@ -3,7 +3,7 @@
 import Link from "next/link";
 import AddToSetlist from "@/app/setlists/AddToSetlist";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import AdminPdfLink from "./AdminPdfLink";
 import Chart from "./Chart";
 import { BpmToggle, DisplayControls, KeyInfo } from "./controls";
@@ -11,6 +11,7 @@ import { FONTS, useChartState, useGesture, useSongKeys, useSongNav, type Neighbo
 import { recordRecent } from "@/lib/search/recent";
 import { usePickedChart } from "@/lib/personal/versions";
 import { OpenBadge, PersonalBar, SongActions, useOpenCount } from "./Community";
+import { HoldSheet, MoveFlagsBanner, MyFlags, useHold, useHoldMarks, withHold, type Spot } from "./Hold";
 
 export interface SongProps {
   slug: string;
@@ -50,12 +51,21 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
   const nav = useSongNav(slug, neighbors);
   useEffect(() => recordRecent(slug), [slug]);
   const router = useRouter();
+  const [spot, setSpot] = useState<Spot | null>(null);
   const go = (d: -1 | 1) => {
+    setSpot(null);
     const t = d > 0 ? nav.next : nav.prev;
     if (t) router.push(`/songs/${t.slug}`);
   };
-  useSongKeys(go);
-  const gesture = useGesture({ onSwipe: go });
+  useSongKeys(go, (e) => {
+    if (e.key !== "Escape" || !spot) return false;
+    setSpot(null);
+    return true;
+  });
+  // Press and hold a chord: flag it or suggest an edit. A hold never counts as a swipe.
+  const hold = useHold(s.view, s.chords, setSpot);
+  const marks = useHoldMarks(slug, s.view, spot);
+  const gesture = withHold(useGesture({ onSwipe: (d) => !hold.held() && go(d) }), hold.handlers);
   useEffect(() => {
     if (nav.next) router.prefetch(`/songs/${nav.next.slug}`);
   }, [nav.next, router]);
@@ -107,6 +117,7 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
         </p>
       </header>
       <PersonalBar slug={slug} songId={songId} pick={pick} publicText={chartText} />
+      <MoveFlagsBanner slug={slug} />
 
       <KeyInfo s={s}>
         <BpmToggle s={s} className="-mx-2" />
@@ -119,8 +130,18 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
       </div>
 
       <div {...gesture} className="touch-pan-y">
-        <Chart view={s.view} chords={s.chords} fontFamily={FONTS[s.font].css} fontWeight={FONTS[s.font].weight} style={{ fontSize: "clamp(1.6rem, 7vw, 2.4rem)" }} />
+        <Chart view={s.view} chords={s.chords} fontFamily={FONTS[s.font].css} fontWeight={FONTS[s.font].weight} style={{ fontSize: "clamp(1.6rem, 7vw, 2.4rem)" }} hold={marks} />
       </div>
+      {spot && (
+        <HoldSheet
+          slug={slug}
+          spot={spot}
+          onMine={pick.usingMine}
+          onClose={() => setSpot(null)}
+          onSwipe={(d) => go(d)}
+        />
+      )}
+      <MyFlags slug={slug} view={s.view} />
 
       <SongActions slug={slug} songId={songId} pick={pick} />
 

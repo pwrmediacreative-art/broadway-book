@@ -16,6 +16,7 @@
     "check:review": "node --env-file=.env.local scripts/check-review.mjs",
     "check:setlists": "node --env-file=.env.local scripts/check-setlists.mjs",
     "check:claims": "node --env-file=.env.local scripts/check-claims.mjs",
+    "check:flags": "node --env-file=.env.local scripts/check-flags.mjs",
     "dropbox:token": "node --env-file=.env.local scripts/dropbox-token.mjs"
   },
   "dependencies": {
