@@ -1,0 +1,425 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-14T07:10:45.422Z",
+  "title": "Design System: Broadway Book",
+  "extensions": {
+    "colorMeta": {
+      "stage-black": {
+        "role": "neutral",
+        "displayName": "Stage Black",
+        "canonical": "#000000",
+        "tonalRamp": [
+          "#000000",
+          "#000000",
+          "#000000",
+          "#000000",
+          "#4d4d4d",
+          "#808080",
+          "#b3b3b3",
+          "#e5e5e5"
+        ]
+      },
+      "house-black": {
+        "role": "neutral",
+        "displayName": "House Black",
+        "canonical": "#0a0a0b",
+        "tonalRamp": [
+          "#030303",
+          "#050506",
+          "#070708",
+          "#0a0a0b",
+          "#545454",
+          "#858585",
+          "#b6b6b6",
+          "#e6e6e7"
+        ]
+      },
+      "chart-white": {
+        "role": "neutral",
+        "displayName": "Chart White",
+        "canonical": "#f5f5f4",
+        "tonalRamp": [
+          "#4a4a49",
+          "#7b7b7a",
+          "#acacab",
+          "#f5f5f4",
+          "#f8f8f7",
+          "#fafafa",
+          "#fcfcfc",
+          "#fefefe"
+        ]
+      },
+      "cue-gray": {
+        "role": "neutral",
+        "displayName": "Cue Gray",
+        "canonical": "#a8a29e",
+        "tonalRamp": [
+          "#32312f",
+          "#54514f",
+          "#76716f",
+          "#a8a29e",
+          "#c2bebb",
+          "#d4d1cf",
+          "#e5e3e2",
+          "#f6f6f5"
+        ]
+      },
+      "case-charcoal": {
+        "role": "neutral",
+        "displayName": "Case Charcoal",
+        "canonical": "#18181b",
+        "tonalRamp": [
+          "#070708",
+          "#0c0c0e",
+          "#111113",
+          "#18181b",
+          "#5d5d5f",
+          "#8c8c8d",
+          "#bababb",
+          "#e8e8e8"
+        ]
+      },
+      "rule-gray": {
+        "role": "neutral",
+        "displayName": "Rule Gray",
+        "canonical": "#3f3f46",
+        "tonalRamp": [
+          "#131315",
+          "#202023",
+          "#2c2c31",
+          "#3f3f46",
+          "#79797e",
+          "#9f9fa3",
+          "#c5c5c8",
+          "#ececec"
+        ]
+      },
+      "downbeat-amber": {
+        "role": "primary",
+        "displayName": "Downbeat Amber",
+        "canonical": "#fbbf24",
+        "tonalRamp": [
+          "#4b390b",
+          "#7e6012",
+          "#b08619",
+          "#fbbf24",
+          "#fcd266",
+          "#fddf92",
+          "#feecbd",
+          "#fff9e9"
+        ]
+      },
+      "stop-red": {
+        "role": "status",
+        "displayName": "Stop Red",
+        "canonical": "#fca5a5",
+        "tonalRamp": [
+          "#4c3232",
+          "#7e5353",
+          "#b07373",
+          "#fca5a5",
+          "#fdc0c0",
+          "#fed2d2",
+          "#fee4e4",
+          "#fff6f6"
+        ]
+      },
+      "key-change-blue": {
+        "role": "chart",
+        "displayName": "Key-Change Blue",
+        "canonical": "#7dd3fc",
+        "tonalRamp": [
+          "#263f4c",
+          "#3f6a7e",
+          "#5894b0",
+          "#7dd3fc",
+          "#a4e0fd",
+          "#bee9fe",
+          "#d8f2fe",
+          "#f2fbff"
+        ]
+      },
+      "chart-stop-red": {
+        "role": "chart",
+        "displayName": "Chart Stop Red",
+        "canonical": "#f87171",
+        "tonalRamp": [
+          "#4a2222",
+          "#7c3939",
+          "#ae4f4f",
+          "#f87171",
+          "#fa9c9c",
+          "#fcb8b8",
+          "#fdd4d4",
+          "#fef1f1"
+        ]
+      },
+      "stage-light-paper": {
+        "role": "stage-light",
+        "displayName": "Stage Light Paper",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#4d4d4d",
+          "#808080",
+          "#b3b3b3",
+          "#ffffff",
+          "#ffffff",
+          "#ffffff",
+          "#ffffff",
+          "#ffffff"
+        ]
+      },
+      "stage-light-ink": {
+        "role": "stage-light",
+        "displayName": "Stage Light Ink",
+        "canonical": "#0a0a0b",
+        "tonalRamp": [
+          "#030303",
+          "#050506",
+          "#070708",
+          "#0a0a0b",
+          "#545454",
+          "#858585",
+          "#b6b6b6",
+          "#e6e6e7"
+        ]
+      },
+      "stage-light-muted": {
+        "role": "stage-light",
+        "displayName": "Stage Light Muted",
+        "canonical": "#44403c",
+        "tonalRamp": [
+          "#141312",
+          "#22201e",
+          "#302d2a",
+          "#44403c",
+          "#7c7977",
+          "#a2a09e",
+          "#c7c6c5",
+          "#ececeb"
+        ]
+      },
+      "stage-light-amber": {
+        "role": "stage-light",
+        "displayName": "Stage Light Amber",
+        "canonical": "#b45309",
+        "tonalRamp": [
+          "#361903",
+          "#5a2a05",
+          "#7e3a06",
+          "#b45309",
+          "#cb8753",
+          "#daa984",
+          "#e9cbb5",
+          "#f8eee6"
+        ]
+      },
+      "stage-light-panel": {
+        "role": "stage-light",
+        "displayName": "Stage Light Panel",
+        "canonical": "#f5f5f4",
+        "tonalRamp": [
+          "#4a4a49",
+          "#7b7b7a",
+          "#acacab",
+          "#f5f5f4",
+          "#f8f8f7",
+          "#fafafa",
+          "#fcfcfc",
+          "#fefefe"
+        ]
+      },
+      "stage-light-line": {
+        "role": "stage-light",
+        "displayName": "Stage Light Line",
+        "canonical": "#a8a29e",
+        "tonalRamp": [
+          "#32312f",
+          "#54514f",
+          "#76716f",
+          "#a8a29e",
+          "#c2bebb",
+          "#d4d1cf",
+          "#e5e3e2",
+          "#f6f6f5"
+        ]
+      },
+      "stage-light-key-change": {
+        "role": "stage-light",
+        "displayName": "Stage Light Key-change",
+        "canonical": "#0369a1",
+        "tonalRamp": [
+          "#012030",
+          "#023551",
+          "#024a71",
+          "#0369a1",
+          "#4f96bd",
+          "#81b4d0",
+          "#b3d2e3",
+          "#e6f0f6"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "The page title (song title, app name)."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section headings on long pages."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "List row titles, dialog titles."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Default text, 18px for arm's-length reading."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Small labels, badges, helper lines. Smallest UI text."
+      },
+      "data": {
+        "displayName": "Data",
+        "purpose": "Keys, bar counts, tempos, times. Never prose."
+      },
+      "chart": {
+        "displayName": "Chart",
+        "purpose": "Chart numbers and chords: Atkinson Hyperlegible Bold, tabular figures."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "state",
+        "value": "150ms ease-out",
+        "purpose": "State changes only. Beat light and autoscroll are the only other motion; reduced motion honored."
+      }
+    ],
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The main action on a screen. Amber means live right now.",
+      "html": "<button class=\"ds-btn-primary\">Stage</button>",
+      "css": ".ds-btn-primary{background:var(--bb-color-downbeat-amber);color:var(--bb-color-stage-black);font:600 18px/1.4 var(--bb-font-ui);min-height:var(--bb-size-tap);padding:0 var(--bb-space-4);border:0;border-radius:var(--bb-radius-control);transition:background var(--bb-motion-duration) var(--bb-motion-ease)}.ds-btn-primary:active{background:var(--bb-color-case-charcoal);color:var(--bb-color-chart-white)}.ds-btn-primary:focus-visible{outline:var(--bb-focus-width) solid var(--bb-color-downbeat-amber);outline-offset:var(--bb-focus-offset)}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Any other action.",
+      "html": "<button class=\"ds-btn-secondary\">+ Setlist</button>",
+      "css": ".ds-btn-secondary{background:transparent;color:var(--bb-color-chart-white);font:600 18px/1.4 var(--bb-font-ui);min-height:var(--bb-size-tap);padding:0 var(--bb-space-4);border:1px solid var(--bb-color-rule-gray);border-radius:var(--bb-radius-control);transition:background var(--bb-motion-duration) var(--bb-motion-ease)}.ds-btn-secondary:active{background:var(--bb-color-case-charcoal)}.ds-btn-secondary:focus-visible{outline:var(--bb-focus-width) solid var(--bb-color-downbeat-amber);outline-offset:var(--bb-focus-offset)}"
+    },
+    {
+      "name": "Search Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Text and search fields.",
+      "html": "<input class=\"ds-input\" type=\"search\" placeholder=\"Search title or artist\">",
+      "css": ".ds-input{background:transparent;color:var(--bb-color-chart-white);font:400 18px/1.4 var(--bb-font-ui);min-height:var(--bb-size-tap);padding:0 var(--bb-space-3);border:1px solid var(--bb-color-rule-gray);border-radius:var(--bb-radius-control)}.ds-input::placeholder{color:var(--bb-color-cue-gray)}.ds-input:focus-visible{outline:var(--bb-focus-width) solid var(--bb-color-downbeat-amber);outline-offset:var(--bb-focus-offset)}"
+    },
+    {
+      "name": "Panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "Grouped content. Square, flat, never nested.",
+      "html": "<div class=\"ds-panel\">9 charts saved on this phone</div>",
+      "css": ".ds-panel{background:var(--bb-color-case-charcoal);color:var(--bb-color-chart-white);font:400 18px/1.4 var(--bb-font-ui);padding:var(--bb-space-4);border-radius:var(--bb-radius-none)}"
+    },
+    {
+      "name": "Verified Badge",
+      "kind": "chip",
+      "refersTo": "badge-verified",
+      "description": "Status in words, no green.",
+      "html": "<span class=\"ds-verified\">✓ Verified</span>",
+      "css": ".ds-verified{color:var(--bb-color-chart-white);font:600 14px/20px var(--bb-font-ui);text-transform:uppercase}"
+    },
+    {
+      "name": "Chart Line",
+      "kind": "custom",
+      "refersTo": "chart-section-label",
+      "description": "Section label in amber notation, four bars per line, Atkinson Bold tabular figures.",
+      "html": "<div class=\"ds-chart\"><span class=\"ds-chart-label\">V</span><div class=\"ds-chart-bars\"><span>1</span><span>5</span><span>6-</span><span>4</span></div></div>",
+      "css": ".ds-chart{background:var(--bb-color-stage-black);color:var(--bb-color-chart-white);font:700 var(--bb-text-chart)/1 var(--bb-font-chart);font-variant-numeric:tabular-nums;padding:var(--bb-space-4)}.ds-chart-label{display:inline-block;color:var(--bb-color-downbeat-amber);border:0.06em solid var(--bb-color-downbeat-amber);border-radius:0.15em;padding:0.12em 0.3em;font-size:0.55em}.ds-chart-bars{display:grid;grid-template-columns:repeat(4,1fr);gap:0.35em;margin-top:0.2em}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Session Chart",
+    "overview": "The app looks and reads like a paper chart on a music stand. Black ground, white numbers, nothing between the player and the next bar. The players use it mid-set on a dark, loud stage, one hand on the phone, reading at arm's length (see PRODUCT.md). Every decision answers one question: does this help them read the next bar faster?\n\nMood: **sharp, quiet, certain.** Nothing on screen competes with the numbers. The app is dark everywhere. The only light surface is stage mode's \"Light\" paper look for daylight gigs. Color is rare and means something: amber marks what is live right now, red marks an error, and inside a chart, color is notation.",
+    "keyCharacteristics": [
+      "Black and white first; one accent (Downbeat Amber) used sparingly.",
+      "Flat: no shadows, gradients or blur. Separation by 1px lines and space.",
+      "Two corner radii: square (0px) for surfaces, 4px for controls.",
+      "Big, bold, legible chart type with tabular figures.",
+      "Tap targets of 44px or larger everywhere.",
+      "Plain, short words."
+    ],
+    "rules": [
+      {
+        "name": "The Downbeat Rule",
+        "body": "In the app's UI, amber means \"live right now\" and nothing else. If an element is not the current bar, the main action, an active toggle or the beat light, it is not amber. Chart notation is the one named exception (see above).",
+        "section": "colors"
+      },
+      {
+        "name": "The Stop Rule",
+        "body": "Red appears only for errors and destructive actions, plus the stop mark inside charts. Never for emphasis.",
+        "section": "colors"
+      },
+      {
+        "name": "The No-Purple Rule",
+        "body": "No purple, violet or indigo anywhere. A personal flag on a chord is a solid Chart White dot with a Stage Black ring.",
+        "section": "colors"
+      },
+      {
+        "name": "The Word-First Status Rule",
+        "body": "Status reads from the word, not the color. Verified is Chart White text with a check mark. Unverified is a Cue Gray outline dot. Neither uses green or amber.",
+        "section": "colors"
+      },
+      {
+        "name": "The Arm's-Length Rule",
+        "body": "No UI text below 14px. Chart text never below 30px in stage mode.",
+        "section": "typography"
+      },
+      {
+        "name": "The Two-Voice Rule",
+        "body": "Geist speaks for the app, Atkinson speaks for the chart. Don't swap them.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Stage Rule",
+        "body": "Nothing floats. If a surface needs to stand apart, it changes ground color or gets a 1px line, never a shadow.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** use the `--bb-*` tokens from `app/globals.css` for every color, font, radius and spacing value.",
+      "**Do** keep amber for what is live right now (the Downbeat Rule).",
+      "**Do** keep every tap target at 44px or larger and UI text at 14px or larger.",
+      "**Do** separate with 1px Rule Gray lines and space, not boxes.",
+      "**Do** say status in words."
+    ],
+    "donts": [
+      "**Don't** use gradient heroes or gradient text.",
+      "**Don't** use emoji as icons.",
+      "**Don't** put rounded cards everywhere; lists are rows, surfaces are square.",
+      "**Don't** use generic purple accents (the No-Purple Rule).",
+      "**Don't** center everything; text is left-aligned.",
+      "**Don't** add a kicker or eyebrow label above a heading.",
+      "**Don't** nest a card or panel inside another.",
+      "**Don't** use same-size icon + heading + text cards as page structure.",
+      "**Don't** use the hero-metric template (big number, small label, supporting stats).",
+      "**Don't** use glass, blur or shadows, including hard offset shadows.",
+      "**Don't** put a colored border thicker than 1px on one side of a card, row or alert.",
+      "**Don't** use monospace as a costume; Geist Mono is for keys, bar counts, tempos and times.",
+      "**Don't** add a light mode outside stage mode.",
+      "**Don't** hard-code colors or fonts in components."
+    ]
+  }
+}

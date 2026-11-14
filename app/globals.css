@@ -1,4 +1,8 @@
 @import "tailwindcss";
+/* Design docs mention words like "blur"; keep Tailwind from turning them into classes. */
+@source not "../DESIGN.md";
+@source not "../PRODUCT.md";
+@source not "../.impeccable";
 
 :root {
   --background: #0a0a0b;
@@ -19,6 +23,114 @@
   --color-line: var(--line);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
+
+/*
+ * Design tokens (DESIGN.md, "The Session Chart"). Every UI change uses these.
+ * Not used by any screen yet: the restyle step moves screens from the older
+ * tokens above (--background, --accent, ...) onto --bb-* and retires the old names.
+ */
+:root {
+  /* App palette */
+  --bb-color-stage-black: #000000;
+  --bb-color-house-black: #0a0a0b;
+  --bb-color-chart-white: #f5f5f4;
+  --bb-color-cue-gray: #a8a29e;
+  --bb-color-case-charcoal: #18181b;
+  --bb-color-rule-gray: #3f3f46;
+  --bb-color-downbeat-amber: #fbbf24;
+  --bb-color-stop-red: #fca5a5;
+  --bb-color-key-change-blue: #7dd3fc; /* charts only */
+  --bb-color-chart-stop-red: #f87171; /* chart stop mark only */
+
+  /* Stage light ("Light" in stage mode only) */
+  --bb-stage-light-paper: #ffffff;
+  --bb-stage-light-ink: #0a0a0b;
+  --bb-stage-light-muted: #44403c;
+  --bb-stage-light-amber: #b45309;
+  --bb-stage-light-panel: #f5f5f4;
+  --bb-stage-light-line: #a8a29e;
+  --bb-stage-light-key-change: #0369a1;
+
+  /* Fonts (loaded in app/layout.tsx) */
+  --bb-font-ui: var(--font-geist-sans), system-ui, sans-serif;
+  --bb-font-data: var(--font-geist-mono), ui-monospace, monospace;
+  --bb-font-chart: var(--font-atkinson), system-ui, sans-serif;
+
+  /* UI type scale */
+  --bb-text-label: 14px;
+  --bb-text-label-line: 20px;
+  --bb-text-body: 18px;
+  --bb-text-body-line: 1.4;
+  --bb-text-title: 20px;
+  --bb-text-title-line: 28px;
+  --bb-text-headline: 24px;
+  --bb-text-headline-line: 32px;
+  --bb-text-display: 30px;
+  --bb-text-display-line: 36px;
+  --bb-text-chart: clamp(1.6rem, 7vw, 2.4rem); /* song page; stage fits 30–75px */
+
+  /* Spacing (4px grid) and sizes */
+  --bb-space-1: 4px;
+  --bb-space-2: 8px;
+  --bb-space-3: 12px;
+  --bb-space-4: 16px;
+  --bb-space-6: 24px;
+  --bb-space-8: 32px;
+  --bb-space-12: 48px;
+  --bb-size-tap: 44px;
+
+  /* Shape */
+  --bb-radius-none: 0px;
+  --bb-radius-control: 4px;
+
+  /* Focus and motion */
+  --bb-focus-width: 2px;
+  --bb-focus-offset: 2px;
+  --bb-motion-duration: 150ms;
+  --bb-motion-ease: ease-out;
+}
+
+@theme inline {
+  --color-bb-stage-black: var(--bb-color-stage-black);
+  --color-bb-house-black: var(--bb-color-house-black);
+  --color-bb-chart-white: var(--bb-color-chart-white);
+  --color-bb-cue-gray: var(--bb-color-cue-gray);
+  --color-bb-case-charcoal: var(--bb-color-case-charcoal);
+  --color-bb-rule-gray: var(--bb-color-rule-gray);
+  --color-bb-downbeat-amber: var(--bb-color-downbeat-amber);
+  --color-bb-stop-red: var(--bb-color-stop-red);
+  --color-bb-key-change-blue: var(--bb-color-key-change-blue);
+  --color-bb-chart-stop-red: var(--bb-color-chart-stop-red);
+  --color-bb-stage-light-paper: var(--bb-stage-light-paper);
+  --color-bb-stage-light-ink: var(--bb-stage-light-ink);
+  --color-bb-stage-light-muted: var(--bb-stage-light-muted);
+  --color-bb-stage-light-amber: var(--bb-stage-light-amber);
+  --color-bb-stage-light-panel: var(--bb-stage-light-panel);
+  --color-bb-stage-light-line: var(--bb-stage-light-line);
+  --color-bb-stage-light-key-change: var(--bb-stage-light-key-change);
+
+  --font-bb-ui: var(--bb-font-ui);
+  --font-bb-data: var(--bb-font-data);
+  --font-bb-chart: var(--bb-font-chart);
+
+  --text-bb-label: var(--bb-text-label);
+  --text-bb-label--line-height: var(--bb-text-label-line);
+  --text-bb-label--font-weight: 600;
+  --text-bb-body: var(--bb-text-body);
+  --text-bb-body--line-height: var(--bb-text-body-line);
+  --text-bb-title: var(--bb-text-title);
+  --text-bb-title--line-height: var(--bb-text-title-line);
+  --text-bb-title--font-weight: 600;
+  --text-bb-headline: var(--bb-text-headline);
+  --text-bb-headline--line-height: var(--bb-text-headline-line);
+  --text-bb-headline--font-weight: 700;
+  --text-bb-display: var(--bb-text-display);
+  --text-bb-display--line-height: var(--bb-text-display-line);
+  --text-bb-display--font-weight: 700;
+
+  --radius-bb-none: var(--bb-radius-none);
+  --radius-bb-control: var(--bb-radius-control);
 }
 
 body {

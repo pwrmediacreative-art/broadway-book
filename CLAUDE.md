@@ -113,6 +113,7 @@ readable at arm's length and usable with a thumb.
 
 - Dark only for now, high contrast, large chart text, phone layout first,
   big tap targets (44px+). Font-size control and light mode come later.
+- Every UI change must follow DESIGN.md and use its tokens (`--bb-*` in `app/globals.css`); never hard-code colors or fonts.
 
 ## Rules for every future step
 

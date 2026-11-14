@@ -101,3 +101,5 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Verified: a revert that restores Verified isn't counted in the per-admin numbers (only real checks are); the history row names the admin who reverted.
 - Verified: a trusted reviewer's single "Publish" button was checked in the database only, not in a browser (no reviewers exist yet).
 - Verified: status rows in Chart history show "Automatic" when no signed-in user caused the change (e.g. a re-import).
+- Design system: screens still use the old tokens (--background, --accent, ...), hard-coded hex (StageView, Chart, controls, layout themeColor), raw Tailwind colors (red/amber/emerald/sky/black/violet), `rounded-xl` cards, the amber Unverified dot and the violet flag dot; the restyle step moves them onto the `--bb-*` tokens per DESIGN.md.
+- Design system: CLAUDE.md "Design" still says light mode comes later; DESIGN.md (settled with the owner) says no light mode outside stage mode's Light look.
