@@ -48,15 +48,15 @@ const stamp = Date.now();
 const CLEAN = "{title: Auto Check}\n{key: G}\n[V] 1 4 5 1\n";
 const UNCLEAR = "{title: Auto Check}\n{key: G}\n# UNCLEAR: V bar 2: 4 or 2-\n[V] 1 4 5 1\n";
 const LYRIC = '{title: Auto Check}\n{key: G}\n[V] 1 "and I will always love you baby" 4\n';
-const KEYS = ["auto_approve_enabled", "auto_approve_min_confidence"];
+const KEYS = ["auto_approve_enabled", "auto_approve_min_confidence", "auto_approve_max_unclear"];
 
 const users = [];
 const fileIds = [];
 const songIds = new Set();
 let before = null; // the real settings, put back at the end
 
-const setSettings = async (enabled, cutoff) => {
-  for (const [key, value] of [[KEYS[0], enabled], [KEYS[1], cutoff]]) {
+const setSettings = async (enabled, cutoff, unclear = 0) => {
+  for (const [key, value] of [[KEYS[0], enabled], [KEYS[1], cutoff], [KEYS[2], unclear]]) {
     const r = await svc.from("settings").update({ value }).eq("key", key);
     if (r.error) throw r.error;
   }
@@ -68,9 +68,9 @@ try {
   if (open.count) throw new Error(`${open.count} AI reading(s) are in flight. Run this when no AI run is going.`);
 
   const s0 = await svc.from("settings").select("key, value").in("key", KEYS);
-  if (s0.error || s0.data.length !== 2) throw new Error("auto-approve settings missing: apply the migration first");
+  if (s0.error || s0.data.length !== 3) throw new Error("auto-approve settings missing: apply the migration first");
   before = Object.fromEntries(s0.data.map((r) => [r.key, r.value]));
-  check(true, `settings exist (switch is ${before[KEYS[0]] === 1 ? "ON" : "off"}, cutoff ${before[KEYS[1]]}%)`);
+  check(true, `settings exist (switch is ${before[KEYS[0]] === 1 ? "ON" : "off"}, cutoff ${before[KEYS[1]]}%, unclear spots allowed ${before[KEYS[2]]})`);
 
   const player = await makeUser("player");
   const admin = await makeUser("admin");
@@ -134,6 +134,10 @@ try {
   for (const fn of ["auto_approve_candidates", "auto_approved_songs"]) expectErr(await admin.db.rpc(fn), `even an admin can't call ${fn} directly`);
   expectErr(await admin.db.rpc("auto_approve_set", { p_enabled: false, p_min_confidence: 49 }), "cutoff under 50 is refused");
   expectErr(await admin.db.rpc("auto_approve_set", { p_enabled: false, p_min_confidence: 100 }), "cutoff over 99 is refused");
+  expectErr(await admin.db.rpc("auto_approve_set", { p_enabled: false, p_min_confidence: 75, p_max_unclear: 11 }), "unclear limit over 10 is refused");
+  const okU = await admin.db.rpc("auto_approve_set", { p_enabled: false, p_min_confidence: 75, p_max_unclear: 3 });
+  const sU = await svc.from("settings").select("value").eq("key", KEYS[2]).single();
+  check(!okU.error && sU.data.value === 3, "an admin changes the unclear-spot limit without code (set to 3)");
   const ok80 = await admin.db.rpc("auto_approve_set", { p_enabled: before[KEYS[0]] === 1, p_min_confidence: 80 });
   const s80 = await svc.from("settings").select("value").eq("key", KEYS[1]).single();
   check(!ok80.error && s80.data.value === 80, "an admin changes the cutoff without code (set to 80)");
@@ -203,7 +207,15 @@ try {
   // ── a second one; a stricter cutoff unpublishes nothing ──
   const loose = await read("second", { confidence: 0.95 });
   check(loose.song?.status === "published" && loose.song.unverified === true, "a 0.95 clean chart goes live, Unverified");
+  // ── the unclear-spot limit ──
+  const UNCLEAR2 = UNCLEAR.replace("# UNCLEAR: V bar 2: 4 or 2-\n", "# UNCLEAR: V bar 2: 4 or 2-\n# UNCLEAR: V bar 3: 5 or 5/7\n");
+  await setSettings(1, 75, 1);
+  const one1 = await read("one-unclear", { confidence: 0.95, chart: UNCLEAR });
+  check(one1.song?.status === "published" && one1.song.unverified === true, "limit 1: a chart with one unclear spot goes live, Unverified");
+  notLive(await read("two-unclear", { confidence: 0.95, chart: UNCLEAR2 }), "BLOCKER limit 1: a chart with two unclear spots is not published");
+  notLive(await read("one-unclear-low", { confidence: 0.75, chart: UNCLEAR }), "BLOCKER limit 1: one unclear spot at exactly the cutoff is not published");
   await setSettings(1, 99);
+  check((await statusOf(one1.song.id)) === "published", "lowering the limit back to 0 unpublishes nothing");
   check((await statusOf(good.song.id)) === "published" && (await statusOf(loose.song.id)) === "published", "a stricter cutoff unpublishes nothing");
 
   // ── switching off stops new ones, keeps live ones ──
@@ -219,14 +231,14 @@ try {
   const reverted = await svc.from("songs").select("status, current_revision_id").eq("id", good.song.id).single();
   check(!back.error && reverted.data.status === "needs_review" && reverted.data.current_revision_id === good.song.current_revision_id, "admin revert: back in needs_review, same revision");
   check((await anon.from("songs").select("id").eq("id", good.song.id)).data?.length === 0, "…and players can't see it any more");
-  check((await count("auto_approve_pull_back")) === live0 + 1, "…and it no longer counts as auto-approved (only the second chart does)");
+  check((await count("auto_approve_pull_back")) === live0 + 2, "…and it no longer counts as auto-approved (the second and one-unclear charts still do)");
   check((await count("auto_approve_existing")) === base, "a chart that was sent back is not a candidate again, though its score still passes");
   expectErr(await admin.db.rpc("auto_approve_revert", { p_song_id: good.song.id }), "reverting it twice is refused");
 
   // ── verifying one ends "auto-approved" ──
   const ver = await admin.db.rpc("review_publish", { p_song_id: loose.song.id, p_chart: CLEAN, p_verified: true, p_base_revision: loose.song.current_revision_id });
   check(!ver.error && ver.data === "verified", "a reviewer can fix and verify an auto-approved chart");
-  check((await count("auto_approve_pull_back")) === live0, "…and then it is no longer auto-approved, so Pull back leaves it alone");
+  check((await count("auto_approve_pull_back")) === live0 + 1, "…and then it is no longer auto-approved, so Pull back leaves it alone");
 } finally {
   if (before) for (const k of KEYS) await svc.from("settings").update({ value: before[k] }).eq("key", k);
   if (fileIds.length) {

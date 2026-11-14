@@ -17,11 +17,13 @@ const refresh = () => {
   revalidatePath("/admin/review");
 };
 
-/** The switch and the cutoff (whole percent, 50 to 99; a score must be strictly over it). */
-export async function saveAutoSettings(enabled: boolean, minConfidence: number): Promise<AutoResult> {
+/** The switch, the cutoff (whole percent, 50 to 99; a score must be strictly over it) and
+ *  the most unclear spots a chart may have (0 to 10). */
+export async function saveAutoSettings(enabled: boolean, minConfidence: number, maxUnclear: number): Promise<AutoResult> {
   if (!Number.isInteger(minConfidence) || minConfidence < 50 || minConfidence > 99) return { ok: false, error: "Cutoff: a whole percent from 50 to 99." };
+  if (!Number.isInteger(maxUnclear) || maxUnclear < 0 || maxUnclear > 10) return { ok: false, error: "Unclear spots: 0 to 10." };
   const db = await sessionClient();
-  const { error } = await db.rpc("auto_approve_set", { p_enabled: enabled, p_min_confidence: minConfidence });
+  const { error } = await db.rpc("auto_approve_set", { p_enabled: enabled, p_min_confidence: minConfidence, p_max_unclear: maxUnclear });
   if (error) return fail(error);
   refresh();
   return { ok: true };

@@ -10,6 +10,7 @@ import { autoApproveExisting, pullBackAuto, saveAutoSettings } from "./auto-acti
 export interface AutoOverview {
   enabled: boolean;
   min_confidence: number; // whole percent; a score must be strictly over it
+  max_unclear: number; // most "# UNCLEAR" notes a chart may have (0 = none)
   would_publish: number; // drafts in review that pass the rule with the saved settings
   live: number; // auto-approved charts live now that nobody has verified
   batch_auto: number; // full-batch readings that went live by themselves (ever)
@@ -23,7 +24,7 @@ const field = "bb-input w-28 px-3 text-lg tabular-nums";
 const charts = (n: number) => `${n.toLocaleString()} chart${n === 1 ? "" : "s"}`;
 
 /**
- * The switch, the cutoff, "apply to the drafts already read" and "pull back".
+ * The switch, the cutoff, the unclear-spot limit, "apply to the drafts already read" and "pull back".
  * The database holds the rule; this only shows counts and asks before anything goes
  * live or comes down.
  */
@@ -31,9 +32,10 @@ export function AutoApprove({ o }: { o: AutoOverview }) {
   const router = useRouter();
   const offline = useOffline();
   const [cutoff, setCutoff] = useState(String(o.min_confidence));
+  const [unclear, setUnclear] = useState(String(o.max_unclear));
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, start] = useTransition();
-  const dirty = cutoff !== String(o.min_confidence);
+  const dirty = cutoff !== String(o.min_confidence) || unclear !== String(o.max_unclear);
   const busy = pending || offline;
 
   const done = (text: string) => {
@@ -44,15 +46,15 @@ export function AutoApprove({ o }: { o: AutoOverview }) {
 
   const toggle = () =>
     start(async () => {
-      // The switch saves at once, with the cutoff already saved (not an unsaved edit).
-      const r = await saveAutoSettings(!o.enabled, o.min_confidence);
+      // The switch saves at once, with the numbers already saved (not unsaved edits).
+      const r = await saveAutoSettings(!o.enabled, o.min_confidence, o.max_unclear);
       if (!r.ok) return bad(r.error);
       done(o.enabled ? "Auto-approve is off. Charts already live stay live." : "Auto-approve is on for new readings.");
     });
 
   const saveNumbers = () =>
     start(async () => {
-      const r = await saveAutoSettings(o.enabled, Number(cutoff));
+      const r = await saveAutoSettings(o.enabled, Number(cutoff), Number(unclear));
       if (!r.ok) return bad(r.error);
       done("Saved. Charts already live are not changed.");
     });
@@ -99,7 +101,7 @@ export function AutoApprove({ o }: { o: AutoOverview }) {
       </div>
       <p className="mt-2 text-lg text-bb-cue-gray">
         When on, a new AI reading that passes these rules goes live by itself as Unverified. Everything else waits in the review
-        queue. Skipped: charts with any unclear spot, charts that needed a second read, share a title and artist with another
+        queue. Skipped: charts with more unclear spots than allowed, charts that needed a second read, share a title and artist with another
         file, or are on hold, claimed or drafted, and any chart you sent back.
       </p>
 
@@ -108,8 +110,12 @@ export function AutoApprove({ o }: { o: AutoOverview }) {
           Score must be over (%)
           <input type="number" inputMode="numeric" min={50} max={99} step={1} value={cutoff} onChange={(e) => setCutoff(e.target.value)} className={field} />
         </label>
+        <label className="flex flex-col text-base">
+          Unclear spots allowed
+          <input type="number" inputMode="numeric" min={0} max={10} step={1} value={unclear} onChange={(e) => setUnclear(e.target.value)} className={field} />
+        </label>
         <button type="button" disabled={busy || !dirty} onClick={saveNumbers} className={ghost}>
-          Save cutoff
+          Save numbers
         </button>
       </div>
 
@@ -147,7 +153,7 @@ export function AutoApprove({ o }: { o: AutoOverview }) {
           : pending
             ? "Working…"
             : (msg?.text ??
-              (dirty ? "Save the cutoff to see the new count." : !o.enabled && o.would_publish > 0 ? "Turn auto-approve on to publish the existing drafts." : null))}
+              (dirty ? "Save the numbers to see the new count." : !o.enabled && o.would_publish > 0 ? "Turn auto-approve on to publish the existing drafts." : null))}
       </p>
     </section>
   );
