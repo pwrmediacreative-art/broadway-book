@@ -1,0 +1,129 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useInstall } from "@/lib/offline/install";
+import { ago, count } from "@/lib/offline/plan";
+import { useSyncStatus } from "@/lib/offline/sync";
+
+const IOS_STEPS = ["Tap the Share button (the square with an arrow) in Safari.", "Scroll down and tap “Add to Home Screen”.", "Tap “Add”."];
+const ANDROID_STEPS = ["Tap the ⋮ menu at the top right of Chrome.", "Tap “Install app” or “Add to Home screen”.", "Tap “Install”."];
+
+function Steps({ title, steps }: { title: string; steps: string[] }) {
+  return (
+    <div className="mb-4">
+      <h3 className="mb-1 text-lg font-semibold">{title}</h3>
+      <ol className="list-decimal space-y-1 pl-6 text-lg">
+        {steps.map((s) => (
+          <li key={s}>{s}</li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+function Sheet({ onClose }: { onClose: () => void }) {
+  const { kind, canPrompt, prompt } = useInstall();
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return (
+    <div className="fixed inset-0 z-[70] flex items-end bg-black/70 sm:items-center sm:justify-center" onClick={onClose}>
+      <div
+        role="dialog"
+        aria-label="Install Broadway Book"
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-[85dvh] w-full overflow-y-auto rounded-t-2xl border border-line bg-background p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:max-w-md sm:rounded-2xl"
+      >
+        <div className="mb-3 flex items-center gap-2">
+          <h2 className="min-w-0 flex-1 text-xl font-bold">Install Broadway Book</h2>
+          <button onClick={onClose} aria-label="Close" className="grid size-11 place-items-center rounded-lg text-2xl text-muted active:bg-panel">
+            ✕
+          </button>
+        </div>
+        <p className="mb-4 text-lg text-muted">It opens from your home screen like an app and works with no signal.</p>
+        {canPrompt ? (
+          <button
+            className="mb-4 h-14 w-full rounded-lg bg-accent text-xl font-bold text-black active:opacity-80"
+            onClick={async () => {
+              if (await prompt()) onClose();
+            }}
+          >
+            Install
+          </button>
+        ) : (
+          <>
+            {kind !== "android" && <Steps title="iPhone" steps={IOS_STEPS} />}
+            {kind !== "ios" && <Steps title="Android" steps={ANDROID_STEPS} />}
+          </>
+        )}
+        {kind === "ios" && (
+          <p className="text-base text-muted">
+            Installing also keeps your saved charts on the phone. In Safari alone, iOS can clear them after a week without opening the site.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Home page, above search: one compact row. Gone for good once dismissed or installed. */
+export function InstallCard() {
+  const { showCard, canPrompt, prompt, dismiss } = useInstall();
+  const [open, setOpen] = useState(false);
+  if (!showCard) return null;
+  return (
+    <div className="mb-3 flex items-center gap-2 rounded-xl border border-accent/60 bg-accent/10 py-1 pl-3 pr-1">
+      <p className="min-w-0 flex-1 text-base leading-snug">Install the app: works with no signal.</p>
+      <button
+        className="h-11 shrink-0 rounded-lg bg-accent px-4 text-base font-bold text-black active:opacity-80"
+        onClick={() => (canPrompt ? void prompt() : setOpen(true))}
+      >
+        {canPrompt ? "Install" : "How"}
+      </button>
+      <button onClick={dismiss} aria-label="Dismiss" className="grid size-11 shrink-0 place-items-center rounded-lg text-xl text-muted active:bg-panel">
+        ✕
+      </button>
+      {open && <Sheet onClose={() => setOpen(false)} />}
+    </div>
+  );
+}
+
+/** Home page footer: what is saved on this phone, and a standing "Install app" link. */
+export function HomeFooter() {
+  const { kind } = useInstall();
+  const s = useSyncStatus();
+  const [open, setOpen] = useState(false);
+  // Ticks once a minute so "updated 5 min ago" stays true (0 until the page is in the browser).
+  const [now, setNow] = useState(0);
+  useEffect(() => {
+    const tick = () => setNow(Date.now());
+    tick();
+    const t = window.setInterval(tick, 60_000);
+    return () => window.clearInterval(t);
+  }, []);
+
+  let line: string | null = null;
+  if (!s.ready) line = null;
+  else if (s.phase === "blocked") line = "Couldn’t save charts on this phone. They’ll load while you’re online.";
+  else if (s.phase === "saving") line = s.total ? `Saving charts… ${count(s.saved)} of ${count(s.total)}` : "Saving charts…";
+  else if (s.saved > 0)
+    line = `${count(s.saved)} chart${s.saved === 1 ? "" : "s"} saved on this phone${s.at ? ` · updated ${ago(s.at, Math.max(now, s.at))}` : ""}`;
+
+  return (
+    <footer className="mt-8 flex flex-col items-center gap-1 text-center text-base text-muted">
+      {line && (
+        <p role="status" data-saved-status>
+          {line}
+        </p>
+      )}
+      {kind !== null && kind !== "installed" && (
+        <button onClick={() => setOpen(true)} className="min-h-11 px-3 underline active:text-foreground">
+          Install app
+        </button>
+      )}
+      {open && <Sheet onClose={() => setOpen(false)} />}
+    </footer>
+  );
+}

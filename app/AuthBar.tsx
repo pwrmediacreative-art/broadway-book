@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { browserClient } from "@/lib/supabase/browser";
+import { OFFLINE_MSG, useOffline } from "@/lib/offline/status";
+import { rememberedUser, rememberUser } from "@/lib/offline/user";
 
 type Me = { name: string; admin: boolean; reviewer: boolean; unread: number } | null;
 const READ_EVENT = "bb:notifications-read"; // fired by /notifications once it marks all read
@@ -15,20 +17,31 @@ export default function AuthBar() {
 
   // /auth/* pages handle sign-in tokens themselves; don't let a second client touch them.
   const authPage = pathname.startsWith("/auth/");
+  const offline = useOffline();
 
   useEffect(() => {
     if (authPage) return;
     const db = browserClient();
     let alive = true;
     async function load() {
+      // Offline: keep showing whoever is signed in on this phone (nothing can be checked).
+      if (offline) {
+        const saved = rememberedUser();
+        return alive && setMe(saved ? { name: saved.name || "Profile", admin: !!saved.admin, reviewer: !!saved.reviewer, unread: 0 } : null);
+      }
       const {
         data: { session },
+        error: sessionError,
       } = await db.auth.getSession();
-      if (!session) return alive && setMe(null);
+      if (!session) {
+        if (!sessionError) rememberUser(null);
+        return alive && setMe(null);
+      }
       const [{ data }, { count }] = await Promise.all([
         db.from("profiles").select("display_name, role, reviewer").eq("id", session.user.id).maybeSingle(),
         db.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", session.user.id).is("read_at", null),
       ]);
+      if (data) rememberUser({ id: session.user.id, name: data.display_name || "Profile", admin: data.role === "admin", reviewer: data.reviewer === true });
       if (alive) setMe({
           name: data?.display_name || "Profile",
           admin: data?.role === "admin",
@@ -47,7 +60,7 @@ export default function AuthBar() {
       window.removeEventListener(READ_EVENT, onRead);
       sub.subscription.unsubscribe();
     };
-  }, [pathname, authPage]);
+  }, [pathname, authPage, offline]);
 
   const link = "inline-flex h-11 items-center px-2 text-base text-muted active:text-foreground";
   if (pathname === "/login" || authPage) return <Bar />;
@@ -67,9 +80,15 @@ export default function AuthBar() {
     return (
       <Bar>
         {community}
-        <Link href={`/login${next}`} className={link}>
-          Sign in
-        </Link>
+        {offline ? (
+          <span className={`${link} opacity-50`} title={OFFLINE_MSG} aria-disabled>
+            Sign in
+          </span>
+        ) : (
+          <Link href={`/login${next}`} className={link}>
+            Sign in
+          </Link>
+        )}
       </Bar>
     );
   }
@@ -104,7 +123,7 @@ export default function AuthBar() {
         {me.name}
       </Link>
       <form action="/auth/signout" method="post">
-        <button type="submit" className={link}>
+        <button type="submit" disabled={offline} title={offline ? OFFLINE_MSG : undefined} className={`${link} disabled:opacity-50`}>
           Sign out
         </button>
       </form>

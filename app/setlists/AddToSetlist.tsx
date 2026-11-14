@@ -6,6 +6,8 @@ import { addToSetlist, createSetlist, currentUserId, listMySetlists, type Setlis
 import { addToDeviceSetlist, useDeviceSetlist } from "@/lib/setlists/device";
 import { MAX_SONGS } from "@/lib/setlists/play";
 import { btn, gigDate, plain, primary } from "./ui";
+import { OfflineNote } from "@/app/OfflineRoot";
+import { useOffline } from "@/lib/offline/status";
 
 /** "Add to setlist": a trigger + a picker sheet (your setlists, or New setlist; signed out: the device list). */
 export default function AddToSetlist({ slug, title, variant }: { slug: string; title: string; variant: "row" | "button" }) {
@@ -40,6 +42,7 @@ function Picker({ slug, title, onClose }: { slug: string; title: string; onClose
   const [done, setDone] = useState<{ name: string; href: string } | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [newName, setNewName] = useState<string | null>(null);
+  const offline = useOffline();
 
   useEffect(() => {
     let alive = true;
@@ -142,7 +145,8 @@ function Picker({ slug, title, onClose }: { slug: string; title: string; onClose
                 </p>
               </>
             )}
-            {who.state === "in" && (
+            {who.state === "in" && offline && <OfflineNote />}
+            {who.state === "in" && !offline && (
               <ul className="flex flex-col gap-2">
                 <li>
                   {newName === null ? (

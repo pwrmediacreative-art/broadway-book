@@ -8,6 +8,7 @@ import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } fro
 import { createPortal } from "react-dom";
 import { pretty, type ChartView } from "@/lib/chart";
 import { refAt, refKey, refMatches, refQuery, sectionBars, spotLabel, type BarRef } from "@/lib/flags/ref";
+import { OFFLINE_MSG, useOffline } from "@/lib/offline/status";
 import { addFlag, moveGuestFlags, NOTE_MAX, removeFlags, setFlagNote, useSongFlags, type PersonalFlag } from "@/lib/flags/store";
 import { PREF, setPref, usePref } from "@/lib/prefs";
 import type { HoldMarks } from "./Chart";
@@ -122,6 +123,9 @@ export function HoldSheet({
 }) {
   const router = useRouter();
   const { flags, signedIn } = useSongFlags(slug);
+  const offline = useOffline();
+  // Signed-in flags live in the account, so they need a connection; signed-out flags stay on this phone.
+  const flagsOff = offline && signedIn;
   const existing = flags.find((f) => refKey(f.ref) === refKey(spot.ref)) ?? null;
   const [mode, setMode] = useState<"menu" | "note" | "signin">("menu");
   const [note, setNote] = useState(existing?.note ?? "");
@@ -161,21 +165,22 @@ export function HoldSheet({
             {existing ? (
               <>
                 {existing.note && <p className="text-lg">“{existing.note}”</p>}
-                <button className={primary} onClick={() => setMode("note")}>
+                <button className={`${primary} disabled:opacity-40`} disabled={flagsOff} onClick={() => setMode("note")}>
                   {existing.note ? "Edit note" : "Add a note"}
                 </button>
-                <button className={plain} disabled={busy} onClick={() => run(() => removeFlags([existing.id]))}>
+                <button className={`${plain} disabled:opacity-40`} disabled={busy || flagsOff} onClick={() => run(() => removeFlags([existing.id]))}>
                   Remove flag
                 </button>
               </>
             ) : (
-              <button className={primary} onClick={() => setMode("note")}>
+              <button className={`${primary} disabled:opacity-40`} disabled={flagsOff} onClick={() => setMode("note")}>
                 Flag for me
               </button>
             )}
-            <button className={plain} onClick={suggest}>
+            <button className={`${plain} disabled:opacity-40`} disabled={offline} onClick={suggest}>
               Suggest an edit
             </button>
+            {offline && <p className="text-lg text-amber-200">{OFFLINE_MSG}</p>}
             <button className={`${plain} text-muted`} onClick={onClose}>
               Cancel
             </button>

@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { OfflineNote } from "@/app/OfflineRoot";
+import { useOffline } from "@/lib/offline/status";
 import { useState, useTransition } from "react";
 import { adminDecide, report, setBlocked, vote, withdrawProposal, type Result } from "../actions";
 import { btn, when, ReviewerBadge } from "../ui";
@@ -41,6 +43,7 @@ export default function VotePanel(p: Props) {
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [comment, setComment] = useState("");
   const [reporting, setReporting] = useState<{ voterId: string | null } | null>(null);
+  const offline = useOffline();
 
   const counted = p.votes.filter((v) => v.voter_id !== p.authorId);
   const approvals = counted.filter((v) => v.value === "approve").length;
@@ -95,7 +98,8 @@ export default function VotePanel(p: Props) {
         </p>
       )}
 
-      {canVote && (
+      {canVote && offline && <OfflineNote />}
+      {canVote && !offline && (
         <div className="flex flex-col gap-3">
           <label className="flex flex-col gap-1">
             <span className="text-sm text-muted">Comment (optional)</span>

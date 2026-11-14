@@ -1,5 +1,7 @@
 "use client";
 
+import { OfflineNote } from "@/app/OfflineRoot";
+import { useOffline } from "@/lib/offline/status";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
@@ -37,6 +39,7 @@ export default function Editor({ song, publicText, publicRevisionId, proposal, i
   const [noteMissing, setNoteMissing] = useState(false);
   const [pending, start] = useTransition();
   const touched = useRef(false);
+  const offline = useOffline();
 
   // Start from the player's own version when they have one (unless editing a suggestion).
   useEffect(() => {
@@ -293,22 +296,23 @@ export default function Editor({ song, publicText, publicRevisionId, proposal, i
         </div>
       )}
 
+      {offline && <OfflineNote className="mt-5" />}
       {proposal ? (
         <div className="mt-5">
-          <SaveButton onClick={update} disabled={pending || !check.ok} title="Update suggestion" sub="Everyone will see it. Votes start over." primary />
+          <SaveButton onClick={update} disabled={pending || !check.ok || offline} title="Update suggestion" sub="Everyone will see it. Votes start over." primary />
         </div>
       ) : (
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           <SaveButton
             onClick={saveMine}
-            disabled={pending || !check.ok}
+            disabled={pending || !check.ok || offline}
             title="Just for me"
             sub="Only you will see this. Saved to your account, no vote."
             primary={intent !== "suggest"}
           />
           <SaveButton
             onClick={suggest}
-            disabled={pending || !check.ok || unchanged}
+            disabled={pending || !check.ok || unchanged || offline}
             title="Suggest for everyone"
             sub={unchanged ? "Change something first." : "Everyone will see it after 3 players approve."}
             primary={intent === "suggest"}

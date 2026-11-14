@@ -7,6 +7,8 @@ import { deleteSetlist, loadSetlist, loadSharedSetlist, saveSetlist, shareSetlis
 import type { PlaySet } from "@/lib/setlists/play";
 import Editor from "./Editor";
 import PlayView from "./PlayView";
+import SavedSet from "./SavedSet";
+import { isOffline, OFFLINE_MSG } from "@/lib/offline/status";
 import { btn, enterFullscreen, gigDate, plain, primary, SetSongList } from "./ui";
 
 type Load = { state: "loading" } | { state: "missing" } | { state: "error"; message: string } | { state: "ok"; set: AccountSet };
@@ -44,8 +46,16 @@ const LINK_OFF = "This setlist link was turned off, or it doesn't exist. Ask for
 
 export function AccountEditor({ id }: { id: string }) {
   const load = useSet({ id });
-  const save = useCallback((s: PlaySet) => saveSetlist(id, s), [id]);
+  const save = useCallback(
+    async (s: PlaySet) => {
+      if (isOffline()) throw new Error(OFFLINE_MSG);
+      await saveSetlist(id, s);
+    },
+    [id],
+  );
   if (load.state !== "ok") return <Status load={load} missing={NOT_YOURS} />;
+  // Opened offline from the phone's saved copy: view and play only.
+  if (load.set.saved) return <SavedSet set={load.set} id={id} />;
   return (
     <Editor
       initial={load.set}
@@ -114,6 +124,7 @@ function ShareBox({ id, initial }: { id: string; initial: string | null }) {
   const [msg, setMsg] = useState<string | null>(null);
   const url = code ? `${location.origin}/s/${code}` : null;
   const set = async (on: boolean) => {
+    if (isOffline()) return setMsg(OFFLINE_MSG);
     setBusy(true);
     setMsg(null);
     try {
@@ -185,6 +196,7 @@ function DeleteButton({ id }: { id: string }) {
       <button
         className={`${btn} border border-red-500/60 text-red-300 active:bg-red-500/20`}
         onClick={async () => {
+          if (isOffline()) return setErr(OFFLINE_MSG);
           if (!window.confirm("Delete this setlist? This can't be undone.")) return;
           try {
             await deleteSetlist(id);

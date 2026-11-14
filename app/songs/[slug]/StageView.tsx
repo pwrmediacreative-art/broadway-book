@@ -7,6 +7,7 @@ import { PREF, setPref, usePref } from "@/lib/prefs";
 import Chart from "./Chart";
 import { btn, BpmToggle, DisplayControls, off, on } from "./controls";
 import { usePickedChart } from "@/lib/personal/versions";
+import { useGo, useLocalNav } from "@/lib/offline/nav";
 import { FONTS, useChartState, useGesture, useSongKeys, useSongNav, type FontId, type KeyControl, type Neighbors } from "./hooks";
 import { recordRecent } from "@/lib/search/recent";
 import { HoldSheet, useHold, useHoldMarks, withHold, type Spot } from "./Hold";
@@ -84,6 +85,8 @@ export default function StageView({
   const nav = useSongNav(slug, neighbors);
   useEffect(() => recordRecent(slug), [slug]);
   const router = useRouter();
+  const goTo = useGo();
+  const local = useLocalNav();
   const scroller = useRef<HTMLDivElement>(null);
   const chartEl = useRef<HTMLDivElement>(null);
   useWakeLock();
@@ -256,17 +259,17 @@ export default function StageView({
       return;
     }
     const t = d > 0 ? nav.next : nav.prev;
-    if (t) router.push(`/songs/${t.slug}/stage`);
+    if (t) goTo(`/songs/${t.slug}/stage`);
     else setToast(d > 0 ? "Last song in the list" : "First song in the list");
   };
   const exit = () => {
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     if (set) set.onExit();
-    else router.push(`/songs/${slug}`);
+    else goTo(`/songs/${slug}`);
   };
   useEffect(() => {
-    if (!set && nav.next) router.prefetch(`/songs/${nav.next.slug}/stage`);
-  }, [set, nav.next, router]);
+    if (!set && nav.next && !local) router.prefetch(`/songs/${nav.next.slug}/stage`);
+  }, [set, nav.next, router, local]);
 
   useSongKeys(go, (e) => {
     if (e.key === " ") {

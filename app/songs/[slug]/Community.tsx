@@ -8,6 +8,8 @@ import { loadMyVersions, type usePickedChart } from "@/lib/personal/versions";
 import { deletePersonal, keepPersonal } from "@/app/community/actions";
 import BarDiff, { DiffSummary } from "@/app/community/BarDiff";
 import FlagButton from "./FlagButton";
+import { OfflineNote } from "@/app/OfflineRoot";
+import { useOffline } from "@/lib/offline/status";
 
 type Pick = ReturnType<typeof usePickedChart>;
 
@@ -21,6 +23,7 @@ export function PersonalBar({ slug, songId, pick, publicText }: { slug: string; 
   const [showDiff, setShowDiff] = useState(false);
   const mine = pick.mine;
   const basedOn = mine?.based_on_revision_id ?? null;
+  const offline = useOffline();
 
   useEffect(() => {
     if (!showDiff || !basedOn || baseText !== null) return;
@@ -89,6 +92,9 @@ export function PersonalBar({ slug, songId, pick, publicText }: { slug: string; 
             ) : (
               <p className="text-base text-muted">{baseText === null && basedOn ? "Loading…" : "The older public chart isn't available to compare."}</p>
             ))}
+          {offline ? (
+            <OfflineNote className="mt-3" />
+          ) : (
           <div className="mt-3 grid gap-2 sm:grid-cols-3">
             <button
               disabled={pending || !mine.current_revision_id}
@@ -108,6 +114,7 @@ export function PersonalBar({ slug, songId, pick, publicText }: { slug: string; 
               Edit mine
             </Link>
           </div>
+          )}
         </div>
       )}
       {err && <p className="mt-2 text-lg text-red-300">{err}</p>}
@@ -151,6 +158,19 @@ export function OpenBadge({ slug, count }: { slug: string; count: number | null 
 export function SongActions({ slug, songId, pick }: { slug: string; songId: string; pick: Pick }) {
   const [pending, start] = useTransition();
   const [err, setErr] = useState<string | null>(null);
+  const offline = useOffline();
+  // Offline: suggesting, voting, personal edits and flagging all need the server.
+  if (offline) {
+    return (
+      <section className="mt-10 flex flex-col gap-3" aria-label="Change this chart">
+        <div aria-disabled className="flex min-h-16 flex-col justify-center rounded-2xl border-2 border-line px-5 py-2 opacity-50">
+          <span className="text-xl font-bold">✎ Suggest a change</span>
+          <span className="text-base text-muted">Fix it for everyone, or keep a version just for you.</span>
+        </div>
+        <OfflineNote />
+      </section>
+    );
+  }
   return (
     <section className="mt-10 flex flex-col gap-3" aria-label="Change this chart">
       <Link href={`/songs/${slug}/edit`} className="flex min-h-16 flex-col justify-center rounded-2xl border-2 border-accent px-5 py-2 active:bg-accent/20">

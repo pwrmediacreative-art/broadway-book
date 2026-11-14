@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { browserClient } from "@/lib/supabase/browser";
 import { FLAG_REASONS, type FlagReason } from "@/lib/review/unclear";
 import { flagChart } from "./flag-actions";
+import { isOffline, OFFLINE_MSG } from "@/lib/offline/status";
 
 /** "Flag a problem": signed-in players report a wrong chart. Enough flags alert the admins. */
 export default function FlagButton({ slug, songId }: { slug: string; songId: string }) {
@@ -25,6 +26,7 @@ export default function FlagButton({ slug, songId }: { slug: string; songId: str
 
   const send = () =>
     start(async () => {
+      if (isOffline()) return setMsg({ ok: false, text: OFFLINE_MSG });
       if (!reason) return setMsg({ ok: false, text: "Pick what's wrong." });
       const r = await flagChart(songId, reason, details);
       if (!r.ok) return setMsg({ ok: false, text: r.error });

@@ -18,6 +18,8 @@
     "check:setlists": "node --env-file=.env.local scripts/check-setlists.mjs",
     "check:claims": "node --env-file=.env.local scripts/check-claims.mjs",
     "check:flags": "node --env-file=.env.local scripts/check-flags.mjs",
+    "check:offline": "node --env-file=.env.local scripts/check-offline.mjs",
+    "icons": "node scripts/gen-icons.mjs",
     "dropbox:token": "node --env-file=.env.local scripts/dropbox-token.mjs"
   },
   "dependencies": {

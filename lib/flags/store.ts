@@ -6,6 +6,8 @@
 // the player moves them to their account. Never public, never part of proposals or votes.
 import { useSyncExternalStore } from "react";
 import { browserClient } from "@/lib/supabase/browser";
+import { isOffline } from "@/lib/offline/status";
+import { knownUserId } from "@/lib/offline/user";
 import type { BarRef } from "./ref";
 
 export const NOTE_MAX = 60;
@@ -108,17 +110,16 @@ export function loadFlags(): Promise<void> {
       });
     }
     const guest = read(GUEST);
-    const {
-      data: { session },
-    } = await db.auth.getSession();
-    if (!session) {
+    // Offline, this is the player remembered on this phone (their saved copy still shows).
+    const userId = await knownUserId(db);
+    if (!userId) {
       clearAccountCopies();
       return set({ ready: true, userId: null, flags: guest, guest });
     }
-    const userId = session.user.id;
     const key = ACCOUNT + userId;
     clearAccountCopies(key);
     if (!state.ready || state.userId !== userId) set({ ready: true, userId, flags: read(key), guest });
+    if (isOffline()) return;
     const { data, error } = await db.from("personal_flags").select(COLS).order("created_at");
     if (error) return set({ ready: true, userId, flags: read(key), guest }); // offline: device copy
     const flags = ((data ?? []) as unknown as Row[]).flatMap((r) => fromRow(r) ?? []);

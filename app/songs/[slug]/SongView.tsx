@@ -10,6 +10,7 @@ import { BpmToggle, DisplayControls, KeyInfo } from "./controls";
 import { FONTS, useChartState, useGesture, useSongKeys, useSongNav, type Neighbors } from "./hooks";
 import { recordRecent } from "@/lib/search/recent";
 import { usePickedChart } from "@/lib/personal/versions";
+import { useGo, useLocalNav } from "@/lib/offline/nav";
 import { OpenBadge, PersonalBar, SongActions, useOpenCount } from "./Community";
 import { HoldSheet, MoveFlagsBanner, MyFlags, useHold, useHoldMarks, withHold, type Spot } from "./Hold";
 
@@ -51,11 +52,13 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
   const nav = useSongNav(slug, neighbors);
   useEffect(() => recordRecent(slug), [slug]);
   const router = useRouter();
+  const goTo = useGo();
+  const local = useLocalNav(); // saved-chart page: songs change in place, nothing to warm up
   const [spot, setSpot] = useState<Spot | null>(null);
   const go = (d: -1 | 1) => {
     setSpot(null);
     const t = d > 0 ? nav.next : nav.prev;
-    if (t) router.push(`/songs/${t.slug}`);
+    if (t) goTo(`/songs/${t.slug}`);
   };
   useSongKeys(go, (e) => {
     if (e.key !== "Escape" || !spot) return false;
@@ -67,8 +70,8 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
   const marks = useHoldMarks(slug, s.view, spot);
   const gesture = withHold(useGesture({ onSwipe: (d) => !hold.held() && go(d) }), hold.handlers);
   useEffect(() => {
-    if (nav.next) router.prefetch(`/songs/${nav.next.slug}`);
-  }, [nav.next, router]);
+    if (nav.next && !local) router.prefetch(`/songs/${nav.next.slug}`);
+  }, [nav.next, router, local]);
 
   if (!s.view) {
     return (

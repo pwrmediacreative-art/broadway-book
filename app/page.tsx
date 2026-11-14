@@ -1,5 +1,6 @@
 import { preload } from "react-dom";
 import { INDEX_URL } from "@/lib/search/pack";
+import { HomeFooter, InstallCard } from "./Install";
 import SongSearch from "./SongSearch";
 
 export default function Home() {
@@ -11,7 +12,9 @@ export default function Home() {
         <h1 className="text-3xl font-bold tracking-tight">Broadway Book</h1>
         <p className="text-muted">Nashville number charts. Free, no login to view.</p>
       </header>
+      <InstallCard />
       <SongSearch />
+      <HomeFooter />
     </main>
   );
 }

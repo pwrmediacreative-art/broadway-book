@@ -79,3 +79,16 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Full AI batch: "Retry failed" can be pressed again for files that already failed after a retry; each press is confirmed with the count and cost.
 - `npm run check:batch` refuses to run once a real full batch has started (it would disturb the first-chunk check).
 - Est. remaining uses half the pilot average until the first batch results come back, then the batch average (parser retries at full price push it up a little).
+- Offline shipped: the "Offline support not started", "opening the home page offline needs the service-worker step" and "songs.updated_at is only bumped by publish_chart" lines above are done.
+- Offline: nothing is queued. Account setlists open view/play only, and suggesting, voting, "Just for me", sharing and signed-in "Flag for me" are disabled until back online.
+- Offline: charts sync only while the app is open (on open, on reconnect, after 15+ min away); no background sync while the app is closed.
+- Offline: a first chart download that gets interrupted starts over next time (it keeps what it saved meanwhile).
+- Offline: opening a stage address cold (bookmark, app switcher) is a page load, so fullscreen isn't on until the player taps; moving between songs after that is in place.
+- Offline: the saved-chart page lives at /offline/song?s=… ; copying that address shares the saved-copy page, not the normal song address.
+- Offline: on the saved-chart page the "open suggestions" badge and admin PDF link don't show (they need the server).
+- Offline: a page slower than 4 seconds falls back to the saved copy even when online (by design for bad venue Wi-Fi); no way to force a fresh load except reloading once the connection is better.
+- Offline: old app files are only cleaned from the phone once 150+ pile up; fine at ~1.7 MB per version, revisit if the app grows.
+- Install: desktop browsers that offer no install prompt (Safari, Firefox) get only the footer "Install app" instructions, not the card.
+- Install: iPhone start-up screens cover portrait iPhones only (no iPad, no landscape); other sizes show a plain dark screen while opening.
+- Install: the icon is a plain "BB" made by scripts/gen-icons.mjs (uses a macOS system font); swap the PNGs in public/icons for real artwork.
+- Offline: the top bar shows the remembered name offline but no unread-notification count or fresh admin/reviewer status until back online.

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { readPref, setPref } from "@/lib/prefs";
+import { isNetworkError, reportOffline } from "@/lib/offline/status";
 import { INDEX_URL, unpackIndex, type SongDoc } from "./pack";
 
 // Loads the song index: the copy saved on this device first (instant, works offline),
@@ -35,7 +36,8 @@ export function useSongIndex(): IndexState {
           setState({ docs, offline: false });
         }
       })
-      .catch(() => {
+      .catch((e) => {
+        if (isNetworkError(e)) reportOffline();
         if (!cancelled) setState((s) => ({ ...s, offline: true }));
       });
     return () => {

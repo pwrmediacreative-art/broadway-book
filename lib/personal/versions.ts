@@ -6,6 +6,8 @@
 import { useSyncExternalStore } from "react";
 import { browserClient } from "@/lib/supabase/browser";
 import { PREF, setPref, usePref } from "@/lib/prefs";
+import { isOffline } from "@/lib/offline/status";
+import { knownUserId } from "@/lib/offline/user";
 
 export interface PersonalVersion {
   song_id: string;
@@ -61,14 +63,12 @@ export function loadMyVersions(): Promise<void> {
         } else if (event === "SIGNED_IN" && !state.userId) setTimeout(() => void loadMyVersions(), 0);
       });
     }
-    const {
-      data: { session },
-    } = await db.auth.getSession();
-    if (!session) {
+    // Offline, this is the player remembered on this phone (their saved copy still shows).
+    const userId = await knownUserId(db);
+    if (!userId) {
       clearDeviceCopies();
       return set({ ready: true, userId: null, list: [] });
     }
-    const userId = session.user.id;
     const key = KEY + userId;
     clearDeviceCopies(key);
     // Show this device's copy at once (no flash of the public chart, works offline)…
@@ -77,6 +77,10 @@ export function loadMyVersions(): Promise<void> {
       if (cached && (!state.ready || state.userId !== userId)) set({ ready: true, userId, list: JSON.parse(cached) });
     } catch {
       // ignore
+    }
+    if (isOffline()) {
+      if (!state.ready || state.userId !== userId) set({ ready: true, userId, list: [] });
+      return;
     }
     // …then refresh it from the account.
     const { data, error } = await db

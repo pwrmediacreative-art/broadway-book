@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { createSetlist, currentUserId, listMySetlists, saveSetlist, type SetlistSummary } from "@/lib/setlists/api";
 import { saveDeviceSetlist, useDeviceSetlist } from "@/lib/setlists/device";
 import { btn, gigDate, primary } from "./ui";
+import { OfflineNote } from "@/app/OfflineRoot";
+import { useOffline } from "@/lib/offline/status";
 
 type Me = { state: "loading" } | { state: "out" } | { state: "in"; lists: SetlistSummary[] } | { state: "error"; message: string };
 
@@ -15,6 +17,7 @@ export default function SetlistsHome() {
   const [me, setMe] = useState<Me>({ state: "loading" });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const offline = useOffline();
 
   useEffect(() => {
     let alive = true;
@@ -98,14 +101,15 @@ export default function SetlistsHome() {
               <p className="mb-2 text-lg">
                 You have a setlist saved on this device: <b>{device.name}</b> ({deviceCount} song{deviceCount === 1 ? "" : "s"}).
               </p>
-              <button disabled={busy} onClick={moveDevice} className={`${btn} ${primary}`}>
+              <button disabled={busy || offline} onClick={moveDevice} className={`${btn} ${primary} disabled:opacity-40`}>
                 Save to my account
               </button>
             </div>
           )}
-          <button disabled={busy} onClick={make} className={`${btn} ${primary} mb-4 h-14 w-full text-xl`}>
+          <button disabled={busy || offline} onClick={make} className={`${btn} ${primary} mb-4 h-14 w-full text-xl disabled:opacity-40`}>
             + New setlist
           </button>
+          {offline && <OfflineNote className="mb-4" />}
           {me.lists.length === 0 ? (
             <p className="text-lg text-muted">No setlists yet.</p>
           ) : (
