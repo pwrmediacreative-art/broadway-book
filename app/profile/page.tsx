@@ -37,7 +37,7 @@ async function Profile({ searchParams }: { searchParams: PageProps<"/profile">["
       {!first && (
         <Link
           href="/profile/versions"
-          className="mt-8 flex min-h-14 items-center justify-between rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 text-lg"
+          className="bb-panel mt-8 flex min-h-14 items-center justify-between px-4 text-lg active:bg-bb-rule-gray"
         >
           My versions <span className="text-bb-cue-gray">Songs you changed for yourself ›</span>
         </Link>

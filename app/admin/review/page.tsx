@@ -36,7 +36,7 @@ async function Next({ searchParams }: { searchParams: SearchParams }) {
     <>
       <h1 className="text-3xl font-bold tracking-tight">Review</h1>
       <ReviewHeader prefs={prefs} progress={progress} page="empty" />
-      <p className="rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4 text-lg">
+      <p className="bb-panel p-4 text-lg">
         Nothing left in “{FILTERS[prefs.filter]}” that nobody else is reviewing.{" "}
         <Link href={`/admin/review/queue?${prefsQuery(prefs)}`} className="text-bb-downbeat-amber">
           See the queue

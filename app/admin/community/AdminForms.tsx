@@ -21,7 +21,7 @@ export function SettingsForm({ settings }: { settings: { key: string; value: num
       router.refresh();
     });
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4">
+    <div className="bb-panel flex flex-col gap-3 p-4">
       {settings.map((s) => (
         <label key={s.key} className="flex items-center justify-between gap-3 text-lg">
           <span>{s.label}</span>
@@ -32,14 +32,14 @@ export function SettingsForm({ settings }: { settings: { key: string; value: num
             max={1000}
             value={values[s.key]}
             onChange={(e) => setValues((v) => ({ ...v, [s.key]: e.target.value }))}
-            className="min-h-12 w-24 rounded-xl border border-bb-rule-gray bg-bb-house-black px-3 text-right text-lg"
+            className="bb-input min-h-12 w-24 text-right tabular-nums"
           />
         </label>
       ))}
-      <button disabled={pending} onClick={save} className="min-h-12 rounded-xl bg-bb-downbeat-amber text-lg font-bold text-bb-stage-black disabled:opacity-40">
+      <button disabled={pending} onClick={save} className="bb-btn bb-btn-primary min-h-12">
         Save rules
       </button>
-      {msg && <p className={`text-lg ${msg.ok ? "text-emerald-300" : "text-red-300"}`}>{msg.text}</p>}
+      {msg && <p className={`text-lg ${msg.ok ? "text-bb-chart-white" : "bb-error"}`}>{msg.ok ? `✓ ${msg.text}` : msg.text}</p>}
     </div>
   );
 }
@@ -51,7 +51,7 @@ export function ResolveButton({ id }: { id: string }) {
     <button
       disabled={pending}
       onClick={() => start(async () => void ((await resolveReport(id)).ok && router.refresh()))}
-      className="min-h-12 rounded-xl border border-bb-rule-gray px-4 text-lg disabled:opacity-40"
+      className="bb-btn bb-btn-secondary min-h-12"
     >
       Mark handled
     </button>
@@ -77,11 +77,11 @@ export function BlockToggle({ userId, blocked, name }: { userId: string; blocked
             router.refresh();
           });
         }}
-        className={`min-h-12 rounded-xl border px-4 text-lg disabled:opacity-40 ${blocked ? "border-bb-rule-gray" : "border-red-500/60 text-red-300"}`}
+        className={`bb-btn min-h-12 ${blocked ? "bb-btn-secondary" : "bb-btn-danger"}`}
       >
         {blocked ? "Unblock" : "Block"}
       </button>
-      {err && <span className="w-full text-red-300">{err}</span>}
+      {err && <span className="bb-error w-full">{err}</span>}
     </>
   );
 }
@@ -105,11 +105,11 @@ export function ReviewerToggle({ userId, on, name }: { userId: string; on: boole
             router.refresh();
           });
         }}
-        className={`min-h-12 rounded-xl border px-4 text-lg disabled:opacity-40 ${on ? "border-bb-rule-gray" : "border-sky-400/60 text-sky-200"}`}
+        className="bb-btn bb-btn-secondary min-h-12"
       >
         {on ? "Remove reviewer" : "Make reviewer"}
       </button>
-      {err && <span className="w-full text-red-300">{err}</span>}
+      {err && <span className="bb-error w-full">{err}</span>}
     </>
   );
 }

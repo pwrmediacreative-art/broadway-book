@@ -10,7 +10,7 @@ export default function ManualFile({ id, label, q }: { id: string; label: string
   const [pending, start] = useTransition();
   const [err, setErr] = useState<string | null>(null);
   return (
-    <li className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 py-2">
+    <li className="flex flex-wrap items-center justify-between gap-2 px-4 py-2">
       <span className="min-w-0 truncate text-lg">{label}</span>
       <button
         type="button"
@@ -22,11 +22,11 @@ export default function ManualFile({ id, label, q }: { id: string; label: string
             router.push(`/admin/review/${r.id}?${q}`);
           })
         }
-        className="min-h-11 rounded-lg border border-bb-rule-gray px-3 text-lg disabled:opacity-40"
+        className="bb-btn bb-btn-secondary px-3 text-lg"
       >
         Type it in
       </button>
-      {err && <span className="w-full text-red-300">{err}</span>}
+      {err && <span className="bb-error w-full">{err}</span>}
     </li>
   );
 }

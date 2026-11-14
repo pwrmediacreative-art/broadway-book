@@ -3,9 +3,9 @@
 import { pretty } from "@/lib/chart";
 import { shownKey, type SetItem } from "@/lib/setlists/play";
 
-export const btn = "inline-flex h-12 min-w-12 items-center justify-center rounded-lg px-4 text-lg font-semibold";
-export const primary = "bg-bb-downbeat-amber text-bb-stage-black active:opacity-80";
-export const plain = "border border-bb-rule-gray bg-bb-case-charcoal text-bb-chart-white active:bg-bb-rule-gray";
+export const btn = "bb-btn h-12 min-w-12 px-4 text-lg";
+export const primary = "bb-btn-primary";
+export const plain = "bb-btn-secondary";
 
 /** "Fri, Nov 20" from a YYYY-MM-DD date, without timezone shifts. */
 export function gigDate(d: string | null): string | null {
@@ -20,22 +20,22 @@ export function gigDate(d: string | null): string | null {
 export function SetSongList({ items, current, onPick }: { items: SetItem[]; current?: number; onPick?: (itemIndex: number) => void }) {
   let n = 0;
   return (
-    <ol className="divide-y divide-bb-rule-gray overflow-hidden rounded-xl border border-bb-rule-gray">
+    <ol className="divide-y divide-bb-rule-gray border-y border-bb-rule-gray">
       {items.map((it, i) => {
         const ok = !!it.song;
         if (ok) n++;
         const k = shownKey(it);
         const body = (
           <>
-            <span className="w-8 shrink-0 text-right text-lg tabular-nums text-bb-cue-gray">{ok ? n : "–"}</span>
+            <span className="w-8 shrink-0 text-right font-bb-data text-lg tabular-nums text-bb-cue-gray">{ok ? n : "–"}</span>
             <span className="min-w-0 flex-1">
               <span className={`block truncate text-xl font-semibold ${ok ? "" : "text-bb-cue-gray line-through"}`}>{it.song?.title ?? "Not available"}</span>
-              {it.note && <span className="block truncate text-base text-bb-downbeat-amber">{it.note}</span>}
+              {it.note && <span className="block truncate text-base text-bb-cue-gray">{it.note}</span>}
             </span>
-            {ok && k && <span className="shrink-0 font-mono text-2xl font-bold text-bb-downbeat-amber">{pretty(k)}</span>}
+            {ok && k && <span className="shrink-0 font-bb-data text-2xl font-bold text-bb-chart-white">{pretty(k)}</span>}
           </>
         );
-        const cls = `flex min-h-16 w-full items-center gap-3 px-3 py-2 text-left ${i === current ? "bg-bb-downbeat-amber/20" : "bg-bb-case-charcoal"}`;
+        const cls = `flex min-h-16 w-full items-center gap-3 px-3 py-2 text-left ${i === current ? "bg-bb-downbeat-amber/15" : "bg-bb-case-charcoal"}`;
         return (
           <li key={i}>
             {onPick && ok ? (

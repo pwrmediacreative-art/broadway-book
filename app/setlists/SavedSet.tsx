@@ -20,7 +20,7 @@ export default function SavedSet({ set, id, startPlaying = false }: { set: PlayS
       <Link href="/setlists" className="inline-flex h-12 items-center text-lg text-bb-cue-gray active:text-bb-chart-white">
         ← Setlists
       </Link>
-      <h1 className="text-3xl font-bold leading-tight">{set.name}</h1>
+      <h1 className="text-bb-display">{set.name}</h1>
       <p className="mb-3 text-lg text-bb-cue-gray">
         {[gigDate(set.gig_date), `${playable} song${playable === 1 ? "" : "s"}`, "saved copy"].filter(Boolean).join(" · ")}
       </p>
@@ -30,7 +30,7 @@ export default function SavedSet({ set, id, startPlaying = false }: { set: PlayS
           enterFullscreen();
           setPlaying(true);
         }}
-        className={`${btn} ${primary} mb-4 h-14 w-full text-xl disabled:opacity-40`}
+        className={`${btn} ${primary} mb-4 h-14 w-full text-xl`}
       >
         Play set ▸
       </button>

@@ -40,7 +40,7 @@ export default function AdminPdfLink() {
         e.preventDefault();
         alert("Original PDF links arrive with the Dropbox import step.");
       }}
-      className="mt-6 inline-flex h-12 items-center rounded-lg border border-bb-rule-gray px-4 text-lg text-bb-cue-gray"
+      className="bb-btn bb-btn-secondary mt-6 h-12 px-4 text-lg font-normal text-bb-cue-gray"
     >
       Original PDF (admin, placeholder)
     </a>

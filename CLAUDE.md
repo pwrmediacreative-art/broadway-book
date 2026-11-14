@@ -111,8 +111,10 @@ readable at arm's length and usable with a thumb.
 
 ## Design
 
-- Dark only for now, high contrast, large chart text, phone layout first,
-  big tap targets (44px+). Font-size control and light mode come later.
+- Dark everywhere, high contrast, large chart text, phone layout first,
+  big tap targets (44px+). No light mode outside stage mode's Light look (DESIGN.md).
+  A font-size control comes later. `npm test` includes `lib/design/design.test.ts`, which fails on hex,
+  raw Tailwind colors, pill/card rounding, shadows, blur or text under 14px in components.
 - Every UI change must follow DESIGN.md and use its tokens (`--bb-*` in `app/globals.css`); never hard-code colors or fonts.
 
 ## Rules for every future step

@@ -39,7 +39,7 @@ export default function LoginForm() {
 
   if (state === "sent") {
     return (
-      <div className="rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-5 text-lg">
+      <div className="bb-panel p-5 text-lg">
         <p className="font-semibold">Check your email.</p>
         <p className="mt-1 text-bb-cue-gray">
           We sent a sign-in link to <span className="text-bb-chart-white">{email.trim()}</span>. Tap it to sign in.
@@ -47,7 +47,7 @@ export default function LoginForm() {
         <button
           type="button"
           onClick={() => setState("idle")}
-          className="mt-4 h-11 text-base text-bb-downbeat-amber underline underline-offset-4"
+          className="mt-4 h-11 text-base text-bb-chart-white underline underline-offset-4"
         >
           Use a different email
         </button>
@@ -68,18 +68,18 @@ export default function LoginForm() {
         inputMode="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        className="h-14 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 text-xl outline-none focus:border-bb-downbeat-amber"
+        className="bb-input h-14 px-4 text-xl"
         placeholder="you@example.com"
       />
       {error && (
-        <p role="alert" className="text-lg text-red-400">
+        <p role="alert" className="bb-error text-lg">
           {error}
         </p>
       )}
       <button
         type="submit"
         disabled={state === "sending"}
-        className="h-14 rounded-xl bg-bb-downbeat-amber text-xl font-semibold text-bb-stage-black active:opacity-80 disabled:opacity-60"
+        className="bb-btn bb-btn-primary h-14 text-xl"
       >
         {state === "sending" ? "Sending…" : "Email me a sign-in link"}
       </button>

@@ -66,7 +66,7 @@ function SongRow({ d, index, onOpen }: { d: SongDoc; index: number; onOpen: () =
         <span className="min-w-0">
           <span className="flex items-center gap-2 text-xl font-semibold">
             <span className="min-w-0 truncate">{d.title}</span>
-            {d.uv && <span role="img" aria-label="Unverified" title="Unverified" data-uv-dot className="size-2.5 shrink-0 rounded-full bg-amber-400" />}
+            {d.uv && <span role="img" aria-label="Unverified" title="Unverified" data-uv-dot className="bb-dot bb-dot-unverified size-2.5" />}
           </span>
           <span className="block truncate text-bb-cue-gray">
             {d.artist}
@@ -77,18 +77,18 @@ function SongRow({ d, index, onOpen }: { d: SongDoc; index: number; onOpen: () =
               </span>
             )}
             {yours && (
-              <span className="ml-2 rounded bg-violet-400/25 px-1.5 py-0.5 text-xs font-semibold uppercase text-violet-100">
+              <span className="bb-chip ml-2">
                 Yours
               </span>
             )}
             {d.ex && (
-              <span className="ml-2 rounded bg-bb-downbeat-amber/20 px-1.5 py-0.5 text-xs font-semibold uppercase text-bb-downbeat-amber">
+              <span className="bb-chip bb-chip-muted ml-2">
                 Example
               </span>
             )}
           </span>
         </span>
-        {d.key && <span className="shrink-0 font-mono text-2xl font-bold text-bb-downbeat-amber">{d.key}</span>}
+        {d.key && <span className="shrink-0 font-bb-data text-2xl font-bold text-bb-chart-white">{d.key}</span>}
       </Link>
       <AddToSetlist slug={d.slug} title={d.title} variant="row" />
       <Link
@@ -99,7 +99,7 @@ function SongRow({ d, index, onOpen }: { d: SongDoc; index: number; onOpen: () =
         }}
         aria-label={`Open ${d.title} in stage mode`}
         title="Stage mode"
-        className="flex w-14 shrink-0 items-center justify-center border-l border-bb-rule-gray text-bb-cue-gray active:bg-bb-rule-gray active:text-bb-downbeat-amber"
+        className="flex w-14 shrink-0 items-center justify-center border-l border-bb-rule-gray text-bb-cue-gray active:bg-bb-rule-gray active:text-bb-chart-white"
       >
         <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
           <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" strokeLinecap="round" strokeLinejoin="round" />

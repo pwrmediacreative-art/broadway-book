@@ -88,15 +88,15 @@ async function History({ params }: { params: PageProps<"/songs/[slug]/history">[
         Every version that has been live and every change of its Verified status, newest first. Nothing here is ever deleted
         {admin ? "; reverting adds a new version." : "."}
       </p>
-      <ol className="flex flex-col gap-3">
+      <ol className="divide-y divide-bb-rule-gray border-y border-bb-rule-gray">
         {timeline.map((t) => {
           if (t.kind === "status") {
             const { s } = t;
             const ok = s.status === "verified";
             return (
-              <li key={`s${s.id}`} className="rounded-xl border border-dashed border-bb-rule-gray px-4 py-3" data-status-row>
+              <li key={`s${s.id}`} className="px-4 py-3" data-status-row>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className={`rounded px-2 py-0.5 text-sm font-bold uppercase ${ok ? "bg-emerald-400/15 text-emerald-200" : "bg-amber-400/20 text-amber-200"}`}>
+                  <span className={`bb-chip ${ok ? "" : "bb-chip-muted"}`}>
                     {ok ? "✓ Verified" : "Unverified"}
                   </span>
                   <span className="text-bb-cue-gray">{when(s.created_at)}</span>
@@ -118,10 +118,10 @@ async function History({ params }: { params: PageProps<"/songs/[slug]/history">[
           const live = r.id === song.current_revision_id;
           const pid = fromProposal.get(r.id);
           return (
-            <li key={r.id} className={`rounded-xl border p-4 ${live ? "border-bb-downbeat-amber" : "border-bb-rule-gray"} bg-bb-case-charcoal`}>
+            <li key={r.id} className={`p-4 ${live ? "bg-bb-downbeat-amber/15" : ""}`}>
               <div className="flex flex-wrap items-center gap-2">
-                {live && <span className="rounded bg-bb-downbeat-amber px-2 py-0.5 text-sm font-bold uppercase text-bb-stage-black">Live</span>}
-                <span className="rounded bg-bb-house-black px-2 py-0.5 text-sm font-semibold uppercase text-bb-cue-gray">{SOURCE_LABEL[r.source] ?? r.source}</span>
+                {live && <span className="bb-chip">Live</span>}
+                <span className="bb-chip bb-chip-muted">{SOURCE_LABEL[r.source] ?? r.source}</span>
                 <span className="text-bb-cue-gray">{when(r.created_at)}</span>
               </div>
               <p className="mt-1 text-lg">
@@ -129,7 +129,7 @@ async function History({ params }: { params: PageProps<"/songs/[slug]/history">[
                 {r.note && r.source !== "ai" && <> · “{r.note}”</>}
               </p>
               {pid && (
-                <Link href={`/community/${pid}`} className="inline-flex min-h-11 items-center text-bb-downbeat-amber">
+                <Link href={`/community/${pid}`} className="inline-flex min-h-11 items-center text-bb-chart-white underline">
                   See the suggestion and votes
                 </Link>
               )}

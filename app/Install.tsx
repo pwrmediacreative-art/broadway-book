@@ -29,23 +29,23 @@ function Sheet({ onClose }: { onClose: () => void }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
   return (
-    <div className="fixed inset-0 z-[70] flex items-end bg-black/70 sm:items-center sm:justify-center" onClick={onClose}>
+    <div className="fixed inset-0 z-[70] flex items-end bg-bb-stage-black/80 sm:items-center sm:justify-center" onClick={onClose}>
       <div
         role="dialog"
         aria-label="Install Broadway Book"
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[85dvh] w-full overflow-y-auto rounded-t-2xl border border-bb-rule-gray bg-bb-house-black p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:max-w-md sm:rounded-2xl"
+        className="max-h-[85dvh] w-full overflow-y-auto rounded-bb-none border-t border-bb-rule-gray bg-bb-house-black p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:max-w-md sm:border"
       >
         <div className="mb-3 flex items-center gap-2">
           <h2 className="min-w-0 flex-1 text-xl font-bold">Install Broadway Book</h2>
-          <button onClick={onClose} aria-label="Close" className="grid size-11 place-items-center rounded-lg text-2xl text-bb-cue-gray active:bg-bb-case-charcoal">
+          <button onClick={onClose} aria-label="Close" className="bb-btn bb-btn-quiet size-11 p-0 text-2xl text-bb-cue-gray">
             ✕
           </button>
         </div>
         <p className="mb-4 text-lg text-bb-cue-gray">It opens from your home screen like an app and works with no signal.</p>
         {canPrompt ? (
           <button
-            className="mb-4 h-14 w-full rounded-lg bg-bb-downbeat-amber text-xl font-bold text-bb-stage-black active:opacity-80"
+            className="bb-btn bb-btn-primary mb-4 h-14 w-full text-xl"
             onClick={async () => {
               if (await prompt()) onClose();
             }}
@@ -74,15 +74,15 @@ export function InstallCard() {
   const [open, setOpen] = useState(false);
   if (!showCard) return null;
   return (
-    <div className="mb-3 flex items-center gap-2 rounded-xl border border-bb-downbeat-amber/60 bg-bb-downbeat-amber/10 py-1 pl-3 pr-1">
+    <div className="bb-panel mb-3 flex items-center gap-2 py-1 pl-3 pr-1">
       <p className="min-w-0 flex-1 text-base leading-snug">Install the app: works with no signal.</p>
       <button
-        className="h-11 shrink-0 rounded-lg bg-bb-downbeat-amber px-4 text-base font-bold text-bb-stage-black active:opacity-80"
+        className="bb-btn bb-btn-secondary h-11 shrink-0 px-4 text-base active:bg-bb-rule-gray"
         onClick={() => (canPrompt ? void prompt() : setOpen(true))}
       >
         {canPrompt ? "Install" : "How"}
       </button>
-      <button onClick={dismiss} aria-label="Dismiss" className="grid size-11 shrink-0 place-items-center rounded-lg text-xl text-bb-cue-gray active:bg-bb-case-charcoal">
+      <button onClick={dismiss} aria-label="Dismiss" className="bb-btn bb-btn-quiet size-11 shrink-0 p-0 text-xl text-bb-cue-gray active:bg-bb-rule-gray">
         ✕
       </button>
       {open && <Sheet onClose={() => setOpen(false)} />}

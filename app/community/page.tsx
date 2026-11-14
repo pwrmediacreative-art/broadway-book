@@ -60,7 +60,7 @@ async function List({ searchParams }: { searchParams: PageProps<"/community">["s
     .limit(200);
   if (song) query = query.eq("song.slug", song);
   const { data, error } = await query;
-  if (error) return <p className="text-lg text-red-300">Couldn&apos;t load suggestions: {error.message}</p>;
+  if (error) return <p className="bb-error text-lg">Couldn&apos;t load suggestions: {error.message}</p>;
 
   const needle = q.toLowerCase();
   const rows = ((data ?? []) as unknown as Row[]).filter((r) => {
@@ -90,9 +90,7 @@ async function List({ searchParams }: { searchParams: PageProps<"/community">["s
             key={k}
             href={href({ f: k })}
             aria-current={f === k ? "page" : undefined}
-            className={`inline-flex min-h-11 shrink-0 items-center rounded-full border px-4 text-lg ${
-              f === k ? "border-bb-downbeat-amber bg-bb-downbeat-amber font-semibold text-bb-stage-black" : "border-bb-rule-gray bg-bb-case-charcoal"
-            }`}
+            className={`bb-btn bb-btn-secondary shrink-0 px-4 text-lg ${f === k ? "bb-on" : ""}`}
           >
             {label}
           </Link>
@@ -106,21 +104,21 @@ async function List({ searchParams }: { searchParams: PageProps<"/community">["s
           defaultValue={q}
           type="search"
           placeholder="Filter by song or artist"
-          className="min-h-12 min-w-0 flex-1 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 text-lg"
+          className="bb-input min-h-12 min-w-0 flex-1 px-4 text-lg"
         />
-        <button className="min-h-12 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 text-lg">Go</button>
+        <button className="bb-btn bb-btn-secondary min-h-12 px-4 text-lg">Go</button>
       </form>
       {song && (
         <p className="mb-3 text-lg">
           Showing one song.{" "}
-          <Link href={href({ song: "" })} className="text-bb-downbeat-amber">
+          <Link href={href({ song: "" })} className="text-bb-chart-white underline underline-offset-4">
             Show all songs
           </Link>
         </p>
       )}
       {(f === "needs" || f === "mine") && !user && (
         <p className="mb-3 text-lg">
-          <Link href={`/login?next=${encodeURIComponent(href({}))}`} className="text-bb-downbeat-amber">
+          <Link href={`/login?next=${encodeURIComponent(href({}))}`} className="text-bb-chart-white underline underline-offset-4">
             Sign in
           </Link>{" "}
           to see this list.
@@ -128,18 +126,18 @@ async function List({ searchParams }: { searchParams: PageProps<"/community">["s
       )}
 
       {rows.length === 0 ? (
-        <p className="rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4 text-lg text-bb-cue-gray">
+        <p className="bb-panel p-4 text-lg text-bb-cue-gray">
           {f === "needs" ? "Nothing needs your vote right now. Thanks!" : "No open suggestions here."}
         </p>
       ) : (
-        <ul className="flex flex-col gap-3">
+        <ul className="divide-y divide-bb-rule-gray border-y border-bb-rule-gray">
           {rows.map((r) => {
             const counted = r.votes.filter((v) => v.voter_id !== r.author_id);
             const yes = counted.filter((v) => v.value === "approve").length;
             const no = counted.length - yes;
             return (
               <li key={r.id}>
-                <Link href={`/community/${r.id}`} className="block rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4 active:bg-bb-rule-gray">
+                <Link href={`/community/${r.id}`} className="block px-1 py-4 active:bg-bb-case-charcoal">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate text-xl font-semibold">{r.song.title}</p>
@@ -150,8 +148,8 @@ async function List({ searchParams }: { searchParams: PageProps<"/community">["s
                   <p className="mt-2 text-lg">“{r.note}”</p>
                   <p className="mt-1 text-sm text-bb-cue-gray">
                     {r.author?.display_name || "A player"}
-                    <ReviewerBadge on={r.author?.reviewer} /> · {when(r.created_at)} · <span className="text-emerald-300">✓ {yes}</span>{" "}
-                    <span className="text-red-300">✕ {no}</span>
+                    <ReviewerBadge on={r.author?.reviewer} /> · {when(r.created_at)} · <span className="text-bb-chart-white">✓ {yes}</span>{" "}
+                    <span className="text-bb-cue-gray">✕ {no}</span>
                   </p>
                 </Link>
               </li>

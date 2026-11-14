@@ -74,20 +74,20 @@ function DeviceEditorInner({ device }: { device: Snapshot }) {
       save={save}
       playHref="/setlists/device/play"
       share={(cur) => (
-        <section className="mb-6 rounded-xl border border-bb-rule-gray p-3">
+        <section className="mb-6 border border-bb-rule-gray p-3">
           <h2 className="mb-1 text-lg font-semibold">Share with the band</h2>
           <p className="mb-2 text-base text-bb-cue-gray">
             Makes a snapshot link of the list as it is now: songs, keys, notes, name and date. Later changes need a new link, and a snapshot link can&apos;t be turned
             off.{" "}
-            <Link href="/login?next=/setlists" className="text-bb-downbeat-amber underline">
+            <Link href="/login?next=/setlists" className="text-bb-chart-white underline">
               Sign in
             </Link>{" "}
             for a live link you can turn off.
           </p>
-          {link && <input readOnly value={link} onFocus={(e) => e.target.select()} aria-label="Snapshot link" className="mb-2 h-12 w-full rounded-lg border border-bb-rule-gray bg-bb-house-black px-3 font-mono text-base" />}
+          {link && <input readOnly value={link} onFocus={(e) => e.target.select()} aria-label="Snapshot link" className="bb-input mb-2 h-12 w-full px-3 text-base" />}
           <div className="flex flex-wrap gap-2">
             <button
-              className={`${btn} ${link ? plain : primary}`}
+              className={`${btn} ${plain}`}
               onClick={() => setLink(`${location.origin}/setlists/snapshot#${encodeSnapshot(toSnap(cur))}`)}
             >
               {link ? "Update link" : "Make snapshot link"}
@@ -97,7 +97,7 @@ function DeviceEditorInner({ device }: { device: Snapshot }) {
         </section>
       )}
       danger={
-        <section className="rounded-xl border border-red-500/50 p-3">
+        <section className="border border-bb-rule-gray p-3">
           <ClearButton />
         </section>
       }
@@ -109,7 +109,7 @@ function ClearButton() {
   const router = useRouter();
   return (
     <button
-      className={`${btn} border border-red-500/60 text-red-300 active:bg-red-500/20`}
+      className={`${btn} bb-btn-danger`}
       onClick={() => {
         if (!window.confirm("Clear this setlist from this device? This can't be undone.")) return;
         saveDeviceSetlist(null);
@@ -153,7 +153,7 @@ export function SnapshotView() {
       <Link href="/" className="inline-flex h-12 items-center text-lg text-bb-cue-gray active:text-bb-chart-white">
         ← All songs
       </Link>
-      <h1 className="text-3xl font-bold leading-tight">{set.name}</h1>
+      <h1 className="text-bb-display">{set.name}</h1>
       <p className="mb-3 text-lg text-bb-cue-gray">
         {[gigDate(set.gig_date), `${playable} song${playable === 1 ? "" : "s"}`, "snapshot"].filter(Boolean).join(" · ")}
       </p>
@@ -163,7 +163,7 @@ export function SnapshotView() {
           enterFullscreen();
           setPlaying(true);
         }}
-        className={`${btn} ${primary} mb-4 h-14 w-full text-xl disabled:opacity-40`}
+        className={`${btn} ${primary} mb-4 h-14 w-full text-xl`}
       >
         Play set ▸
       </button>

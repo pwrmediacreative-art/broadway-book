@@ -73,7 +73,7 @@ function ViewPdf({ id }: { id: string }) {
       href={`/admin/import/pdf/${id}`}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex min-h-11 shrink-0 items-center rounded-lg border border-bb-rule-gray px-3 text-base text-bb-downbeat-amber"
+      className="bb-btn bb-btn-secondary shrink-0 px-3"
     >
       View PDF
     </a>
@@ -82,10 +82,10 @@ function ViewPdf({ id }: { id: string }) {
 
 function Section({ title, count, open, children }: { title: string; count: number; open?: boolean; children: ReactNode }) {
   return (
-    <details open={open} className="mb-4 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal">
+    <details open={open} className="bb-panel mb-4 border border-bb-rule-gray">
       <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 px-4 py-3 text-xl font-semibold">
         <span>{title}</span>
-        <span className="text-bb-cue-gray">{count}</span>
+        <span className="tabular-nums text-bb-cue-gray">{count}</span>
       </summary>
       <div className="border-t border-bb-rule-gray px-4 py-3">{count === 0 ? <p className="text-bb-cue-gray">None.</p> : children}</div>
     </details>
@@ -160,7 +160,7 @@ async function Inventory({ searchParams }: { searchParams: SearchParams }) {
   return (
     <>
     <div className="mx-auto max-w-2xl">
-      <Link href="/admin" className="inline-flex min-h-11 items-center text-lg text-bb-downbeat-amber">
+      <Link href="/admin" className="inline-flex h-12 items-center text-lg text-bb-cue-gray active:text-bb-chart-white">
         ← Admin
       </Link>
       <h1 className="text-3xl font-bold tracking-tight">Import from Dropbox</h1>
@@ -169,8 +169,8 @@ async function Inventory({ searchParams }: { searchParams: SearchParams }) {
       </p>
 
       {!connected && (
-        <p className="mb-4 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4 text-lg">
-          Dropbox isn&apos;t connected yet: set DROPBOX_APP_KEY, DROPBOX_APP_SECRET and DROPBOX_REFRESH_TOKEN.
+        <p className="bb-notice mb-4">
+          <b>Dropbox isn&apos;t connected yet:</b> set DROPBOX_APP_KEY, DROPBOX_APP_SECRET and DROPBOX_REFRESH_TOKEN.
         </p>
       )}
       <ScanButton disabled={!connected} />
@@ -182,13 +182,13 @@ async function Inventory({ searchParams }: { searchParams: SearchParams }) {
           ["Unparsed", o.unparsed],
           ["Duplicates", o.duplicates],
         ].map(([label, n]) => (
-          <div key={label} className="rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4">
+          <div key={label} className="bb-panel p-4">
             <dt className="text-sm text-bb-cue-gray">{label}</dt>
-            <dd className="text-3xl font-bold">{n}</dd>
+            <dd className="text-3xl font-bold tabular-nums">{n}</dd>
           </div>
         ))}
       </dl>
-      <p className="mb-6 text-lg text-bb-cue-gray">
+      <p className="mb-6 text-lg tabular-nums text-bb-cue-gray">
         {o.duplicate_groups} duplicate groups · {o.changed} changed since import · {o.missing} missing from Dropbox
       </p>
 
@@ -206,9 +206,9 @@ async function Inventory({ searchParams }: { searchParams: SearchParams }) {
           name="q"
           defaultValue={q}
           placeholder="Search filenames"
-          className="min-h-11 w-full rounded-lg border border-bb-rule-gray bg-bb-house-black px-3 text-lg"
+          className="bb-input w-full"
         />
-        <button type="submit" className="min-h-11 rounded-xl bg-bb-downbeat-amber px-5 text-lg font-semibold text-bb-stage-black">
+        <button type="submit" className="bb-btn bb-btn-secondary px-5">
           Search
         </button>
       </form>

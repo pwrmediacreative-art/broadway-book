@@ -58,24 +58,24 @@ async function Dashboard() {
           ["To review", s.needs_review ?? 0],
           ["Flagged songs", s.flagged ?? 0],
         ].map(([label, n]) => (
-          <div key={label} className="rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4">
+          <div key={label} className="bb-panel p-4">
             <dt className="text-sm text-bb-cue-gray">{label}</dt>
-            <dd className="text-3xl font-bold">{n}</dd>
+            <dd className="text-3xl font-bold tabular-nums">{n}</dd>
           </div>
         ))}
       </dl>
 
-      <ul className="flex flex-col gap-3">
+      <ul className="divide-y divide-bb-rule-gray border-y border-bb-rule-gray">
         {SECTIONS.map((sec) => (
-          <li key={sec.path} className="rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4">
+          <li key={sec.path} className="py-4">
             <div className="flex items-baseline justify-between gap-3">
               <h2 className="text-xl font-semibold">{sec.title}</h2>
               {"ready" in sec ? (
-                <Link href={sec.path} className="inline-flex min-h-11 items-center text-lg text-bb-downbeat-amber">
+                <Link href={sec.path} className="bb-btn bb-btn-secondary shrink-0">
                   Open →
                 </Link>
               ) : (
-                <span className="text-sm text-bb-downbeat-amber">Coming soon</span>
+                <span className="text-sm text-bb-cue-gray">Coming soon</span>
               )}
             </div>
             <p className="mt-1 text-lg text-bb-cue-gray">{sec.text}</p>

@@ -11,15 +11,15 @@ export default function NeedsConnection() {
   const back = from && from.startsWith("/") && !from.startsWith("//") ? from : null;
   return (
     <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-8 text-center">
-      <h1 className="mb-2 text-3xl font-bold">You&apos;re offline</h1>
+      <h1 className="mb-2 text-bb-display">You&apos;re offline</h1>
       <p className="mb-6 text-xl text-bb-cue-gray">This page needs a connection. Your saved charts and setlists still work.</p>
-      <Link href="/" className="inline-flex h-14 items-center justify-center rounded-lg bg-bb-downbeat-amber px-6 text-xl font-bold text-bb-stage-black active:opacity-80">
+      <Link href="/" className="bb-btn bb-btn-primary h-14 px-6 text-xl">
         Back to search
       </Link>
       {back && !offline && (
         <p className="mt-6 text-lg">
           You&apos;re back online.{" "}
-          <a href={back} className="text-bb-downbeat-amber underline">
+          <a href={back} className="text-bb-chart-white underline">
             Open the page
           </a>
         </p>

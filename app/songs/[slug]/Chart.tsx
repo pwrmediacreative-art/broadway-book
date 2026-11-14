@@ -65,10 +65,10 @@ function Beat({ b, chords, marks, spot }: { b: BeatView; chords: boolean; marks:
       data-beat={spot?.id}
       className={`relative inline-flex flex-col items-start px-[0.1em] ${
         spot ? "select-none [-webkit-touch-callout:none]" : ""
-      } ${selected ? "rounded-[0.12em] bg-bb-downbeat-amber/35 outline outline-[0.06em] outline-bb-downbeat-amber" : ""}`}
+      } ${selected ? "rounded-[0.12em] bg-bb-downbeat-amber/25 outline outline-[0.06em] outline-bb-downbeat-amber" : ""}`}
     >
       {spot?.hold.flagged.has(spot.id) && (
-        <span className="absolute right-0 top-0 size-[0.24em] rounded-full bg-violet-400 ring-[0.03em] ring-black" aria-label="flagged" role="img" />
+        <span className="bb-dot bb-dot-flag absolute right-0 top-0 size-[0.24em]" aria-label="flagged" role="img" />
       )}
       {marks && (
         <span className="relative h-[0.42em] w-full min-w-[0.5em]" aria-hidden>
@@ -77,7 +77,7 @@ function Beat({ b, chords, marks, spot }: { b: BeatView; chords: boolean; marks:
             <Fermata className="absolute bottom-0 left-1/2 h-[0.4em] w-[0.75em] -translate-x-1/2 text-bb-downbeat-amber" />
           )}
           {b.end === "stop" && (
-            <span className="absolute bottom-[0.04em] right-0 size-[0.28em] rounded-full bg-red-400" />
+            <span className="bb-dot absolute bottom-[0.04em] right-0 size-[0.28em] bg-bb-chart-stop-red" />
           )}
         </span>
       )}
@@ -251,7 +251,7 @@ export default function Chart({
                         onClick={() => marks.onTap(id)}
                         aria-label="Unclear spot: show it in the editor"
                         className={`flex flex-col gap-[0.3em] rounded-[0.2em] text-left outline outline-[0.08em] outline-offset-[0.12em] ${
-                          marks.active === id ? "bg-amber-400/25 outline-amber-300" : "bg-amber-400/10 outline-amber-400/80"
+                          marks.active === id ? "bg-bb-downbeat-amber/25 outline-bb-downbeat-amber" : "bg-bb-downbeat-amber/15 outline-bb-downbeat-amber"
                         }`}
                       >
                         {lines}

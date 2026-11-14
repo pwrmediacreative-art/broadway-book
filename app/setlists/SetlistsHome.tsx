@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createSetlist, currentUserId, listMySetlists, saveSetlist, type SetlistSummary } from "@/lib/setlists/api";
 import { saveDeviceSetlist, useDeviceSetlist } from "@/lib/setlists/device";
-import { btn, gigDate, primary } from "./ui";
+import { btn, gigDate, plain, primary } from "./ui";
 import { OfflineNote } from "@/app/OfflineRoot";
 import { useOffline } from "@/lib/offline/status";
 
@@ -67,15 +67,15 @@ export default function SetlistsHome() {
       <Link href="/" className="inline-flex h-12 items-center text-lg text-bb-cue-gray active:text-bb-chart-white">
         ← All songs
       </Link>
-      <h1 className="mb-3 text-3xl font-bold tracking-tight">Setlists</h1>
-      {err && <p className="mb-3 rounded-lg border border-red-500 p-3 text-lg text-red-300">{err}</p>}
+      <h1 className="mb-3 text-bb-display">Setlists</h1>
+      {err && <p className="bb-error mb-3 border border-bb-stop-red p-3 text-lg">{err}</p>}
 
       {me.state === "loading" && <p className="text-lg text-bb-cue-gray">Loading…</p>}
-      {me.state === "error" && <p className="text-lg text-red-300">Couldn&apos;t load your setlists: {me.message}</p>}
+      {me.state === "error" && <p className="bb-error text-lg">Couldn&apos;t load your setlists: {me.message}</p>}
 
       {me.state === "out" && (
         <>
-          <Link href="/setlists/device" className="mb-3 flex min-h-20 items-center justify-between gap-3 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 py-3 active:bg-bb-rule-gray">
+          <Link href="/setlists/device" className="mb-3 flex min-h-20 items-center justify-between gap-3 border-y border-bb-rule-gray bg-bb-case-charcoal px-4 py-3 active:bg-bb-rule-gray">
             <span className="min-w-0">
               <span className="block truncate text-xl font-semibold">{device?.name || "My setlist"}</span>
               <span className="block text-bb-cue-gray">
@@ -86,7 +86,7 @@ export default function SetlistsHome() {
           </Link>
           <p className="text-lg text-bb-cue-gray">
             Signed out, you get one setlist saved on this device.{" "}
-            <Link href="/login?next=/setlists" className="text-bb-downbeat-amber underline">
+            <Link href="/login?next=/setlists" className="text-bb-chart-white underline">
               Sign in
             </Link>{" "}
             to keep as many as you like and share live links with the band.
@@ -97,31 +97,31 @@ export default function SetlistsHome() {
       {me.state === "in" && (
         <>
           {device && deviceCount > 0 && (
-            <div className="mb-4 rounded-xl border border-bb-downbeat-amber/60 bg-bb-downbeat-amber/10 p-3">
+            <div className="bb-notice mb-4">
               <p className="mb-2 text-lg">
                 You have a setlist saved on this device: <b>{device.name}</b> ({deviceCount} song{deviceCount === 1 ? "" : "s"}).
               </p>
-              <button disabled={busy || offline} onClick={moveDevice} className={`${btn} ${primary} disabled:opacity-40`}>
+              <button disabled={busy || offline} onClick={moveDevice} className={`${btn} ${plain}`}>
                 Save to my account
               </button>
             </div>
           )}
-          <button disabled={busy || offline} onClick={make} className={`${btn} ${primary} mb-4 h-14 w-full text-xl disabled:opacity-40`}>
+          <button disabled={busy || offline} onClick={make} className={`${btn} ${primary} mb-4 h-14 w-full text-xl`}>
             + New setlist
           </button>
           {offline && <OfflineNote className="mb-4" />}
           {me.lists.length === 0 ? (
             <p className="text-lg text-bb-cue-gray">No setlists yet.</p>
           ) : (
-            <ul className="flex flex-col gap-2">
+            <ul className="flex flex-col divide-y divide-bb-rule-gray border-y border-bb-rule-gray">
               {me.lists.map((l) => (
                 <li key={l.id}>
-                  <Link href={`/setlists/${l.id}`} className="flex min-h-20 items-center justify-between gap-3 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 py-3 active:bg-bb-rule-gray">
+                  <Link href={`/setlists/${l.id}`} className="flex min-h-20 items-center justify-between gap-3 bg-bb-case-charcoal px-4 py-3 active:bg-bb-rule-gray">
                     <span className="min-w-0">
                       <span className="block truncate text-xl font-semibold">{l.name}</span>
                       <span className="block text-bb-cue-gray">
                         {[gigDate(l.gig_date), `${l.count} song${l.count === 1 ? "" : "s"}`].filter(Boolean).join(" · ")}
-                        {l.shared && <span className="ml-2 rounded bg-bb-downbeat-amber/20 px-1.5 py-0.5 text-xs font-semibold uppercase text-bb-downbeat-amber">Shared</span>}
+                        {l.shared && <span className="bb-chip ml-2">Shared</span>}
                       </span>
                     </span>
                     <span className="text-2xl text-bb-cue-gray">›</span>

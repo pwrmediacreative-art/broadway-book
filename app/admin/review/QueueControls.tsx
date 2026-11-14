@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { FILTERS, ORDERS, PREFS_COOKIE, prefsCookie, prefsQuery, type Filter, type Order, type Prefs } from "@/lib/review/queue";
 
-const sel = "min-h-11 rounded-lg border border-bb-rule-gray bg-bb-house-black px-2 text-lg";
+const sel = "bb-input px-2 text-lg";
 
 /** Filter + order pickers. Remembered on this device (cookie) and kept in the URL. */
 export default function QueueControls({ prefs, to }: { prefs: Prefs; to: "next" | "queue" }) {

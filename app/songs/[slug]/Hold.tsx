@@ -100,9 +100,9 @@ export function useHoldMarks(slug: string, view: ChartView | null, selected: Spo
   );
 }
 
-const big = "flex min-h-14 w-full items-center justify-center rounded-xl px-4 text-xl font-bold";
-const primary = `${big} bg-bb-downbeat-amber text-bb-stage-black active:opacity-80`;
-const plain = `${big} border border-bb-rule-gray bg-bb-case-charcoal text-bb-chart-white active:bg-bb-house-black`;
+const big = "bb-btn min-h-14 w-full px-4 text-xl font-bold";
+const primary = `${big} bb-btn-primary`;
+const plain = `${big} bb-btn-secondary active:bg-bb-house-black`;
 
 /**
  * The bottom sheet. Rendered on <body> so it always uses the app's dark high-contrast colors,
@@ -153,9 +153,9 @@ export function HoldSheet({
   if (typeof document === "undefined") return null;
   return createPortal(
     <div className="fixed inset-0 z-[80] flex flex-col justify-end text-bb-chart-white" role="dialog" aria-modal="true" aria-label="Chart spot">
-      <div {...backdrop} className="min-h-0 flex-1 touch-pan-y bg-black/70" />
-      <div className="rounded-t-2xl border-t border-bb-rule-gray bg-bb-case-charcoal px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 shadow-2xl">
-        <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-bb-rule-gray" aria-hidden />
+      <div {...backdrop} className="min-h-0 flex-1 touch-pan-y bg-bb-stage-black/80" />
+      <div className="rounded-bb-none border-t border-bb-rule-gray bg-bb-case-charcoal px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
+        <div className="mx-auto mb-3 h-1 w-12 bg-bb-rule-gray" aria-hidden />
         <p className="mb-4 flex items-baseline gap-3">
           <span className="text-4xl font-bold">{spot.shown}</span>
           <span className="text-xl text-bb-cue-gray">{spotLabel(spot.ref, spot.split)}</span>
@@ -165,22 +165,22 @@ export function HoldSheet({
             {existing ? (
               <>
                 {existing.note && <p className="text-lg">“{existing.note}”</p>}
-                <button className={`${primary} disabled:opacity-40`} disabled={flagsOff} onClick={() => setMode("note")}>
+                <button className={primary} disabled={flagsOff} onClick={() => setMode("note")}>
                   {existing.note ? "Edit note" : "Add a note"}
                 </button>
-                <button className={`${plain} disabled:opacity-40`} disabled={busy || flagsOff} onClick={() => run(() => removeFlags([existing.id]))}>
+                <button className={plain} disabled={busy || flagsOff} onClick={() => run(() => removeFlags([existing.id]))}>
                   Remove flag
                 </button>
               </>
             ) : (
-              <button className={`${primary} disabled:opacity-40`} disabled={flagsOff} onClick={() => setMode("note")}>
+              <button className={primary} disabled={flagsOff} onClick={() => setMode("note")}>
                 Flag for me
               </button>
             )}
-            <button className={`${plain} disabled:opacity-40`} disabled={offline} onClick={suggest}>
+            <button className={plain} disabled={offline} onClick={suggest}>
               Suggest an edit
             </button>
-            {offline && <p className="text-lg text-amber-200">{OFFLINE_MSG}</p>}
+            {offline && <p className="text-lg text-bb-chart-white">{OFFLINE_MSG}</p>}
             <button className={`${plain} text-bb-cue-gray`} onClick={onClose}>
               Cancel
             </button>
@@ -204,7 +204,7 @@ export function HoldSheet({
               onChange={(e) => setNote(e.target.value.slice(0, NOTE_MAX))}
               placeholder="e.g. watch the push"
               enterKeyHint="done"
-              className="min-h-14 rounded-xl border border-bb-rule-gray bg-bb-house-black px-4 text-xl"
+              className="bb-input min-h-14 px-4 text-xl"
             />
             <button type="submit" className={primary} disabled={busy}>
               {busy ? "Saving…" : existing ? "Save note" : "Save flag"}
@@ -227,7 +227,7 @@ export function HoldSheet({
           </div>
         )}
         {msg && (
-          <p role="alert" className="mt-3 text-lg text-red-300">
+          <p role="alert" className="bb-error mt-3 text-lg">
             {msg}
           </p>
         )}
@@ -245,13 +245,13 @@ export function MoveFlagsBanner({ slug }: { slug: string }) {
   const [busy, setBusy] = useState(false);
   if (!waiting || later) return null;
   return (
-    <div className="mb-3 rounded-xl border border-violet-400/60 bg-violet-400/10 p-3">
+    <div className="bb-notice mb-3 p-3">
       <p className="mb-2 text-lg">
         Move {waiting} {waiting === 1 ? "flag" : "flags"} on this phone to your account?
       </p>
       <div className="flex gap-2">
         <button
-          className="min-h-12 flex-1 rounded-xl bg-violet-300 px-4 text-lg font-bold text-bb-stage-black disabled:opacity-50"
+          className="bb-btn bb-btn-secondary min-h-12 flex-1 px-4 text-lg font-bold active:bg-bb-house-black"
           disabled={busy}
           onClick={async () => {
             setBusy(true);
@@ -261,11 +261,11 @@ export function MoveFlagsBanner({ slug }: { slug: string }) {
         >
           {busy ? "Moving…" : "Move"}
         </button>
-        <button className="min-h-12 flex-1 rounded-xl border border-bb-rule-gray px-4 text-lg" onClick={() => setPref(PREF.flagsLater, "1", "session")}>
+        <button className="bb-btn bb-btn-secondary min-h-12 flex-1 px-4 text-lg font-normal active:bg-bb-house-black" onClick={() => setPref(PREF.flagsLater, "1", "session")}>
           Not now
         </button>
       </div>
-      {msg && <p className="mt-2 text-lg text-red-300">{msg}</p>}
+      {msg && <p className="bb-error mt-2 text-lg">{msg}</p>}
     </div>
   );
 }
@@ -286,25 +286,29 @@ export function MyFlags({ slug, view }: { slug: string; view: ChartView | null }
     return spotLabel(f.ref, (beats?.length ?? 1) > 1);
   };
   return (
-    <section className="mt-8 rounded-xl border border-bb-rule-gray p-4" aria-labelledby="my-flags">
+    <section className="mt-8" aria-labelledby="my-flags">
       <h2 id="my-flags" className="mb-1 text-xl font-bold">
-        <span className="mr-2 inline-block size-3 rounded-full bg-violet-400 align-middle" aria-hidden />
+        <span className="bb-dot bb-dot-flag mr-2 size-3 align-middle" aria-hidden />
         My flags ({flags.length})
       </h2>
       <p className="mb-3 text-base text-bb-cue-gray">Only you can see these. Press and hold any chord to add one.</p>
-      <ul className="grid gap-2">
+      <ul className="divide-y divide-bb-rule-gray border-y border-bb-rule-gray">
         {sorted.map((f) => {
           const ok = refMatches(view, f.ref);
           return (
-            <li key={f.id} className="flex items-center gap-3 rounded-lg bg-bb-case-charcoal px-3 py-2">
+            <li key={f.id} className="flex items-center gap-3 py-2">
               <div className="min-w-0 flex-1">
                 <p className="text-lg">
                   <b>{pretty(f.ref.text)}</b> <span className="text-bb-cue-gray">· {label(f)}</span>
                 </p>
                 {f.note && <p className="text-lg">“{f.note}”</p>}
-                {!ok && <p className="text-base text-amber-300">Chart changed since you flagged this.</p>}
+                {!ok && (
+                  <p className="text-base text-bb-chart-white">
+                    <b>Chart changed</b> since you flagged this.
+                  </p>
+                )}
               </div>
-              <button className="min-h-11 shrink-0 rounded-lg border border-bb-rule-gray px-3 text-lg" onClick={() => clear([f.id])} aria-label={`Clear flag at ${label(f)}`}>
+              <button className="bb-btn bb-btn-secondary min-h-11 shrink-0 px-3 text-lg font-normal" onClick={() => clear([f.id])} aria-label={`Clear flag at ${label(f)}`}>
                 Clear
               </button>
             </li>
@@ -315,20 +319,20 @@ export function MyFlags({ slug, view }: { slug: string; view: ChartView | null }
         {confirm ? (
           <>
             <span className="text-lg">Clear all {flags.length}?</span>
-            <button className="min-h-11 rounded-lg bg-red-400 px-4 text-lg font-bold text-bb-stage-black" onClick={() => clear(flags.map((f) => f.id))}>
+            <button className="bb-btn bb-btn-danger min-h-11 px-4 text-lg font-bold" onClick={() => clear(flags.map((f) => f.id))}>
               Yes, clear all
             </button>
-            <button className="min-h-11 rounded-lg border border-bb-rule-gray px-4 text-lg" onClick={() => setConfirm(false)}>
+            <button className="bb-btn bb-btn-secondary min-h-11 px-4 text-lg font-normal" onClick={() => setConfirm(false)}>
               No
             </button>
           </>
         ) : (
-          <button className="min-h-11 rounded-lg border border-bb-rule-gray px-4 text-lg text-bb-cue-gray" onClick={() => setConfirm(true)}>
+          <button className="bb-btn bb-btn-secondary min-h-11 px-4 text-lg font-normal text-bb-cue-gray" onClick={() => setConfirm(true)}>
             Clear all
           </button>
         )}
       </div>
-      {msg && <p className="mt-2 text-lg text-red-300">{msg}</p>}
+      {msg && <p className="bb-error mt-2 text-lg">{msg}</p>}
     </section>
   );
 }

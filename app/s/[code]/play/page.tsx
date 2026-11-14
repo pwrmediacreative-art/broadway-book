@@ -5,7 +5,7 @@ export const metadata = { title: "Play · Broadway Book", robots: { index: false
 
 export default function SharedPlayPage({ params }: PageProps<"/s/[code]/play">) {
   return (
-    <Suspense fallback={<div className="fixed inset-0 bg-black" />}>
+    <Suspense fallback={<div className="fixed inset-0 bg-bb-stage-black" />}>
       <Inner params={params} />
     </Suspense>
   );

@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { bulkUnverified } from "../actions";
 
-const input = "min-h-11 w-24 rounded-lg border border-bb-rule-gray bg-bb-house-black px-3 text-lg";
+const input = "bb-input w-24 px-3 text-lg";
 
 /** Publish every clean-enough chart as unverified: count first, then confirm. */
 export default function BulkPublish() {
@@ -36,7 +36,7 @@ export default function BulkPublish() {
     });
 
   return (
-    <details className="mb-4 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal">
+    <details className="mb-4 border border-bb-rule-gray bg-bb-case-charcoal">
       <summary className="flex min-h-11 cursor-pointer items-center px-4 py-3 text-xl font-semibold">Publish clean charts as unverified</summary>
       <div className="border-t border-bb-rule-gray px-4 py-3">
         <p className="mb-3 text-bb-cue-gray">
@@ -53,11 +53,11 @@ export default function BulkPublish() {
           </label>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={preview} disabled={pending} className="min-h-11 rounded-xl border border-bb-rule-gray px-5 text-lg font-semibold disabled:opacity-60">
+          <button type="button" onClick={preview} disabled={pending} className="bb-btn bb-btn-secondary px-5 text-lg">
             {pending && count === null ? "Counting…" : "Count matching charts"}
           </button>
           {count !== null && count > 0 && (
-            <button type="button" onClick={publish} disabled={pending} className="min-h-11 rounded-xl bg-bb-downbeat-amber px-5 text-lg font-semibold text-bb-stage-black disabled:opacity-60">
+            <button type="button" onClick={publish} disabled={pending} className="bb-btn bb-btn-primary px-5 text-lg">
               {pending ? "Publishing…" : `Publish ${count} as unverified`}
             </button>
           )}

@@ -41,23 +41,23 @@ export default function FlagButton({ slug, songId }: { slug: string; songId: str
         ⚑ Flag a problem with this chart
       </button>
       {open && (
-        <div className="mt-2 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4">
+        <div className="bb-panel mt-2 p-4">
           {signedIn === false ? (
             <p className="text-lg">
-              <Link href={`/login?next=${encodeURIComponent(`/songs/${slug}`)}`} className="text-bb-downbeat-amber underline">
+              <Link href={`/login?next=${encodeURIComponent(`/songs/${slug}`)}`} className="text-bb-chart-white underline">
                 Sign in
               </Link>{" "}
               to flag a chart.
             </p>
           ) : msg?.ok ? (
-            <p role="status" className="text-lg">{msg.text}</p>
+            <p role="status" className="text-lg text-bb-chart-white">✓ {msg.text}</p>
           ) : (
             <>
               <fieldset className="mb-3">
                 <legend className="mb-2 text-lg font-semibold">What&apos;s wrong?</legend>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {(Object.keys(FLAG_REASONS) as FlagReason[]).map((k) => (
-                    <label key={k} className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 text-lg ${reason === k ? "border-bb-downbeat-amber" : "border-bb-rule-gray"}`}>
+                    <label key={k} className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-bb-control border px-3 text-lg ${reason === k ? "bb-on" : "border-bb-rule-gray"}`}>
                       <input type="radio" name="flag-reason" value={k} checked={reason === k} onChange={() => setReason(k)} className="size-5" />
                       {FLAG_REASONS[k]}
                     </label>
@@ -72,12 +72,12 @@ export default function FlagButton({ slug, songId }: { slug: string; songId: str
                 value={details}
                 onChange={(e) => setDetails(e.target.value.slice(0, 300))}
                 rows={2}
-                className="mb-3 w-full rounded-lg border border-bb-rule-gray bg-bb-house-black p-3 text-lg"
+                className="bb-input mb-3 w-full p-3 text-lg"
               />
-              <button type="button" onClick={send} disabled={pending} className="min-h-12 rounded-xl bg-bb-downbeat-amber px-5 text-lg font-bold text-bb-stage-black disabled:opacity-40">
+              <button type="button" onClick={send} disabled={pending} className="bb-btn bb-btn-primary min-h-12 px-5 text-lg">
                 {pending ? "Sending…" : "Send flag"}
               </button>
-              {msg && !msg.ok && <p className="mt-2 text-lg text-red-300">{msg.text}</p>}
+              {msg && !msg.ok && <p className="bb-error mt-2 text-lg">{msg.text}</p>}
             </>
           )}
         </div>

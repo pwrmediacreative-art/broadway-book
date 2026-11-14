@@ -148,13 +148,13 @@ export default function Editor({ song, publicText, publicRevisionId, proposal, i
       <p className="mb-3 text-lg text-bb-cue-gray">{song.title}</p>
 
       {proposal?.stale && (
-        <div className="mb-4 rounded-xl border border-amber-400/60 bg-amber-400/10 p-4 text-lg text-amber-100">
+        <div className="bb-notice mb-4 p-4 text-lg">
           <p>
-            The public chart changed after you suggested this. Bring your change onto the newest chart, then save. Votes
+            <b>The public chart changed</b> after you suggested this. Bring your change onto the newest chart, then save. Votes
             start over.
           </p>
           <div className="mt-3 flex flex-wrap gap-3">
-            <button className="min-h-12 rounded-xl bg-bb-downbeat-amber px-4 text-lg font-bold text-bb-stage-black" onClick={() => loadFrom("public")}>
+            <button className="bb-btn bb-btn-secondary min-h-12 px-4 text-lg font-bold active:bg-bb-house-black" onClick={() => loadFrom("public")}>
               Start from the newest chart
             </button>
           </div>
@@ -177,7 +177,7 @@ export default function Editor({ song, publicText, publicRevisionId, proposal, i
               key={w}
               onClick={() => loadFrom(w)}
               aria-pressed={source === w}
-              className={`min-h-11 rounded-full border px-4 ${source === w ? "border-bb-downbeat-amber bg-bb-downbeat-amber font-semibold text-bb-stage-black" : "border-bb-rule-gray bg-bb-case-charcoal"}`}
+              className={`bb-btn bb-btn-secondary min-h-11 px-4 text-lg ${source === w ? "bb-on font-semibold" : "font-normal"}`}
             >
               {w === "mine" ? "Your version" : "Public chart"}
             </button>
@@ -198,7 +198,7 @@ export default function Editor({ song, publicText, publicRevisionId, proposal, i
             spellCheck={false}
             autoCapitalize="off"
             autoCorrect="off"
-            className="min-h-72 w-full rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-3 font-mono text-lg leading-relaxed"
+            className="bb-input min-h-72 w-full p-3 font-bb-data text-lg leading-relaxed"
           />
           <Status check={check} />
           <details className="text-base text-bb-cue-gray">
@@ -228,13 +228,13 @@ export default function Editor({ song, publicText, publicRevisionId, proposal, i
                 role="tab"
                 aria-selected={tab === t}
                 onClick={() => setTab(t)}
-                className={`min-h-12 rounded-xl border text-lg ${tab === t ? "border-bb-downbeat-amber bg-bb-downbeat-amber font-semibold text-bb-stage-black" : "border-bb-rule-gray bg-bb-case-charcoal"}`}
+                className={`bb-btn bb-btn-secondary min-h-12 text-lg ${tab === t ? "bb-on font-semibold" : "font-normal"}`}
               >
                 {t === "preview" ? "Preview" : `Changes${diff && diff.changedBars ? ` (${diff.changedBars})` : ""}`}
               </button>
             ))}
           </div>
-          <div className="min-h-40 rounded-xl border border-bb-rule-gray p-3">
+          <div className="min-h-40 border border-bb-rule-gray p-3">
             {tab === "preview" ? (
               view ? (
                 <Chart
@@ -281,12 +281,13 @@ export default function Editor({ song, publicText, publicRevisionId, proposal, i
           maxLength={500}
           placeholder="e.g. Bridge goes to the 6-, not the 4"
           aria-invalid={noteMissing}
-          className={`min-h-12 rounded-xl border bg-bb-case-charcoal px-4 text-lg ${noteMissing ? "border-red-400" : "border-bb-rule-gray"}`}
+          className={`bb-input min-h-12 px-4 text-lg ${noteMissing ? "border-bb-stop-red" : ""}`}
         />
       </label>
 
       {msg && (
-        <div role="status" className={`mt-3 text-lg ${msg.ok ? "text-emerald-300" : "text-red-300"}`}>
+        <div role="status" className={`mt-3 text-lg ${msg.ok ? "text-bb-chart-white" : "bb-error"}`}>
+          {msg.ok && "✓ "}
           {msg.text}
           {msg.stale && (
             <button className="ml-2 min-h-11 underline" onClick={() => router.refresh()}>
@@ -328,27 +329,27 @@ function SaveButton({ onClick, disabled, title, sub, primary }: { onClick: () =>
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`flex min-h-20 w-full flex-col items-start justify-center rounded-2xl border-2 px-5 py-3 text-left active:opacity-80 disabled:opacity-40 ${
-        primary ? "border-bb-downbeat-amber bg-bb-downbeat-amber text-bb-stage-black" : "border-bb-rule-gray bg-bb-case-charcoal"
+      className={`flex min-h-20 w-full flex-col items-start justify-center rounded-bb-control border px-5 py-3 text-left ${
+        primary ? "bb-btn-primary" : "bb-btn-secondary"
       }`}
     >
       <span className="text-xl font-bold">{title}</span>
-      <span className={`text-base ${primary ? "text-bb-stage-black/75" : "text-bb-cue-gray"}`}>{sub}</span>
+      <span className={`text-base ${primary ? "font-normal" : "text-bb-cue-gray"}`}>{sub}</span>
     </button>
   );
 }
 
 function Status({ check }: { check: ReturnType<typeof checkChart> }) {
-  if (check.error) return <p className="text-lg text-red-300">Format error: {check.error}</p>;
+  if (check.error) return <p className="bb-error text-lg">Format error: {check.error}</p>;
   if (check.longCues.length)
     return (
-      <p className="text-lg text-red-300">
+      <p className="bb-error text-lg">
         Cue too long (6 words max, never lyrics): “{check.longCues[0]}”
       </p>
     );
   return (
-    <p className="text-lg text-emerald-300">
-      ✓ Chart reads fine{check.warnings.length ? <span className="text-amber-200"> · {check.warnings.join(" · ")}</span> : null}
+    <p className="text-lg text-bb-chart-white">
+      ✓ Chart reads fine{check.warnings.length ? <span className="font-semibold"> · {check.warnings.join(" · ")}</span> : null}
     </p>
   );
 }

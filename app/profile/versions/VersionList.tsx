@@ -15,7 +15,7 @@ export default function VersionList() {
   if (!userId)
     return (
       <p className="text-lg">
-        <Link href="/login?next=/profile/versions" className="text-bb-downbeat-amber">
+        <Link href="/login?next=/profile/versions" className="text-bb-chart-white underline underline-offset-4">
           Sign in
         </Link>{" "}
         to see your versions.
@@ -23,25 +23,29 @@ export default function VersionList() {
     );
   if (!list.length)
     return (
-      <p className="rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4 text-lg text-bb-cue-gray">
+      <p className="bb-panel p-4 text-lg text-bb-cue-gray">
         None yet. Open a song, tap “Suggest a change”, then “Just for me”.
       </p>
     );
 
   return (
     <>
-      {err && <p className="mb-3 text-lg text-red-300">{err}</p>}
-      <ul className="flex flex-col gap-3">
+      {err && <p className="bb-error mb-3 text-lg">{err}</p>}
+      <ul className="divide-y divide-bb-rule-gray border-y border-bb-rule-gray">
         {list.map((v) => (
-          <li key={v.song_id} className="rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4">
+          <li key={v.song_id} className="py-4">
             <p className="text-xl font-semibold">{v.title}</p>
             <p className="text-bb-cue-gray">
               {v.artist ? `${v.artist} · ` : ""}saved {when(v.updated_at)}
             </p>
-            {isStale(v) && <p className="mt-1 text-amber-200">The public chart changed since your version.</p>}
+            {isStale(v) && (
+              <p className="bb-notice mt-2">
+                <b>Out of date:</b> The public chart changed since your version.
+              </p>
+            )}
             {v.note && <p className="mt-1 text-bb-cue-gray">“{v.note}”</p>}
             <div className="mt-3 grid grid-cols-2 gap-3">
-              <Link href={`/songs/${v.slug}`} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-bb-downbeat-amber text-lg font-bold text-bb-stage-black">
+              <Link href={`/songs/${v.slug}`} className="bb-btn bb-btn-secondary min-h-12 text-lg">
                 Open
               </Link>
               <button
@@ -54,7 +58,7 @@ export default function VersionList() {
                     await loadMyVersions();
                   });
                 }}
-                className="min-h-12 rounded-xl border border-bb-rule-gray text-lg disabled:opacity-40"
+                className="bb-btn bb-btn-danger min-h-12 text-lg"
               >
                 Reset to public
               </button>

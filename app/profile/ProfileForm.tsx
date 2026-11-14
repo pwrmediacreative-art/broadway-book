@@ -25,7 +25,7 @@ export default function ProfileForm(props: {
         maxLength={DISPLAY_NAME_MAX}
         autoComplete="nickname"
         defaultValue={props.displayName}
-        className="h-14 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 text-xl outline-none focus:border-bb-downbeat-amber"
+        className="bb-input h-14 px-4 text-xl"
       />
       <label htmlFor="instrument" className="mt-2 text-lg font-medium">
         Instrument <span className="text-bb-cue-gray">(optional)</span>
@@ -34,7 +34,7 @@ export default function ProfileForm(props: {
         id="instrument"
         name="instrument"
         defaultValue={props.instrument}
-        className="h-14 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 text-xl capitalize outline-none focus:border-bb-downbeat-amber"
+        className="bb-input h-14 px-4 text-xl capitalize"
       >
         <option value="">—</option>
         {INSTRUMENTS.map((i) => (
@@ -44,14 +44,14 @@ export default function ProfileForm(props: {
         ))}
       </select>
       {state.error && (
-        <p role="alert" className="text-lg text-red-400">
+        <p role="alert" className="bb-error text-lg">
           {state.error}
         </p>
       )}
       <button
         type="submit"
         disabled={pending}
-        className="mt-2 h-14 rounded-xl bg-bb-downbeat-amber text-xl font-semibold text-bb-stage-black active:opacity-80 disabled:opacity-60"
+        className="bb-btn bb-btn-primary mt-2 h-14 text-xl"
       >
         {pending ? "Saving…" : props.first ? "Save and continue" : "Save"}
       </button>

@@ -42,10 +42,10 @@ export default function PlayView({ set, id, exitHref, onExit }: { set: PlaySet; 
 
   if (!order.length) {
     return (
-      <div className="fixed inset-0 z-50 grid place-items-center bg-black p-6 text-center">
+      <div className="fixed inset-0 z-50 grid place-items-center bg-bb-stage-black p-6 text-center">
         <div>
           <p className="mb-4 text-2xl">No playable songs in this set.</p>
-          <button className="h-12 rounded-lg bg-bb-downbeat-amber px-5 text-lg font-bold text-bb-stage-black" onClick={exit}>
+          <button className="bb-btn bb-btn-primary h-12 px-5 text-lg" onClick={exit}>
             Back
           </button>
         </div>
@@ -85,7 +85,7 @@ export default function PlayView({ set, id, exitHref, onExit }: { set: PlaySet; 
       {jump && (
         <div className="fixed inset-0 z-[60] flex flex-col bg-bb-house-black" role="dialog" aria-label="Jump to a song">
           <header className="flex h-14 shrink-0 items-center gap-2 border-b border-bb-rule-gray px-2">
-            <button onClick={() => setJump(false)} aria-label="Close" className="grid size-12 place-items-center rounded-lg text-2xl text-bb-cue-gray active:bg-bb-case-charcoal">
+            <button onClick={() => setJump(false)} aria-label="Close" className="bb-btn bb-btn-quiet size-12 p-0 text-2xl text-bb-cue-gray">
               ✕
             </button>
             <b className="min-w-0 flex-1 truncate text-xl">{set.name}</b>

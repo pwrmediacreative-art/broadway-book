@@ -41,7 +41,7 @@ async function Bulk({ searchParams }: { searchParams: SearchParams }) {
         right. A chart can&apos;t be ticked until its PDF has been opened.
       </p>
       {d.cards.length === 0 ? (
-        <p className="rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4 text-lg text-bb-cue-gray">Nothing here.</p>
+        <p className="bb-panel p-4 text-lg text-bb-cue-gray">Nothing here.</p>
       ) : (
         <BulkVerify key={page} cards={d.cards} />
       )}
@@ -53,7 +53,7 @@ async function Bulk({ searchParams }: { searchParams: SearchParams }) {
         ) : (
           <span />
         )}
-        <span className="text-bb-cue-gray">{d.total ? `${page * PAGE + 1}–${Math.min((page + 1) * PAGE, d.total)} of ${d.total}` : ""}</span>
+        <span className="tabular-nums text-bb-cue-gray">{d.total ? `${page * PAGE + 1}–${Math.min((page + 1) * PAGE, d.total)} of ${d.total}` : ""}</span>
         {(page + 1) * PAGE < d.total ? (
           <Link href={`/admin/review/bulk?page=${page + 1}`} className="inline-flex min-h-11 items-center text-bb-downbeat-amber">
             Next ›

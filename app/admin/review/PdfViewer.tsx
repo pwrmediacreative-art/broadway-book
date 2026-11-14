@@ -12,7 +12,7 @@ const MAX = 4;
 const MAX_FIT = 1600; // px: the "100%" page width never exceeds this
 const ZOOM_KEY = "bb_review_zoom";
 const clamp = (z: number) => Math.min(MAX, Math.max(MIN, Math.round(z * 100) / 100));
-const btn = "min-h-11 min-w-11 rounded-lg border border-bb-rule-gray px-3 text-lg font-semibold active:bg-bb-rule-gray disabled:opacity-40";
+const btn = "bb-btn bb-btn-secondary px-3 text-lg";
 
 function savedZoom() {
   try {
@@ -146,7 +146,7 @@ export default function PdfViewer({ src, title }: { src: string; title: string }
       </div>
       <div
         ref={box}
-        className="min-h-0 w-full min-w-0 flex-1 overflow-auto rounded-lg bg-neutral-700"
+        className="min-h-0 w-full min-w-0 flex-1 overflow-auto bg-bb-case-charcoal"
         style={{ touchAction: "pan-x pan-y" }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -156,8 +156,8 @@ export default function PdfViewer({ src, title }: { src: string; title: string }
         role="region"
       >
         <div ref={inner} className="flex flex-col gap-2 p-px" style={{ transformOrigin: "0 0", width: pageWidth || undefined }}>
-          {err && <p className="p-4 text-lg text-red-200">Couldn&apos;t show the PDF: {err}</p>}
-          {!doc && !err && <p className="p-4 text-lg text-neutral-200">Loading the original…</p>}
+          {err && <p className="bb-error p-4 text-lg">Couldn&apos;t show the PDF: {err}</p>}
+          {!doc && !err && <p className="p-4 text-lg text-bb-cue-gray">Loading the original…</p>}
           {doc && pageWidth > 0 &&
             Array.from({ length: doc.numPages }, (_, i) => <Page key={i} doc={doc} n={i + 1} width={pageWidth} />)}
         </div>
@@ -199,5 +199,5 @@ function Page({ doc, n, width }: { doc: PDFDocumentProxy; n: number; width: numb
     };
   }, [doc, n, width]);
 
-  return <canvas ref={canvas} className="block bg-white" style={{ width, height }} aria-label={`Page ${n}`} />;
+  return <canvas ref={canvas} className="block bg-bb-chart-white" style={{ width, height }} aria-label={`Page ${n}`} />;
 }

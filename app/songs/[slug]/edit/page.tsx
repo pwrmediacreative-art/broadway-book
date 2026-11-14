@@ -57,7 +57,7 @@ async function Edit({
       return (
         <p className="mt-6 text-lg">
           Only the author can edit an open suggestion.{" "}
-          <Link href={`/community/${pid}`} className="text-bb-downbeat-amber">
+          <Link href={`/community/${pid}`} className="text-bb-chart-white underline">
             Back to the suggestion
           </Link>
         </p>

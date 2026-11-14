@@ -25,19 +25,19 @@ export default function ReviewHeader({ prefs, progress, page }: { prefs: Prefs; 
       </div>
       <div>
         <div
-          className="flex h-4 w-full overflow-hidden rounded-full bg-bb-rule-gray"
+          className="flex h-4 w-full overflow-hidden bg-bb-rule-gray"
           role="progressbar"
           aria-valuemin={0}
           aria-valuemax={total}
           aria-valuenow={verified}
           aria-label={`${verified} of ${total} charts verified`}
         >
-          <div className="h-full bg-green-500" style={{ width: `${pct(verified)}%` }} />
-          <div className="h-full bg-amber-400" style={{ width: `${pct(unverified)}%` }} />
+          <div className="h-full bg-bb-chart-white" style={{ width: `${pct(verified)}%` }} />
+          <div className="h-full bg-bb-cue-gray" style={{ width: `${pct(unverified)}%` }} />
         </div>
-        <p className="mt-1 text-base text-bb-cue-gray">
-          <b className="text-green-300">{verified.toLocaleString()}</b> / {total.toLocaleString()} verified ·{" "}
-          <span className="text-amber-200">{unverified.toLocaleString()} live, unverified</span> ·{" "}
+        <p className="mt-1 text-base tabular-nums text-bb-cue-gray">
+          <b className="text-bb-chart-white">{verified.toLocaleString()}</b> / {total.toLocaleString()} verified ·{" "}
+          <span className="text-bb-chart-white">{unverified.toLocaleString()} live, unverified</span> ·{" "}
           {waiting.toLocaleString()} waiting for review
           {people.length > 0 && (
             <>

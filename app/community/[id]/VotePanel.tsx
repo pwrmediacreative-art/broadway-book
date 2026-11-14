@@ -80,10 +80,10 @@ export default function VotePanel(p: Props) {
     });
 
   return (
-    <section className="rounded-xl border border-bb-rule-gray p-4">
+    <section className="border border-bb-rule-gray p-4">
       <div className="mb-3 grid grid-cols-2 gap-3 text-center">
-        <Meter label="Approve" n={approvals} of={p.approvalsNeeded} cls="bg-emerald-400" />
-        <Meter label="Reject" n={rejections} of={p.rejectionsNeeded} cls="bg-red-400" />
+        <Meter label="Approve" n={approvals} of={p.approvalsNeeded} />
+        <Meter label="Reject" n={rejections} of={p.rejectionsNeeded} />
       </div>
 
       {open && !p.me && (
@@ -108,15 +108,15 @@ export default function VotePanel(p: Props) {
               onChange={(e) => setComment(e.target.value)}
               maxLength={300}
               rows={2}
-              className="rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-3 text-lg"
+              className="bb-input p-3 text-lg"
               placeholder="e.g. Yes, that's how the band plays it"
             />
           </label>
           <div className="grid grid-cols-2 gap-3">
-            <button disabled={pending} onClick={() => castVote(true)} className="min-h-14 rounded-xl bg-emerald-500 text-xl font-bold text-bb-stage-black active:opacity-80 disabled:opacity-40">
+            <button disabled={pending} onClick={() => castVote(true)} className="bb-btn bb-btn-primary min-h-14 text-xl">
               ✓ Approve
             </button>
-            <button disabled={pending} onClick={() => castVote(false)} className="min-h-14 rounded-xl bg-red-500 text-xl font-bold text-bb-stage-black active:opacity-80 disabled:opacity-40">
+            <button disabled={pending} onClick={() => castVote(false)} className="bb-btn bb-btn-secondary min-h-14 text-xl">
               ✕ Reject
             </button>
           </div>
@@ -140,11 +140,11 @@ export default function VotePanel(p: Props) {
 
       {p.me?.admin && open && (
         <div className="mt-4 flex flex-wrap gap-3 border-t border-bb-rule-gray pt-4">
-          <span className="w-full text-sm font-semibold uppercase tracking-wide text-bb-downbeat-amber">Admin</span>
+          <span className="w-full text-bb-label text-bb-cue-gray">Admin</span>
           {!isAuthor && (
             <button
               disabled={pending || p.stale}
-              className={btn.primary}
+              className={canVote ? btn.ghost : btn.primary}
               onClick={() => run(() => adminDecide(p.proposalId, true), "Approved. The chart is live.", "Approve now and make this the live chart?")}
             >
               Approve now
@@ -162,7 +162,7 @@ export default function VotePanel(p: Props) {
       {p.me?.admin && !isAuthor && (
         <button
           disabled={pending}
-          className={`${btn.link} mt-2 text-red-300`}
+          className="mt-2 inline-flex min-h-11 items-center text-lg text-bb-stop-red underline underline-offset-4"
           onClick={() =>
             run(
               () => setBlocked(p.authorId, !p.authorBlocked),
@@ -176,8 +176,8 @@ export default function VotePanel(p: Props) {
       )}
 
       {msg && (
-        <p role="status" className={`mt-3 text-lg ${msg.ok ? "text-emerald-300" : "text-red-300"}`}>
-          {msg.text}
+        <p role="status" className={`mt-3 text-lg ${msg.ok ? "text-bb-chart-white" : "bb-error"}`}>
+          {msg.ok ? `✓ ${msg.text}` : msg.text}
         </p>
       )}
 
@@ -185,7 +185,7 @@ export default function VotePanel(p: Props) {
         <ul className="mt-5 flex flex-col gap-2 border-t border-bb-rule-gray pt-4">
           {p.votes.map((v) => (
             <li key={v.voter_id} className="text-lg">
-              <span className={v.value === "approve" ? "text-emerald-300" : "text-red-300"}>{v.value === "approve" ? "✓" : "✕"}</span>{" "}
+              <span className={v.value === "approve" ? "text-bb-chart-white" : "text-bb-cue-gray"}>{v.value === "approve" ? "✓" : "✕"}</span>{" "}
               <b>{v.voter?.display_name || "A player"}</b>
               <ReviewerBadge on={v.voter?.reviewer} /> <span className="text-sm text-bb-cue-gray">{when(v.created_at)}</span>
               {v.comment && <p className="ml-5 text-bb-cue-gray">“{v.comment}”</p>}
@@ -222,14 +222,14 @@ export default function VotePanel(p: Props) {
   );
 }
 
-function Meter({ label, n, of, cls }: { label: string; n: number; of: number; cls: string }) {
+function Meter({ label, n, of }: { label: string; n: number; of: number }) {
   return (
     <div>
       <p className="text-lg">
         <b className="text-2xl">{n}</b> / {of} {label.toLowerCase()}
       </p>
-      <div className="mt-1 h-2 overflow-hidden rounded bg-bb-case-charcoal">
-        <div className={`h-full ${cls}`} style={{ width: `${Math.min(100, (n / of) * 100)}%` }} />
+      <div className="mt-1 h-2 overflow-hidden bg-bb-rule-gray">
+        <div className="h-full bg-bb-chart-white" style={{ width: `${Math.min(100, (n / of) * 100)}%` }} />
       </div>
     </div>
   );
@@ -239,7 +239,7 @@ function ReportForm({ onSend, onCancel, pending }: { onSend: (reason: string, de
   const [reason, setReason] = useState<string>("lyrics");
   const [details, setDetails] = useState("");
   return (
-    <div className="mt-4 flex flex-col gap-3 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4">
+    <div className="bb-panel mt-4 flex flex-col gap-3 p-4">
       <p className="text-lg font-semibold">What&apos;s wrong?</p>
       <div className="flex flex-col gap-1">
         {REASONS.map(([value, label]) => (
@@ -255,7 +255,7 @@ function ReportForm({ onSend, onCancel, pending }: { onSend: (reason: string, de
         maxLength={300}
         rows={2}
         placeholder="Details (optional)"
-        className="rounded-xl border border-bb-rule-gray bg-bb-house-black p-3 text-lg"
+        className="bb-input p-3 text-lg"
       />
       <div className="flex gap-3">
         <button disabled={pending} className={btn.primary} onClick={() => onSend(reason, details)}>

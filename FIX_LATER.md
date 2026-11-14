@@ -101,5 +101,11 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Verified: a revert that restores Verified isn't counted in the per-admin numbers (only real checks are); the history row names the admin who reverted.
 - Verified: a trusted reviewer's single "Publish" button was checked in the database only, not in a browser (no reviewers exist yet).
 - Verified: status rows in Chart history show "Automatic" when no signed-in user caused the change (e.g. a re-import).
-- Design system: screens still use the old tokens (--background, --accent, ...), hard-coded hex (StageView, Chart, controls, layout themeColor), raw Tailwind colors (red/amber/emerald/sky/black/violet), `rounded-xl` cards, the amber Unverified dot and the violet flag dot; the restyle step moves them onto the `--bb-*` tokens per DESIGN.md.
-- Design system: CLAUDE.md "Design" still says light mode comes later; DESIGN.md (settled with the owner) says no light mode outside stage mode's Light look.
+- Restyle: stat tiles on /admin, /admin/import and the AI panel are the hero-metric layout DESIGN.md warns against; make them plain label/number rows.
+- Restyle: pilot result items (/admin/import) are still bordered boxes around a chart block; could become rows.
+- Restyle: BulkPublish and BulkVerify success messages are Cue Gray without "✓"; split ok/error state so success reads Chart White.
+- Restyle: one-primary rule is bent in a few sheets/forms ("Send flag", "Flag for me", "Send report" while its form is open); confirm or make them secondary.
+- Restyle: stage setlist note strip (StageView) and the changed-key select in the setlist editor keep amber; confirm they count as live.
+- Restyle: stage Light look has no Stop Red of its own; the error text and chart stop mark use the dark-mode reds on paper.
+- Next dev shows an "instant" notice on /songs/[slug] and /songs/[slug]/stage (`await params` outside Suspense); dev-only, predates the restyle.
+- Fresh worktrees need `npm install` and `next typegen` before `tsc` passes (missing pdfjs-dist/minisearch, `PageProps`).

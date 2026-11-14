@@ -322,7 +322,7 @@ export default function StageView({
   return (
     <div className={`fixed inset-0 z-50 flex flex-col bg-bb-house-black text-bb-chart-white ${stageLook(light)}`} onPointerDownCapture={poke}>
       <header className="flex h-12 shrink-0 items-center gap-1 border-b border-bb-rule-gray/60 pl-1 pr-2 text-base">
-        <button onClick={exit} aria-label={set ? "Exit play mode" : "Exit stage mode"} className="grid size-11 shrink-0 place-items-center rounded-lg text-2xl text-bb-cue-gray active:bg-bb-case-charcoal">
+        <button onClick={exit} aria-label={set ? "Exit play mode" : "Exit stage mode"} className="grid size-11 shrink-0 place-items-center rounded-bb-control text-2xl text-bb-cue-gray active:bg-bb-case-charcoal">
           ✕
         </button>
         <div className="flex min-w-20 flex-1 items-baseline gap-1">
@@ -333,7 +333,7 @@ export default function StageView({
           <button
             onClick={() => pick.setShowPublic(pick.usingMine)}
             aria-label={pick.usingMine ? "Showing your version. Tap to view the public version" : "Showing the public version. Tap to view yours"}
-            className={`h-11 shrink-0 self-center rounded-md px-1 text-[0.7rem] font-bold uppercase ${pick.usingMine ? "text-violet-300" : "text-bb-cue-gray"}`}
+            className={`h-11 min-w-11 shrink-0 self-center rounded-bb-control px-1 text-sm font-bold active:bg-bb-case-charcoal ${pick.usingMine ? "text-bb-downbeat-amber" : "text-bb-cue-gray"}`}
           >
             {pick.usingMine ? "Yours" : "Public"}
           </button>
@@ -341,7 +341,7 @@ export default function StageView({
         <BpmToggle s={s} className="shrink-0 text-sm text-bb-cue-gray" />
         {set ? (
           <>
-            <button onClick={set.onJump} aria-label="Jump to a song in the set" className="grid size-11 shrink-0 place-items-center rounded-lg text-bb-cue-gray active:bg-bb-case-charcoal">
+            <button onClick={set.onJump} aria-label="Jump to a song in the set" className="grid size-11 shrink-0 place-items-center rounded-bb-control text-bb-cue-gray active:bg-bb-case-charcoal">
               <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
                 <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" />
               </svg>
@@ -356,7 +356,7 @@ export default function StageView({
         )}
       </header>
       {set && (
-        <button onClick={() => go(1)} className="flex h-10 shrink-0 items-center gap-2 border-b border-bb-rule-gray/60 px-3 text-left text-base text-bb-cue-gray">
+        <button onClick={() => go(1)} className="flex h-11 shrink-0 items-center gap-2 border-b border-bb-rule-gray/60 px-3 text-left text-base text-bb-cue-gray active:bg-bb-case-charcoal">
           <span className="shrink-0 font-bold tabular-nums text-bb-chart-white">{set.count}</span>
           <span aria-hidden>·</span>
           {set.next ? (
@@ -384,16 +384,16 @@ export default function StageView({
 
       {toast && (
         <div className="pointer-events-none absolute inset-x-0 top-16 z-20 text-center">
-          <span className="rounded-full bg-bb-case-charcoal px-4 py-2 text-lg">{toast}</span>
+          <span className="bb-panel inline-block border border-bb-rule-gray px-4 py-2 text-lg">{toast}</span>
         </div>
       )}
 
       <div
         onClick={blurButtons}
-        className={`absolute inset-x-0 bottom-0 z-10 transition-opacity duration-300 ${shown ? "opacity-100" : "pointer-events-none opacity-0"}`}
+        className={`absolute inset-x-0 bottom-0 z-10 transition-opacity duration-150 ease-out ${shown ? "opacity-100" : "pointer-events-none opacity-0"}`}
       >
         {panel && (
-          <div className="mx-2 mb-2 max-h-[65dvh] overflow-y-auto rounded-2xl border border-bb-rule-gray bg-bb-case-charcoal p-4 shadow-2xl">
+          <div className="bb-panel mx-2 mb-2 max-h-[65dvh] overflow-y-auto border border-bb-rule-gray p-4">
             <div className="mb-4 flex flex-wrap items-center gap-2">
               <DisplayControls s={s} />
             </div>
@@ -410,7 +410,7 @@ export default function StageView({
                 step={1}
                 value={fontPx}
                 onChange={(e) => setPref(PREF.size, e.target.value)}
-                className="h-11 min-w-0 flex-1 accent-amber-400"
+                className="h-11 min-w-0 flex-1 accent-bb-downbeat-amber"
               />
               <button className={`${btn} ${manual ? on : off} shrink-0 text-base`} onClick={() => setPref(PREF.size, null)} disabled={!manual}>
                 {manual ? "Reset" : "Auto"}
@@ -451,7 +451,7 @@ export default function StageView({
 
         <div
           className={`flex flex-col gap-1 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 ${
-            scrollable || panel ? "border-t border-bb-rule-gray/60 bg-bb-house-black/90 backdrop-blur" : "pointer-events-none [&_button]:pointer-events-auto"
+            scrollable || panel ? "border-t border-bb-rule-gray bg-bb-stage-black" : "pointer-events-none [&_button]:pointer-events-auto"
           }`}
         >
           <div className="flex items-center gap-1.5">
@@ -460,7 +460,7 @@ export default function StageView({
                 <button
                   onClick={() => (playing ? setPlaying(false) : play())}
                   aria-label={playing ? "Pause scrolling" : "Play scrolling"}
-                  className="grid h-12 w-14 shrink-0 place-items-center rounded-lg bg-bb-downbeat-amber text-2xl text-bb-stage-black"
+                  className="bb-btn bb-btn-primary h-12 w-14 shrink-0 px-0 text-2xl font-normal"
                 >
                   {playing ? "❚❚" : "▶"}
                 </button>
@@ -477,7 +477,7 @@ export default function StageView({
                   onClick={() => setPref(PREF.songSpeed(slug), songSpeed === null ? String(speed) : null)}
                   aria-pressed={songSpeed !== null}
                   title="Remember this speed for this song"
-                  className={`h-12 min-w-11 shrink rounded-lg px-2 text-sm font-semibold leading-tight ${songSpeed !== null ? on : off}`}
+                  className={`bb-btn h-12 min-w-11 shrink px-2 text-sm font-semibold leading-tight ${songSpeed !== null ? on : off}`}
                 >
                   {songSpeed !== null ? "Song ✓" : "Save song"}
                 </button>
@@ -505,10 +505,10 @@ export default function StageView({
                 step={1}
                 value={speed}
                 onChange={(e) => setSpeed(Number(e.target.value))}
-                className="h-10 min-w-0 flex-1 accent-amber-400"
+                className="h-11 min-w-0 flex-1 accent-bb-downbeat-amber"
               />
               {suggested && suggested !== speed && (
-                <button onClick={() => setSpeed(suggested)} className="h-10 shrink-0 rounded-lg px-2 text-sm text-bb-cue-gray underline">
+                <button onClick={() => setSpeed(suggested)} className="h-11 shrink-0 rounded-bb-control px-2 text-sm text-bb-cue-gray underline active:bg-bb-case-charcoal">
                   Suggested {suggested}
                 </button>
               )}

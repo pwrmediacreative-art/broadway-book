@@ -42,7 +42,7 @@ export default function SavedSetlistPage() {
     return (
       <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-8 text-center">
         <p className="mb-6 text-2xl">This setlist isn&apos;t saved on this phone yet.</p>
-        <Link href="/setlists" className="inline-flex h-14 items-center justify-center rounded-lg bg-bb-downbeat-amber px-6 text-xl font-bold text-bb-stage-black active:opacity-80">
+        <Link href="/setlists" className="bb-btn bb-btn-primary h-14 px-6 text-xl">
           Back to setlists
         </Link>
       </main>

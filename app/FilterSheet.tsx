@@ -22,9 +22,7 @@ export function Chip({
       aria-pressed={on}
       aria-label={label}
       onClick={onClick}
-      className={`inline-flex min-h-11 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-4 text-base font-semibold ${
-        on ? "border-bb-downbeat-amber bg-bb-downbeat-amber text-bb-stage-black" : "border-bb-rule-gray bg-bb-case-charcoal text-bb-chart-white active:bg-bb-rule-gray"
-      }`}
+      className={`bb-btn bb-btn-secondary min-h-11 shrink-0 gap-1 whitespace-nowrap px-4 text-base ${on ? "bb-on" : ""}`}
     >
       {children}
     </button>
@@ -36,7 +34,7 @@ const toggle = <T,>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="mb-5">
-      <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-bb-cue-gray">{title}</h3>
+      <h3 className="mb-2 text-bb-label text-bb-cue-gray">{title}</h3>
       <div className="flex flex-wrap gap-2">{children}</div>
     </section>
   );
@@ -56,7 +54,7 @@ function NumberBox({ label, value, onChange }: { label: string; value: number | 
           const n = parseInt(e.target.value, 10);
           onChange(Number.isFinite(n) && n > 0 && n < 1000 ? n : null);
         }}
-        className="h-11 w-20 rounded-lg border border-bb-rule-gray bg-bb-house-black px-3 text-lg text-bb-chart-white focus:border-bb-downbeat-amber focus:outline-none"
+        className="bb-input h-11 w-20 px-3 font-bb-data text-lg"
       />
     </label>
   );
@@ -98,13 +96,13 @@ export default function FilterSheet({
   const tags = allTags ? fx.tags : fx.tags.slice(0, 24);
 
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/70 sm:items-center" onClick={onClose}>
+    <div className="fixed inset-0 z-40 flex items-end justify-center bg-bb-stage-black/80 sm:items-center" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="filter-title"
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[88dvh] w-full max-w-lg flex-col rounded-t-2xl border border-bb-rule-gray bg-bb-case-charcoal sm:rounded-2xl"
+        className="flex max-h-[88dvh] w-full max-w-lg flex-col rounded-bb-none border-t border-bb-rule-gray bg-bb-case-charcoal sm:border"
       >
         <div className="flex items-center justify-between border-b border-bb-rule-gray px-4 py-2">
           <h2 id="filter-title" className="text-xl font-bold">
@@ -120,7 +118,7 @@ export default function FilterSheet({
             <Section title="Key">
               {fx.keys.map(({ value }) => (
                 <Chip key={value} on={f.keys.includes(value)} onClick={() => setF({ ...f, keys: toggle(f.keys, value) })}>
-                  <span className="font-mono">{value}</span>
+                  <span className="font-bb-data">{value}</span>
                 </Chip>
               ))}
             </Section>
@@ -139,7 +137,7 @@ export default function FilterSheet({
                 on={f.tempos.includes(t.id)}
                 onClick={() => setF({ ...f, tempos: toggle<Tempo>(f.tempos, t.id), bpmMin: null, bpmMax: null })}
               >
-                {t.label} <span className="text-sm font-normal opacity-80">{t.hint}</span>
+                {t.label} <span className="text-sm font-normal">{t.hint}</span>
               </Chip>
             ))}
             <div className="mt-1 flex w-full flex-wrap items-center gap-x-3 gap-y-2">
@@ -177,7 +175,7 @@ export default function FilterSheet({
                 </Chip>
               ))}
               {fx.tags.length > tags.length && (
-                <button type="button" onClick={() => setAllTags(true)} className="min-h-11 px-3 text-bb-downbeat-amber">
+                <button type="button" onClick={() => setAllTags(true)} className="min-h-11 px-3 text-bb-chart-white underline">
                   All {fx.tags.length} tags…
                 </button>
               )}
@@ -190,11 +188,11 @@ export default function FilterSheet({
             type="button"
             disabled={!countFilters(f)}
             onClick={() => setF(NO_FILTERS)}
-            className="h-12 rounded-xl border border-bb-rule-gray px-4 text-lg font-semibold disabled:opacity-40"
+            className="bb-btn bb-btn-secondary h-12 px-4 text-lg"
           >
             Clear all
           </button>
-          <button type="button" onClick={onClose} className="h-12 flex-1 rounded-xl bg-bb-downbeat-amber text-lg font-bold text-bb-stage-black active:opacity-80">
+          <button type="button" onClick={onClose} className="bb-btn bb-btn-primary h-12 flex-1 text-lg">
             Show {count} {count === 1 ? "song" : "songs"}
           </button>
         </div>

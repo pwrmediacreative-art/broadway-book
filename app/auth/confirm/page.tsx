@@ -21,7 +21,7 @@ export default function ConfirmPage() {
           <p className="mb-6 mt-1 text-lg text-bb-cue-gray">{error} Send yourself a new link.</p>
           <Link
             href="/login"
-            className="flex h-14 items-center justify-center rounded-xl bg-bb-downbeat-amber text-xl font-semibold text-bb-stage-black"
+            className="bb-btn bb-btn-primary flex h-14 w-full text-xl"
           >
             Get a new link
           </Link>

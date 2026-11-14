@@ -292,7 +292,7 @@ export default function SongSearch() {
             value={st.q}
             onChange={(e) => update({ q: e.target.value })}
             onKeyDown={(e) => e.key === "Enter" && input.current?.blur()}
-            className="h-14 w-full rounded-xl border border-bb-rule-gray bg-bb-case-charcoal pl-4 pr-14 text-xl text-bb-chart-white placeholder:text-bb-cue-gray focus:border-bb-downbeat-amber focus:outline-none [&::-webkit-search-cancel-button]:hidden"
+            className="bb-input h-14 w-full bg-bb-case-charcoal pl-4 pr-14 text-xl [&::-webkit-search-cancel-button]:hidden"
           />
           {st.q && (
             <button
@@ -314,7 +314,7 @@ export default function SongSearch() {
         <div
           role="tablist"
           aria-label="Browse"
-          className="mb-3 grid grid-cols-3 gap-1 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-1"
+          className="mb-3 grid grid-cols-3 gap-1 rounded-bb-control border border-bb-rule-gray p-1"
         >
           {(
             [
@@ -329,7 +329,7 @@ export default function SongSearch() {
               type="button"
               aria-selected={view === id}
               onClick={() => update({ view: id, artist: null })}
-              className={`h-12 rounded-lg text-lg font-semibold ${view === id ? "bg-bb-downbeat-amber text-bb-stage-black" : "text-bb-chart-white active:bg-bb-rule-gray"}`}
+              className={`bb-btn bb-btn-quiet h-12 text-lg ${view === id ? "bb-on" : ""}`}
             >
               {label}
             </button>
@@ -341,11 +341,9 @@ export default function SongSearch() {
         <button
           type="button"
           onClick={() => setSheet(true)}
-          className={`h-12 shrink-0 rounded-xl border px-4 text-lg font-semibold ${
-            nFilters
-              ? "border-bb-downbeat-amber text-bb-downbeat-amber"
-              : "border-bb-rule-gray text-bb-chart-white"
-          } active:bg-bb-rule-gray`}
+          className={`bb-btn bb-btn-secondary h-12 shrink-0 px-4 text-lg ${
+            nFilters ? "border-bb-downbeat-amber text-bb-downbeat-amber" : ""
+          }`}
         >
           Filters{nFilters ? ` · ${nFilters}` : ""}
         </button>
@@ -356,7 +354,7 @@ export default function SongSearch() {
           id="sort"
           value={st.sort}
           onChange={(e) => update({ sort: e.target.value as Sort })}
-          className="h-12 min-w-0 flex-1 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-3 text-lg text-bb-chart-white focus:border-bb-downbeat-amber focus:outline-none"
+          className="bb-input h-12 min-w-0 flex-1 bg-bb-case-charcoal px-3 text-lg"
         >
           {SORTS.map((s) => (
             <option key={s.id} value={s.id}>
@@ -399,7 +397,7 @@ export default function SongSearch() {
             <button
               type="button"
               onClick={() => setF(NO_FILTERS)}
-              className="text-bb-downbeat-amber underline"
+              className="text-bb-chart-white underline"
             >
               {hidden} hidden by filters
             </button>
@@ -409,7 +407,7 @@ export default function SongSearch() {
       </p>
       {rows.some((r) => r.kind === "song" && r.d.uv) && (
         <p className="-mt-1 mb-2 flex items-center gap-2 text-sm text-bb-cue-gray" data-uv-legend>
-          <span aria-hidden className="size-2.5 shrink-0 rounded-full bg-amber-400" />
+          <span aria-hidden className="bb-dot bb-dot-unverified size-2.5" />
           Not yet checked against the original
         </p>
       )}
@@ -428,7 +426,7 @@ export default function SongSearch() {
       )}
 
       {!docs ? (
-        <p className="rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 py-6 text-center text-bb-cue-gray">
+        <p className="bb-panel px-4 py-6 text-center text-bb-cue-gray">
           {index.offline
             ? "Can’t reach the song list. Check your connection and reload."
             : "Loading songs…"}
@@ -444,7 +442,7 @@ export default function SongSearch() {
         />
       ) : (
         <div className="flex items-start gap-1">
-          <ul className="min-w-0 flex-1 divide-y divide-bb-rule-gray overflow-hidden rounded-xl border border-bb-rule-gray">
+          <ul className="min-w-0 flex-1 divide-y divide-bb-rule-gray border-y border-bb-rule-gray">
             {rows.slice(0, limit).map((r, i) =>
               r.kind === "song" ? (
                 <SongRow key={r.d.slug} d={r.d} index={i} onOpen={onOpen} />
@@ -501,7 +499,7 @@ function Empty({
   clear: () => void;
   browse: () => void;
 }) {
-  const box = "rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 py-6 text-center";
+  const box = "bb-panel px-4 py-6 text-center";
   if (hidden > 0)
     return (
       <div className={box}>
@@ -512,7 +510,7 @@ function Empty({
         <button
           type="button"
           onClick={clear}
-          className="h-12 rounded-xl bg-bb-downbeat-amber px-6 text-lg font-bold text-bb-stage-black active:opacity-80"
+          className="bb-btn bb-btn-primary h-12 px-6 text-lg"
         >
           Clear filters
         </button>
@@ -527,7 +525,7 @@ function Empty({
         <button
           type="button"
           onClick={browse}
-          className="h-12 rounded-xl border border-bb-rule-gray px-6 text-lg font-semibold active:bg-bb-rule-gray"
+          className="bb-btn bb-btn-secondary h-12 px-6 text-lg"
         >
           Browse A–Z
         </button>
@@ -556,7 +554,7 @@ function LetterStrip({
   return (
     <nav
       aria-label="Jump to letter"
-      className="sticky top-[4.75rem] flex h-[calc(100dvh-6rem)] max-h-[48rem] w-8 shrink-0 touch-none select-none flex-col items-center justify-around rounded-xl border border-bb-rule-gray bg-bb-case-charcoal py-1"
+      className="sticky top-[4.75rem] flex h-[calc(100dvh-6rem)] max-h-[48rem] w-8 shrink-0 touch-none select-none flex-col items-center justify-around border border-bb-rule-gray py-1"
       onPointerDown={(e) => {
         last.current = "";
         (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
@@ -571,7 +569,7 @@ function LetterStrip({
           data-letter={l}
           onClick={() => onJump(l)}
           aria-label={`Jump to ${l}`}
-          className="w-8 text-center text-sm font-bold text-bb-downbeat-amber"
+          className="w-8 text-center text-sm font-bold text-bb-chart-white"
         >
           {l}
         </button>

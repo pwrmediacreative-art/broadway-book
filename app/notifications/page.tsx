@@ -50,11 +50,11 @@ async function List() {
   const rows = (data ?? []) as unknown as Row[];
   const unread = rows.some((r) => !r.read_at);
 
-  if (!rows.length) return <p className="rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4 text-lg text-bb-cue-gray">Nothing yet.</p>;
+  if (!rows.length) return <p className="bb-panel p-4 text-lg text-bb-cue-gray">Nothing yet.</p>;
   return (
     <>
       {unread && <MarkRead />}
-      <ul className="flex flex-col gap-3">
+      <ul className="divide-y divide-bb-rule-gray border-y border-bb-rule-gray">
         {rows.map((r) => {
           const [icon, text] = TEXT[r.kind] ?? ["•", "Update"];
           return (
@@ -69,9 +69,9 @@ async function List() {
                         ? `/songs/${r.song.slug}`
                         : "/community"
                 }
-                className={`flex gap-3 rounded-xl border p-4 active:bg-bb-rule-gray ${r.read_at ? "border-bb-rule-gray" : "border-bb-downbeat-amber bg-bb-case-charcoal"}`}
+                className={`flex gap-3 p-4 active:bg-bb-rule-gray ${r.read_at ? "" : "bg-bb-case-charcoal"}`}
               >
-                <span className="text-2xl" aria-hidden>
+                <span className={`text-2xl ${r.read_at ? "" : "text-bb-downbeat-amber"}`} aria-hidden>
                   {icon}
                 </span>
                 <span className="min-w-0">

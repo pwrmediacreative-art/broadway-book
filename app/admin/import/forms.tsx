@@ -3,20 +3,17 @@
 import { useActionState } from "react";
 import { fixName, scanDropbox, type FixState, type ScanState } from "./actions";
 
-const button =
-  "min-h-11 rounded-xl bg-bb-downbeat-amber px-5 text-lg font-semibold text-bb-stage-black disabled:opacity-60";
-const input =
-  "min-h-11 w-full rounded-lg border border-bb-rule-gray bg-bb-house-black px-3 text-lg text-bb-chart-white";
+const input = "bb-input w-full";
 
 export function ScanButton({ disabled }: { disabled?: boolean }) {
   const [state, action, pending] = useActionState<ScanState, FormData>(scanDropbox, {});
   return (
     <form action={action} className="mb-6">
-      <button type="submit" className={button} disabled={disabled || pending}>
+      <button type="submit" className="bb-btn bb-btn-primary px-5" disabled={disabled || pending}>
         {pending ? "Scanning Dropbox…" : "Scan Dropbox"}
       </button>
       <p role="status" aria-live="polite" className="mt-2 text-lg">
-        {state.error && <span className="text-red-400">{state.error}</span>}
+        {state.error && <span className="bb-error">{state.error}</span>}
         {state.summary && <span className="text-bb-cue-gray">{state.summary}</span>}
       </p>
     </form>
@@ -32,10 +29,10 @@ export function FixNameForm({ id, title, artist }: { id: string; title: string |
       <input id={`t-${id}`} name="title" defaultValue={title ?? ""} placeholder="Title" className={input} required />
       <label className="sr-only" htmlFor={`a-${id}`}>Artist</label>
       <input id={`a-${id}`} name="artist" defaultValue={artist ?? ""} placeholder="Artist" className={input} required />
-      <button type="submit" className={button} disabled={pending}>
+      <button type="submit" className="bb-btn bb-btn-secondary px-5" disabled={pending}>
         {pending ? "Saving…" : "Save"}
       </button>
-      {state.error && <p className="text-red-400 sm:col-span-3">{state.error}</p>}
+      {state.error && <p className="bb-error sm:col-span-3">{state.error}</p>}
     </form>
   );
 }

@@ -90,14 +90,14 @@ export function SharedView({ code }: { code: string }) {
       <Link href="/" className="inline-flex h-12 items-center text-lg text-bb-cue-gray active:text-bb-chart-white">
         ← All songs
       </Link>
-      <h1 className="text-3xl font-bold leading-tight">{set.name}</h1>
+      <h1 className="text-bb-display">{set.name}</h1>
       <p className="mb-3 text-lg text-bb-cue-gray">
         {[gigDate(set.gig_date), `${playable} song${playable === 1 ? "" : "s"}`, "view only"].filter(Boolean).join(" · ")}
       </p>
       {set.mine && (
         <p className="mb-3 text-lg">
           This is your setlist.{" "}
-          <Link className="text-bb-downbeat-amber underline" href={`/setlists/${set.id ?? ""}`}>
+          <Link className="text-bb-chart-white underline" href={`/setlists/${set.id ?? ""}`}>
             Edit it
           </Link>
         </p>
@@ -108,7 +108,7 @@ export function SharedView({ code }: { code: string }) {
           enterFullscreen();
           router.push(`/s/${code}/play`);
         }}
-        className={`${btn} ${primary} mb-4 h-14 w-full text-xl disabled:opacity-40`}
+        className={`${btn} ${primary} mb-4 h-14 w-full text-xl`}
       >
         Play set ▸
       </button>
@@ -137,12 +137,12 @@ function ShareBox({ id, initial }: { id: string; initial: string | null }) {
     }
   };
   return (
-    <section className="mb-6 rounded-xl border border-bb-rule-gray p-3">
+    <section className="mb-6 border border-bb-rule-gray p-3">
       <h2 className="mb-1 text-lg font-semibold">Share with the band</h2>
       {url ? (
         <>
           <p className="mb-2 text-base text-bb-cue-gray">Anyone with this link can view and play the set (no sign-in). They see your edits when they refresh.</p>
-          <input readOnly value={url} onFocus={(e) => e.target.select()} aria-label="Share link" className="mb-2 h-12 w-full rounded-lg border border-bb-rule-gray bg-bb-house-black px-3 font-mono text-base" />
+          <input readOnly value={url} onFocus={(e) => e.target.select()} aria-label="Share link" className="bb-input mb-2 h-12 w-full px-3 text-base" />
           <div className="flex flex-wrap gap-2">
             <CopyButton text={url} />
             <button disabled={busy} className={`${btn} ${plain}`} onClick={() => set(false)}>
@@ -153,13 +153,13 @@ function ShareBox({ id, initial }: { id: string; initial: string | null }) {
       ) : (
         <>
           <p className="mb-2 text-base text-bb-cue-gray">Private. Only you can see it until you make a link.</p>
-          <button disabled={busy} className={`${btn} ${primary}`} onClick={() => set(true)}>
+          <button disabled={busy} className={`${btn} ${plain}`} onClick={() => set(true)}>
             Make share link
           </button>
         </>
       )}
       {msg && (
-        <p className="mt-2 text-base text-bb-downbeat-amber" aria-live="polite">
+        <p className="mt-2 text-base text-bb-chart-white" aria-live="polite">
           {msg}
         </p>
       )}
@@ -171,7 +171,7 @@ export function CopyButton({ text, label = "Copy link" }: { text: string; label?
   const [done, setDone] = useState(false);
   return (
     <button
-      className={`${btn} ${primary}`}
+      className={`${btn} ${plain}`}
       onClick={async () => {
         try {
           if (navigator.share && matchMedia("(pointer: coarse)").matches) await navigator.share({ url: text });
@@ -192,9 +192,9 @@ function DeleteButton({ id }: { id: string }) {
   const router = useRouter();
   const [err, setErr] = useState<string | null>(null);
   return (
-    <section className="rounded-xl border border-red-500/50 p-3">
+    <section className="border border-bb-rule-gray p-3">
       <button
-        className={`${btn} border border-red-500/60 text-red-300 active:bg-red-500/20`}
+        className={`${btn} bb-btn-danger`}
         onClick={async () => {
           if (isOffline()) return setErr(OFFLINE_MSG);
           if (!window.confirm("Delete this setlist? This can't be undone.")) return;
@@ -208,7 +208,7 @@ function DeleteButton({ id }: { id: string }) {
       >
         Delete setlist
       </button>
-      {err && <p className="mt-2 text-red-300">{err}</p>}
+      {err && <p className="bb-error mt-2">{err}</p>}
     </section>
   );
 }

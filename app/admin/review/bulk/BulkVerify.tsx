@@ -67,7 +67,7 @@ export default function BulkVerify({ cards }: { cards: Card[] }) {
                   : null;
           const on = picked.has(c.id);
           return (
-            <li key={c.id} className={`rounded-xl border bg-bb-case-charcoal p-3 ${on ? "border-green-400" : "border-bb-rule-gray"}`} data-bulk-card>
+            <li key={c.id} className={`border bg-bb-case-charcoal p-3 ${on ? "border-bb-downbeat-amber" : "border-bb-rule-gray"}`} data-bulk-card>
               <h2 className="text-xl font-bold leading-tight">
                 {c.title} <span className="font-normal text-bb-cue-gray">· {c.artist ?? "no artist"}</span>
               </h2>
@@ -78,16 +78,16 @@ export default function BulkVerify({ cards }: { cards: Card[] }) {
                     target="_blank"
                     rel="noreferrer"
                     onClick={() => setOpened((o) => new Set(o).add(c.id))}
-                    className="inline-flex min-h-12 items-center rounded-lg bg-bb-downbeat-amber px-4 text-lg font-bold text-bb-stage-black active:opacity-80"
+                    className="bb-btn bb-btn-secondary min-h-12 px-4 text-lg"
                   >
                     Open PDF ↗
                   </a>
                 )}
-                <Link href={`/admin/review/${c.id}?f=unverified`} className="inline-flex min-h-12 items-center rounded-lg border border-bb-rule-gray px-4 text-lg">
+                <Link href={`/admin/review/${c.id}?f=unverified`} className="bb-btn bb-btn-secondary min-h-12 px-4 text-lg">
                   Open in review
                 </Link>
               </div>
-              <pre className="max-h-[50vh] overflow-auto whitespace-pre-wrap rounded-lg border border-bb-rule-gray bg-bb-house-black p-3 font-mono text-base leading-relaxed">{c.chart_text}</pre>
+              <pre className="max-h-[50vh] overflow-auto whitespace-pre-wrap border border-bb-rule-gray bg-bb-house-black p-3 font-bb-data text-base leading-relaxed">{c.chart_text}</pre>
               <label className={`mt-2 flex min-h-12 items-center gap-3 text-lg ${why ? "text-bb-cue-gray" : ""}`}>
                 <input type="checkbox" className="size-7 shrink-0" checked={on} disabled={!!why || pending} onChange={() => toggle(c.id)} />
                 {why ?? "This chart matches the original"}
@@ -97,10 +97,10 @@ export default function BulkVerify({ cards }: { cards: Card[] }) {
         })}
       </ul>
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-bb-rule-gray bg-bb-house-black/95 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-bb-rule-gray bg-bb-house-black p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         <div className="mx-auto flex max-w-2xl flex-col gap-1">
           {msg && (
-            <p role="status" aria-live="polite" className={`text-base ${msg.ok ? "text-bb-cue-gray" : "text-amber-200"}`}>
+            <p role="status" aria-live="polite" className={`text-base ${msg.ok ? "text-bb-cue-gray" : "bb-error"}`}>
               {msg.text}
             </p>
           )}
@@ -108,7 +108,7 @@ export default function BulkVerify({ cards }: { cards: Card[] }) {
             type="button"
             disabled={pending || picked.size === 0}
             onClick={verify}
-            className="min-h-14 w-full rounded-xl bg-green-500 text-xl font-bold text-bb-stage-black disabled:opacity-40"
+            className="bb-btn bb-btn-primary min-h-14 w-full text-xl"
           >
             {pending ? "Verifying…" : `✓ Verify ${picked.size} selected`}
           </button>

@@ -85,14 +85,14 @@ async function Body({ searchParams }: { searchParams: SearchParams }) {
 
       <section className="mt-8">
         <h2 className="mb-2 text-2xl font-bold">Reports ({open.length})</h2>
-        {reports.error && <p className="text-red-300">{reports.error.message}</p>}
-        {!open.length && <p className="rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4 text-lg text-bb-cue-gray">No open reports.</p>}
-        <ul className="flex flex-col gap-3">
+        {reports.error && <p className="bb-error">{reports.error.message}</p>}
+        {!open.length && <p className="bb-panel p-4 text-lg text-bb-cue-gray">No open reports.</p>}
+        <ul className="divide-y divide-bb-rule-gray border-y border-bb-rule-gray empty:hidden">
           {open.map((r) => {
             const target = r.voter_id ? r.voter : r.proposal?.author;
             const targetId = r.voter_id ?? r.proposal?.author_id;
             return (
-              <li key={r.id} className="rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4">
+              <li key={r.id} className="py-4">
                 <p className="text-lg font-semibold">
                   {REASON[r.reason] ?? r.reason} · {r.voter_id ? "vote comment" : "suggestion"}
                 </p>
@@ -106,7 +106,7 @@ async function Body({ searchParams }: { searchParams: SearchParams }) {
                 </p>
                 <div className="mt-3 flex flex-wrap gap-3">
                   {r.proposal && (
-                    <Link href={`/community/${r.proposal.id}`} className="inline-flex min-h-12 items-center rounded-xl border border-bb-rule-gray px-4 text-lg">
+                    <Link href={`/community/${r.proposal.id}`} className="bb-btn bb-btn-secondary min-h-12">
                       Open
                     </Link>
                   )}
@@ -123,9 +123,9 @@ async function Body({ searchParams }: { searchParams: SearchParams }) {
         <h2 className="mb-1 text-2xl font-bold">Trusted reviewers</h2>
         <p className="mb-2 text-lg text-bb-cue-gray">They can review imported charts at /admin/review (publish, save drafts, can&apos;t read, skip). Hold, bulk publish and duplicates stay admin-only.</p>
         {!reviewers.data?.length && <p className="mb-2 text-lg text-bb-cue-gray">No reviewers yet.</p>}
-        <ul className="mb-3 flex flex-col gap-2">
+        <ul className="mb-3 divide-y divide-bb-rule-gray border-y border-bb-rule-gray empty:hidden">
           {(reviewers.data ?? []).map((r) => (
-            <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-3">
+            <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
               <span className="text-lg">{r.display_name || "Unnamed player"}</span>
               <ReviewerToggle userId={r.id} on name={r.display_name || "this player"} />
             </li>
@@ -133,15 +133,15 @@ async function Body({ searchParams }: { searchParams: SearchParams }) {
         </ul>
         <form method="get" className="mb-2 flex gap-2" role="search">
           <label htmlFor="rq" className="sr-only">Find a player by display name</label>
-          <input id="rq" name="rq" defaultValue={rq} placeholder="Find a player by display name" className="min-h-11 w-full rounded-lg border border-bb-rule-gray bg-bb-house-black px-3 text-lg" />
-          <button type="submit" className="min-h-11 rounded-xl border border-bb-rule-gray px-5 text-lg">Find</button>
+          <input id="rq" name="rq" defaultValue={rq} placeholder="Find a player by display name" className="bb-input w-full" />
+          <button type="submit" className="bb-btn bb-btn-secondary px-5">Find</button>
         </form>
         {rq && !found.data?.length && <p className="text-lg text-bb-cue-gray">No player named like “{rq}”.</p>}
-        <ul className="flex flex-col gap-2">
+        <ul className="divide-y divide-bb-rule-gray border-y border-bb-rule-gray empty:hidden">
           {(found.data ?? [])
             .filter((f) => !f.reviewer && f.role !== "admin")
             .map((f) => (
-              <li key={f.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-3">
+              <li key={f.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                 <span className="text-lg">{f.display_name || "Unnamed player"}</span>
                 <ReviewerToggle userId={f.id} on={false} name={f.display_name || "this player"} />
               </li>
@@ -152,9 +152,9 @@ async function Body({ searchParams }: { searchParams: SearchParams }) {
       <section className="mt-8">
         <h2 className="mb-2 text-2xl font-bold">Blocked players</h2>
         {!blocked.data?.length && <p className="text-lg text-bb-cue-gray">Nobody is blocked.</p>}
-        <ul className="flex flex-col gap-2">
+        <ul className="divide-y divide-bb-rule-gray border-y border-bb-rule-gray empty:hidden">
           {(blocked.data ?? []).map((b) => (
-            <li key={b.id} className="flex items-center justify-between gap-3 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-3">
+            <li key={b.id} className="flex items-center justify-between gap-3 py-3">
               <span className="text-lg">{b.display_name || "Unnamed player"}</span>
               <BlockToggle userId={b.id} blocked name={b.display_name || "this player"} />
             </li>

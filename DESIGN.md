@@ -100,9 +100,10 @@ components:
 
 # Design System: Broadway Book
 
-<!-- Tokens live in app/globals.css as --bb-* variables (Tailwind classes: bg-bb-*, text-bb-*, rounded-bb-*, font-bb-*).
-     As of this file's first version, screens still use the older tokens (--background, --accent, ...);
-     the restyle step moves them onto --bb-* and retires the old names. -->
+<!-- Tokens live in app/globals.css as --bb-* variables (Tailwind classes: bg-bb-*, text-bb-*, rounded-bb-*, font-bb-*),
+     plus shared classes (bb-btn, bb-btn-primary/-secondary/-danger/-quiet, bb-on, bb-input, bb-chip, bb-panel,
+     bb-notice, bb-error, bb-dot). Stage mode's looks are the bb-stage-dark / bb-stage-light classes.
+     lib/design/design.test.ts fails the build's tests on hex, raw Tailwind colors, pills, shadows, blur or text under 14px. -->
 
 ## Overview
 
@@ -249,7 +250,7 @@ Character: tools on a music stand — plain, firm, obvious.
 - **Secondary:** Chart White text, 1px Rule Gray border.
 - **Pressed:** the ground goes to Case Charcoal. No scaling, no bounce.
 - **Focus:** 2px solid Downbeat Amber outline, 2px offset.
-- **Disabled (and offline):** the control says why in words (offline: `OFFLINE_MSG`). The visual treatment is settled in the restyle step.
+- **Disabled (and offline):** no fading. Case Charcoal ground, Cue Gray text, Rule Gray border (amber buttons lose their amber), and the control says why in words (offline: `OFFLINE_MSG`).
 
 ### Inputs / Fields
 - **Style:** 1px Rule Gray border, 4px corners, 44px tall, body-size text.
@@ -261,6 +262,9 @@ Character: tools on a music stand — plain, firm, obvious.
 - Never a panel inside a panel.
 
 ### Badges and status
+- **Chips (status words):** 4px corners, 1px Rule Gray border, label-size text, no fill. Chart White; Cue Gray for minor ones; Stop Red only for failures.
+- **Notices and warnings:** a square Case Charcoal panel in Chart White that leads with a word ("Out of date:"). No amber, no colored border.
+- **Success:** Chart White text starting with ✓. No green.
 - **Verified:** Chart White label-size text with a check mark. No green.
 - **Unverified:** Cue Gray outline dot.
 - **Flag (personal):** solid Chart White dot with a Stage Black ring.

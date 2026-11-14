@@ -50,14 +50,14 @@ export default function OfflineRoot() {
   return (
     <>
       {offline && (
-        <p role="status" data-offline-banner className="bg-amber-400/15 px-4 py-1 text-center text-sm font-semibold text-amber-200">
-          Offline, showing saved charts
+        <p role="status" data-offline-banner className="bg-bb-case-charcoal px-4 py-1 text-center text-sm text-bb-chart-white">
+          <b>Offline,</b> showing saved charts
         </p>
       )}
       {note && (
         <p
           role="status"
-          className="pointer-events-none fixed bottom-4 left-1/2 z-40 -translate-x-1/2 rounded-full border border-bb-rule-gray bg-bb-case-charcoal px-4 py-2 text-base text-bb-chart-white shadow-lg"
+          className="bb-panel pointer-events-none fixed bottom-4 left-1/2 z-40 -translate-x-1/2 border border-bb-rule-gray px-4 py-2 text-base text-bb-chart-white"
         >
           Updated {note.n} song{note.n === 1 ? "" : "s"}
         </p>
@@ -69,7 +69,7 @@ export default function OfflineRoot() {
 /** The one message for anything that needs the server while offline. */
 export function OfflineNote({ className = "" }: { className?: string }) {
   return (
-    <p role="status" className={`rounded-xl border border-amber-400/50 bg-amber-400/10 px-4 py-3 text-lg text-amber-100 ${className}`}>
+    <p role="status" className={`bb-notice ${className}`}>
       {OFFLINE_MSG}
     </p>
   );

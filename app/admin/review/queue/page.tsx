@@ -90,24 +90,24 @@ async function Queue({ searchParams }: { searchParams: SearchParams }) {
           <Link
             key={k}
             href={`/admin/review/queue?f=${k}&o=${prefs.order}`}
-            className={`flex min-h-16 flex-col justify-center rounded-xl border p-3 ${prefs.filter === k ? "border-bb-downbeat-amber bg-bb-case-charcoal" : "border-bb-rule-gray bg-bb-case-charcoal"}`}
+            className={`flex min-h-16 flex-col justify-center border p-3 ${prefs.filter === k ? "border-bb-downbeat-amber bg-bb-case-charcoal" : "border-bb-rule-gray bg-bb-case-charcoal"}`}
           >
             <dt className="text-sm text-bb-cue-gray">{FILTERS[k]}</dt>
-            <dd className="text-2xl font-bold">{d.counts[k] + (k === "needs_manual" ? d.counts.manual_files_without_song : 0)}</dd>
+            <dd className="text-2xl font-bold tabular-nums">{d.counts[k] + (k === "needs_manual" ? d.counts.manual_files_without_song : 0)}</dd>
           </Link>
         ))}
       </dl>
 
       {admin && prefs.filter === "needs_review" && <BulkPublish />}
       {admin && prefs.filter === "unverified" && d.counts.unverified > 0 && (
-        <Link href="/admin/review/bulk" className="mb-4 flex min-h-14 items-center justify-between rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 text-xl font-semibold active:bg-bb-rule-gray">
+        <Link href="/admin/review/bulk" className="mb-4 flex min-h-14 items-center justify-between border border-bb-rule-gray bg-bb-case-charcoal px-4 text-xl font-semibold active:bg-bb-rule-gray">
           Bulk verify (chart beside its PDF) <span className="text-bb-downbeat-amber">›</span>
         </Link>
       )}
 
       {progress.oldest.length > 0 && (
-        <section className="mb-4 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-3" aria-label="Longest unverified">
-          <h2 className="mb-1 text-sm font-bold uppercase tracking-wide text-bb-cue-gray">Live and unverified the longest</h2>
+        <section className="bb-panel mb-4 p-3" aria-label="Longest unverified">
+          <h2 className="mb-1 text-bb-label text-bb-cue-gray">Live and unverified the longest</h2>
           <ul className="divide-y divide-bb-rule-gray">
             {progress.oldest.map((o) => (
               <li key={o.id}>
@@ -127,40 +127,40 @@ async function Queue({ searchParams }: { searchParams: SearchParams }) {
         <input type="hidden" name="f" value={prefs.filter} />
         <input type="hidden" name="o" value={prefs.order} />
         <label htmlFor="q" className="sr-only">Search songs</label>
-        <input id="q" name="q" defaultValue={q} placeholder="Title or artist" className="min-h-11 w-full rounded-lg border border-bb-rule-gray bg-bb-house-black px-3 text-lg" />
-        <button type="submit" className="min-h-11 rounded-xl bg-bb-downbeat-amber px-5 text-lg font-semibold text-bb-stage-black">
+        <input id="q" name="q" defaultValue={q} placeholder="Title or artist" className="bb-input w-full px-3 text-lg" />
+        <button type="submit" className="bb-btn bb-btn-secondary px-5 text-lg">
           Search
         </button>
       </form>
 
       {d.songs.length === 0 ? (
-        <p className="rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4 text-lg text-bb-cue-gray">{q ? "No matches." : "Nothing here."}</p>
+        <p className="bb-panel p-4 text-lg text-bb-cue-gray">{q ? "No matches." : "Nothing here."}</p>
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className="divide-y divide-bb-rule-gray border-y border-bb-rule-gray">
           {d.songs.map((s) => (
             <li key={s.id}>
-              <Link href={`/admin/review/${s.id}?${pq}`} className="flex min-h-14 items-center justify-between gap-3 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 py-2 active:bg-bb-rule-gray">
+              <Link href={`/admin/review/${s.id}?${pq}`} className="flex min-h-14 items-center justify-between gap-3 px-4 py-2 active:bg-bb-case-charcoal">
                 <span className="min-w-0">
                   <span className="block truncate text-lg font-semibold">{s.title}</span>
                   <span className="block truncate text-bb-cue-gray">{s.artist ?? "no artist"}</span>
                 </span>
                 <span className="flex shrink-0 flex-wrap justify-end gap-1.5 text-sm">
                   {s.claim_expires && s.claimed_by_me === false && (
-                    <span className="rounded-full bg-sky-400/25 px-2 py-0.5 font-semibold text-sky-100">{s.claimed_name} reviewing</span>
+                    <span className="bb-chip">{s.claimed_name} reviewing</span>
                   )}
-                  {s.flagged && <span className="rounded-full bg-red-500/25 px-2 py-0.5 font-semibold text-red-200">{s.flags} flags</span>}
-                  {s.has_draft && <span className="rounded-full bg-bb-rule-gray px-2 py-0.5 text-bb-cue-gray">draft</span>}
-                  {s.review_hold && <span className="rounded-full bg-bb-rule-gray px-2 py-0.5 text-bb-cue-gray">held</span>}
+                  {s.flagged && <span className="bb-chip bb-chip-error">{s.flags} flags</span>}
+                  {s.has_draft && <span className="bb-chip bb-chip-muted">draft</span>}
+                  {s.review_hold && <span className="bb-chip bb-chip-muted">held</span>}
                   {s.status === "published" &&
                     (s.unverified ? (
-                      <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-amber-200">live, unverified</span>
+                      <span className="bb-chip">live, unverified</span>
                     ) : (
-                      <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-green-200">live</span>
+                      <span className="bb-chip">live</span>
                     ))}
-                  <span className={`rounded-full px-2 py-0.5 ${s.unclear ? "bg-amber-400/20 text-amber-200" : "bg-green-500/20 text-green-200"}`}>
+                  <span className={`bb-chip ${s.unclear ? "" : "bb-chip-muted"}`}>
                     {s.unclear} unclear
                   </span>
-                  {s.confidence != null && <span className="rounded-full bg-bb-rule-gray px-2 py-0.5 text-bb-cue-gray">{Number(s.confidence).toFixed(2)}</span>}
+                  {s.confidence != null && <span className="bb-chip bb-chip-muted font-bb-data">{Number(s.confidence).toFixed(2)}</span>}
                 </span>
               </Link>
             </li>
@@ -170,7 +170,7 @@ async function Queue({ searchParams }: { searchParams: SearchParams }) {
 
       <nav className="mt-4 flex items-center justify-between text-lg" aria-label="Pages">
         {page > 0 ? <Link href={qs(page - 1)} className="inline-flex min-h-11 items-center text-bb-downbeat-amber">‹ Previous</Link> : <span />}
-        <span className="text-bb-cue-gray">
+        <span className="tabular-nums text-bb-cue-gray">
           {d.matches ? `${page * PAGE + 1}–${Math.min((page + 1) * PAGE, d.matches)} of ${d.matches}` : ""}
         </span>
         {(page + 1) * PAGE < d.matches ? <Link href={qs(page + 1)} className="inline-flex min-h-11 items-center text-bb-downbeat-amber">Next ›</Link> : <span />}
@@ -179,7 +179,7 @@ async function Queue({ searchParams }: { searchParams: SearchParams }) {
       {files.length > 0 && (
         <section className="mt-8">
           <h2 className="mb-2 text-2xl font-bold">Can&apos;t-read PDFs without a song yet</h2>
-          <ul className="flex flex-col gap-2">
+          <ul className="divide-y divide-bb-rule-gray border-y border-bb-rule-gray">
             {files.map((f) => (
               <ManualFile key={f.id} id={f.id} q={pq} label={f.title && f.artist ? `${f.title} · ${f.artist}` : (f.file_name ?? "Unnamed file")} />
             ))}

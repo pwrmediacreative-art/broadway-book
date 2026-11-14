@@ -85,14 +85,14 @@ async function Proposal({ params }: { params: PageProps<"/community/[id]">["para
           <span className="text-bb-cue-gray">Suggested {when(p.created_at)}</span>
         </p>
         <h1 className="text-3xl font-bold leading-tight">
-          <Link href={`/songs/${p.song.slug}`} className="active:text-bb-downbeat-amber">
+          <Link href={`/songs/${p.song.slug}`} className="active:text-bb-cue-gray">
             {p.song.title}
           </Link>
         </h1>
         {p.song.artist && <p className="text-lg text-bb-cue-gray">{p.song.artist}</p>}
       </header>
 
-      <section className="mb-5 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4">
+      <section className="bb-panel mb-5 p-4">
         <p className="text-sm text-bb-cue-gray">
           {author}
           <ReviewerBadge on={p.author?.reviewer} /> wrote{p.updated_at !== p.created_at && <> · updated {when(p.updated_at)}</>}
@@ -101,8 +101,8 @@ async function Proposal({ params }: { params: PageProps<"/community/[id]">["para
       </section>
 
       {p.status === "open" && p.out_of_date && (
-        <p className="mb-5 rounded-xl border border-amber-400/60 bg-amber-400/10 p-4 text-lg text-amber-100">
-          The chart changed after this was suggested, so voting is paused. {author} can update it to the newest
+        <p className="bb-notice mb-5">
+          <b>Out of date:</b> The chart changed after this was suggested, so voting is paused. {author} can update it to the newest
           version; votes then start over. It will never overwrite the newer chart.
         </p>
       )}
@@ -132,11 +132,11 @@ async function Proposal({ params }: { params: PageProps<"/community/[id]">["para
         {diff ? (
           <BarDiff diff={diff} />
         ) : (
-          <p className="text-lg text-red-300">This suggestion can&apos;t be compared: {diffError}</p>
+          <p className="bb-error text-lg">This suggestion can&apos;t be compared: {diffError}</p>
         )}
         <details className="mt-4">
           <summary className="inline-flex min-h-11 cursor-pointer items-center text-lg text-bb-cue-gray">Show the full suggested chart text</summary>
-          <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-3 font-mono text-lg">{p.chart_text}</pre>
+          <pre className="bb-panel mt-2 overflow-x-auto whitespace-pre-wrap p-3 font-bb-data text-lg">{p.chart_text}</pre>
         </details>
       </section>
     </>

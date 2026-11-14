@@ -61,23 +61,23 @@ export function PersonalBar({ slug, songId, pick, publicText }: { slug: string; 
     <div className="mb-3">
       <div className="flex flex-wrap items-center gap-2">
         <span
-          className={`rounded-full px-3 py-1 text-sm font-bold uppercase tracking-wide ${
-            pick.usingMine ? "bg-violet-400/25 text-violet-100" : "bg-bb-case-charcoal text-bb-cue-gray"
-          }`}
+          className={`bb-chip ${pick.usingMine ? "" : "bb-chip-muted"}`}
         >
           {pick.usingMine ? "Your version" : "Public version"}
         </span>
         <button
           onClick={() => pick.setShowPublic(pick.usingMine)}
-          className="min-h-11 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 text-lg active:bg-bb-rule-gray"
+          className="bb-btn bb-btn-secondary min-h-11 px-4 text-lg font-normal"
         >
           {pick.usingMine ? "View public version" : "View your version"}
         </button>
       </div>
 
       {pick.usingMine && pick.stale && (
-        <div className="mt-3 rounded-xl border border-amber-400/60 bg-amber-400/10 p-4 text-lg text-amber-100">
-          <p className="font-semibold">The public chart changed since your version.</p>
+        <div className="bb-notice mt-3 p-4 text-lg">
+          <p>
+            <b>The public chart changed</b> since your version.
+          </p>
           <button className="min-h-11 underline" onClick={() => setShowDiff((v) => !v)}>
             {showDiff ? "Hide what changed" : "Show what changed"}
           </button>
@@ -99,25 +99,25 @@ export function PersonalBar({ slug, songId, pick, publicText }: { slug: string; 
             <button
               disabled={pending || !mine.current_revision_id}
               onClick={() => act(() => keepPersonal(songId, mine.current_revision_id!))}
-              className="min-h-12 rounded-xl bg-bb-downbeat-amber px-4 font-bold text-bb-stage-black disabled:opacity-40"
+              className="bb-btn bb-btn-secondary min-h-12 px-4 font-bold"
             >
               Keep mine
             </button>
             <button
               disabled={pending}
               onClick={() => act(() => deletePersonal(songId), RESET_CONFIRM)}
-              className="min-h-12 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 disabled:opacity-40"
+              className="bb-btn bb-btn-secondary min-h-12 px-4 font-normal"
             >
               Switch to public
             </button>
-            <Link href={`/songs/${slug}/edit`} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4">
+            <Link href={`/songs/${slug}/edit`} className="bb-btn bb-btn-secondary min-h-12 px-4 font-normal">
               Edit mine
             </Link>
           </div>
           )}
         </div>
       )}
-      {err && <p className="mt-2 text-lg text-red-300">{err}</p>}
+      {err && <p className="bb-error mt-2 text-lg">{err}</p>}
     </div>
   );
 }
@@ -147,9 +147,11 @@ export function OpenBadge({ slug, count }: { slug: string; count: number | null 
   return (
     <Link
       href={`/community?song=${encodeURIComponent(slug)}`}
-      className="ml-2 inline-flex min-h-8 items-center rounded-full bg-sky-400/20 px-2.5 text-sm font-semibold text-sky-100 active:bg-sky-400/40"
+      className="group ml-2 inline-flex min-h-11 items-center align-middle"
     >
-      {count} open suggestion{count === 1 ? "" : "s"}
+      <span className="bb-chip group-active:bg-bb-case-charcoal">
+        {count} open suggestion{count === 1 ? "" : "s"}
+      </span>
     </Link>
   );
 }
@@ -163,7 +165,7 @@ export function SongActions({ slug, songId, pick }: { slug: string; songId: stri
   if (offline) {
     return (
       <section id="suggest" className="mt-10 flex scroll-mt-20 flex-col gap-3" aria-label="Change this chart">
-        <div aria-disabled className="flex min-h-16 flex-col justify-center rounded-2xl border-2 border-bb-rule-gray px-5 py-2 opacity-50">
+        <div aria-disabled className="flex min-h-16 flex-col justify-center rounded-bb-control border border-bb-rule-gray px-5 py-2">
           <span className="text-xl font-bold">✎ Suggest a change</span>
           <span className="text-base text-bb-cue-gray">Fix it for everyone, or keep a version just for you.</span>
         </div>
@@ -173,15 +175,15 @@ export function SongActions({ slug, songId, pick }: { slug: string; songId: stri
   }
   return (
     <section id="suggest" className="mt-10 flex scroll-mt-20 flex-col gap-3" aria-label="Change this chart">
-      <Link href={`/songs/${slug}/edit`} className="flex min-h-16 flex-col justify-center rounded-2xl border-2 border-bb-downbeat-amber px-5 py-2 active:bg-bb-downbeat-amber/20">
-        <span className="text-xl font-bold text-bb-downbeat-amber">✎ Suggest a change</span>
+      <Link href={`/songs/${slug}/edit`} className="flex min-h-16 flex-col justify-center rounded-bb-control border border-bb-rule-gray px-5 py-2 active:bg-bb-case-charcoal">
+        <span className="text-xl font-bold text-bb-chart-white">✎ Suggest a change</span>
         <span className="text-base text-bb-cue-gray">Fix it for everyone, or keep a version just for you.</span>
       </Link>
       {pick.mine && (
         <div className="grid grid-cols-2 gap-3">
           <Link
             href={`/songs/${slug}/edit?intent=suggest`}
-            className="inline-flex min-h-12 items-center justify-center rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-3 text-center text-lg"
+            className="bb-btn bb-btn-secondary min-h-12 px-3 text-center text-lg font-normal"
           >
             Suggest this for everyone
           </Link>
@@ -196,13 +198,13 @@ export function SongActions({ slug, songId, pick }: { slug: string; songId: stri
                 await loadMyVersions();
               });
             }}
-            className="min-h-12 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-3 text-lg disabled:opacity-40"
+            className="bb-btn bb-btn-secondary min-h-12 px-3 text-lg font-normal"
           >
             Reset to public version
           </button>
         </div>
       )}
-      {err && <p className="text-lg text-red-300">{err}</p>}
+      {err && <p className="bb-error text-lg">{err}</p>}
       <FlagButton slug={slug} songId={songId} />
       <Link href={`/songs/${slug}/history`} className="inline-flex min-h-11 items-center text-lg text-bb-cue-gray underline">
         Chart history

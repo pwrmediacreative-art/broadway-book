@@ -20,11 +20,11 @@ export default function RevertButton({ songId, revisionId, when }: { songId: str
             router.refresh();
           });
         }}
-        className="min-h-12 rounded-xl border border-bb-downbeat-amber px-4 text-lg text-bb-downbeat-amber active:bg-bb-downbeat-amber/20 disabled:opacity-40"
+        className="bb-btn bb-btn-secondary min-h-12 px-4 text-lg font-normal"
       >
         {pending ? "Reverting…" : "Revert to this version"}
       </button>
-      {err && <p className="mt-1 text-lg text-red-300">{err}</p>}
+      {err && <p className="bb-error mt-1 text-lg">{err}</p>}
     </div>
   );
 }

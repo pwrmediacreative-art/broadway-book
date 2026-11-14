@@ -41,7 +41,7 @@ export function UnverifiedBadge({ className = "" }: { className?: string }) {
     <span
       title="Not checked against the original chart yet. Flag it or suggest a fix if something's off."
       data-unverified-badge
-      className={`rounded bg-amber-400/20 px-1.5 py-0.5 text-xs font-semibold uppercase text-amber-200 ${className}`}
+      className={`bb-chip bb-chip-muted ${className}`}
     >
       Unverified
     </span>
@@ -60,7 +60,7 @@ function VerifiedBadge({ at }: { at?: string | null }) {
         className="ml-2 inline-flex min-h-11 items-center align-middle"
         data-verified-badge
       >
-        <span className="rounded bg-emerald-400/15 px-1.5 py-0.5 text-xs font-semibold uppercase text-emerald-200">✓ Verified</span>
+        <span className="text-bb-label text-bb-chart-white">✓ Verified</span>
       </button>
       {open && (
         <span role="status" className="block text-base text-bb-cue-gray">
@@ -104,10 +104,10 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
     return (
       <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-4">
         <h1 className="mb-3 text-3xl font-bold">{title}</h1>
-        <div className="rounded-xl border border-red-500 p-4">
+        <div className="border border-bb-stop-red p-4">
           <p className="font-semibold">This chart has a format error.</p>
           <p className="text-bb-cue-gray">{s.error}</p>
-          <pre className="mt-3 whitespace-pre-wrap font-mono text-lg">{pick.text}</pre>
+          <pre className="mt-3 whitespace-pre-wrap font-bb-data text-lg">{pick.text}</pre>
         </div>
         <PersonalBar slug={slug} songId={songId} pick={pick} publicText={chartText} />
         <SongActions slug={slug} songId={songId} pick={pick} />
@@ -127,7 +127,7 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
         <Link
           href={`/songs/${slug}/stage`}
           onClick={enterFullscreen}
-          className="inline-flex h-12 items-center gap-2 rounded-lg bg-bb-downbeat-amber px-5 text-lg font-bold text-bb-stage-black active:opacity-80"
+          className="bb-btn bb-btn-primary h-12 gap-2 px-5 text-lg"
         >
           Stage ▸
         </Link>
@@ -138,7 +138,7 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
         <p className="text-lg text-bb-cue-gray">
           {artist}
           {isExample && (
-            <span className="ml-2 rounded bg-bb-downbeat-amber/20 px-1.5 py-0.5 text-xs font-semibold uppercase text-bb-downbeat-amber">
+            <span className="bb-chip ml-2">
               Example
             </span>
           )}
@@ -149,7 +149,7 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
         {!isExample && unverified && (
           <p className="mt-1 text-base text-bb-cue-gray" data-unverified-note>
             Not yet checked against the original. Play it by ear and{" "}
-            <a href="#suggest" className="text-bb-downbeat-amber underline">
+            <a href="#suggest" className="text-bb-chart-white underline">
               suggest a fix
             </a>{" "}
             if something is off.
@@ -165,7 +165,7 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
         {meta.feel && <span>{meta.feel}</span>}
       </KeyInfo>
 
-      <div className="sticky top-0 z-10 -mx-4 mb-4 flex flex-wrap items-center gap-2 border-b border-bb-rule-gray bg-bb-house-black/95 px-4 py-2 backdrop-blur">
+      <div className="sticky top-0 z-10 -mx-4 mb-4 flex flex-wrap items-center gap-2 border-b border-bb-rule-gray bg-bb-house-black px-4 py-2">
         <DisplayControls s={s} />
       </div>
 
@@ -187,7 +187,7 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
 
       <nav className="mt-10 grid grid-cols-2 gap-3" aria-label="Other songs">
         {nav.prev ? (
-          <Link href={`/songs/${nav.prev.slug}`} className="flex min-h-14 flex-col justify-center rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 py-2">
+          <Link href={`/songs/${nav.prev.slug}`} className="flex min-h-14 flex-col justify-center border border-bb-rule-gray bg-bb-case-charcoal px-4 py-2 active:bg-bb-rule-gray">
             <span className="text-sm text-bb-cue-gray">‹ Previous</span>
             <span className="truncate text-lg font-semibold">{nav.prev.title}</span>
           </Link>
@@ -197,7 +197,7 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
         {nav.next && (
           <Link
             href={`/songs/${nav.next.slug}`}
-            className="flex min-h-14 flex-col justify-center rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 py-2 text-right"
+            className="flex min-h-14 flex-col justify-center border border-bb-rule-gray bg-bb-case-charcoal px-4 py-2 text-right active:bg-bb-rule-gray"
           >
             <span className="text-sm text-bb-cue-gray">Next ›</span>
             <span className="truncate text-lg font-semibold">{nav.next.title}</span>

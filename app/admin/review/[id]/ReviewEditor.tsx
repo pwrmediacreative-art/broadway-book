@@ -55,7 +55,7 @@ export interface ReviewSong {
 const SKIP_KEY = "bb_review_skip"; // songs skipped this sitting
 const TAB_KEY = "bb_review_tab";
 const RENEW_MS = 4 * 60_000; // renew the 30-minute claim at most this often, while working
-const btn = "min-h-12 rounded-xl px-4 text-lg font-semibold disabled:opacity-40";
+const btn = "bb-btn min-h-12 px-4 text-lg";
 
 const template = (s: ReviewSong) => `{title: ${s.title}}\n{artist: ${s.artist ?? ""}}\n\n[V]\n`;
 
@@ -111,6 +111,8 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
   const verified = !!song.verified_at;
   // Only admins verify, and examples sit outside verification: everyone else just publishes.
   const canVerify = admin && !song.is_example;
+  // One amber button at a time: "Verify as is" while the text is untouched, otherwise Publish.
+  const verifyMain = canVerify && live && !verified && !dirty;
   const [unverifying, setUnverifying] = useState(false);
 
   useEffect(() => {
@@ -339,19 +341,19 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
         {song.notes && ` · “${song.notes}”`}
       </p>
 
-      {claimErr && <p className="mb-3 rounded-xl border border-red-500/60 bg-red-500/10 p-3 text-lg">{claimErr}</p>}
+      {claimErr && <p className="bb-notice bb-error mb-3 text-lg">{claimErr}</p>}
       {claim && !mine && (
-        <section className="mb-3 rounded-xl border border-amber-400/70 bg-amber-400/10 p-4" aria-label="Claimed">
+        <section className="bb-notice mb-3" aria-label="Claimed">
           <p className="mb-2 text-xl font-semibold">
             Being reviewed by {claim.by}
             {minutesLeft && <span className="font-normal text-bb-cue-gray"> · up to {minutesLeft} min left</span>}
           </p>
           <p className="mb-3 text-lg text-bb-cue-gray">You can look, but not change it, until they finish or their claim runs out.</p>
           <div className="flex flex-wrap gap-2">
-            <button type="button" className={`${btn} bg-bb-downbeat-amber text-bb-stage-black`} disabled={pending} onClick={() => start(goNext)}>
+            <button type="button" className={`${btn} bb-btn-primary`} disabled={pending} onClick={() => start(goNext)}>
               Next song ›
             </button>
-            <button type="button" className={`${btn} border border-bb-rule-gray`} onClick={() => window.location.reload()}>
+            <button type="button" className={`${btn} bb-btn-secondary`} onClick={() => window.location.reload()}>
               Check again
             </button>
           </div>
@@ -360,7 +362,7 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
       {!claim && !claimErr && <p className="mb-3 text-lg text-bb-cue-gray">Claiming this song…</p>}
 
       {song.flags.length > 0 && (
-        <section className="mb-3 rounded-xl border border-red-500/60 bg-red-500/10 p-4" aria-label="Player flags">
+        <section className="bb-notice mb-3" aria-label="Player flags">
           <h2 className="mb-2 text-xl font-semibold">Flagged by {song.flags.length} player{song.flags.length === 1 ? "" : "s"}</h2>
           <ul className="mb-2 flex flex-col gap-1 text-lg">
             {song.flags.map((f, i) => (
@@ -376,7 +378,7 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
               type="button"
               disabled={pending}
               onClick={() => run(() => dismissFlags(song.id), "Flags dismissed.", false)}
-              className={`${btn} border border-bb-rule-gray`}
+              className={`${btn} bb-btn-secondary`}
             >
               Dismiss flags (chart is right)
             </button>
@@ -385,7 +387,7 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
       )}
 
       {song.duplicates.length > 0 && (
-        <section className="mb-3 rounded-xl border border-sky-400/60 bg-sky-400/10 p-4" aria-label="Duplicates">
+        <section className="bb-notice mb-3" aria-label="Duplicates">
           <h2 className="mb-1 text-xl font-semibold">Another PDF has the same title and artist</h2>
           <ul className="mb-2 flex flex-col gap-1 text-lg">
             {song.duplicates.map((d) => (
@@ -405,7 +407,7 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
                 if (window.confirm(`Hide this copy (${song.file_name ?? song.title}) for good? The other copy stays.`))
                   run(() => markDuplicate(song.id), "Hidden as a duplicate.", true);
               }}
-              className={`${btn} border border-sky-400/60`}
+              className={`${btn} bb-btn-secondary`}
             >
               Not needed (duplicate)
             </button>
@@ -422,7 +424,7 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
             role="tab"
             aria-selected={tab === t}
             onClick={() => pickTab(t)}
-            className={`min-h-12 rounded-xl text-lg font-semibold ${tab === t ? "bg-bb-downbeat-amber text-bb-stage-black" : "border border-bb-rule-gray"}`}
+            className={`bb-btn bb-btn-secondary min-h-12 text-lg ${tab === t ? "bb-on" : ""}`}
           >
             {t === "original" ? "Original" : `Chart${marks.length ? ` · ${marks.length} unclear` : ""}`}
           </button>
@@ -440,15 +442,15 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
 
         <div className={`${tab === "chart" ? "" : "hidden"} min-w-0 pb-36 lg:block lg:pb-0`}>
           {draft && (
-            <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-3 text-lg">
+            <div className="bb-notice mb-3 flex flex-wrap items-center gap-2 p-3 text-lg">
               <span>
                 Draft saved by {draft.by} · {new Date(draft.updated_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
                 {draft.base_revision_id !== song.revision_id && (
-                  <b className="block text-amber-200">The chart changed after this draft was saved. Check it against the original.</b>
+                  <b className="block">The chart changed after this draft was saved. Check it against the original.</b>
                 )}
               </span>
               {mine && (
-                <button type="button" disabled={pending} onClick={resetToAi} className="ml-auto min-h-11 rounded-lg border border-bb-rule-gray px-3">
+                <button type="button" disabled={pending} onClick={resetToAi} className="bb-btn bb-btn-secondary ml-auto px-3">
                   {song.chart_text ? "Reset to AI reading" : "Discard draft"}
                 </button>
               )}
@@ -470,8 +472,8 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
                         jump(m.note.start, m.note.end);
                         showRow(m.rows[0] ?? null);
                       }}
-                      className={`min-h-11 w-full rounded-lg px-3 py-2 text-left text-base text-amber-100 active:bg-amber-400/30 ${
-                        active && m.rows.includes(active) ? "bg-amber-400/30" : "bg-amber-400/15"
+                      className={`min-h-11 w-full rounded-bb-control px-3 py-2 text-left text-base text-bb-chart-white active:bg-bb-downbeat-amber/25 ${
+                        active && m.rows.includes(active) ? "bg-bb-downbeat-amber/25" : "bg-bb-downbeat-amber/15"
                       }`}
                     >
                       {m.note.where && <b>{m.note.where}: </b>}
@@ -482,15 +484,15 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
               </ul>
             </section>
           ) : (
-            <p className="mb-3 rounded-lg bg-green-500/15 px-3 py-2 text-lg text-green-100">No unclear notes left.</p>
+            <p className="mb-3 text-lg text-bb-chart-white">✓ No unclear notes left.</p>
           )}
 
           <label htmlFor="chart" className="sr-only">Chart text</label>
-          <div className="relative overflow-hidden rounded-lg border border-bb-rule-gray bg-bb-house-black">
-            <div ref={back} aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden p-3 font-mono text-lg leading-7 text-transparent">
+          <div className="relative overflow-hidden rounded-bb-control border border-bb-rule-gray bg-bb-house-black focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-bb-downbeat-amber">
+            <div ref={back} aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden p-3 font-bb-data text-lg leading-7 text-transparent">
               <div className="w-max min-w-full whitespace-pre">
                 {lines.map((l, i) => (
-                  <div key={i} className={noteLines.has(i) ? "bg-amber-400/30" : targetLines.has(i) ? "bg-amber-400/15" : undefined}>
+                  <div key={i} className={noteLines.has(i) ? "bg-bb-downbeat-amber/25" : targetLines.has(i) ? "bg-bb-downbeat-amber/15" : undefined}>
                     {l || "​"}
                   </div>
                 ))}
@@ -510,15 +512,15 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
               autoCapitalize="off"
               autoCorrect="off"
               rows={16}
-              className="relative block w-full resize-y bg-transparent p-3 font-mono text-lg leading-7 outline-none read-only:opacity-70"
+              className="relative block w-full resize-y bg-transparent p-3 font-bb-data text-lg leading-7 focus-visible:outline-none read-only:text-bb-cue-gray"
             />
           </div>
-          {check.error && <p className="mt-1 text-lg text-red-300">Format error: {check.error}</p>}
-          {check.longCues.length > 0 && <p className="mt-1 text-lg text-red-300">Cue over 6 words (no lyrics): “{check.longCues[0]}”</p>}
+          {check.error && <p className="bb-error mt-1 text-lg">Format error: {check.error}</p>}
+          {check.longCues.length > 0 && <p className="bb-error mt-1 text-lg">Cue over 6 words (no lyrics): “{check.longCues[0]}”</p>}
 
           {/* Actions: pinned to the bottom on phones */}
           {mine && (
-            <div className="fixed inset-x-0 bottom-0 z-20 border-t border-bb-rule-gray bg-bb-house-black/95 p-2 backdrop-blur lg:static lg:mt-4 lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
+            <div className="fixed inset-x-0 bottom-0 z-20 border-t border-bb-rule-gray bg-bb-house-black p-2 lg:static lg:mt-4 lg:border-0 lg:bg-transparent lg:p-0">
               <div className="mx-auto grid max-w-2xl grid-cols-3 gap-2 lg:flex lg:max-w-none lg:flex-wrap">
                 {canVerify && live && !verified && (
                   <button
@@ -526,7 +528,7 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
                     disabled={pending || dirty || marks.length > 0}
                     title={dirty ? "You changed the chart: use Publish" : marks.length ? "Fix or delete every unclear note first" : sc("verify")}
                     onClick={() => act("verify")}
-                    className={`${btn} col-span-3 bg-green-500 text-bb-stage-black`}
+                    className={`${btn} col-span-3 ${verifyMain ? "bb-btn-primary" : "bb-btn-secondary"}`}
                   >
                     ✓ Verify as is
                   </button>
@@ -538,7 +540,7 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
                       disabled={pending || !formatOk || marks.length > 0}
                       title={marks.length ? "Fix or delete every unclear note first" : sc("publish")}
                       onClick={() => act("publish")}
-                      className={`${btn} col-span-2 bg-bb-downbeat-amber text-bb-stage-black`}
+                      className={`${btn} col-span-2 ${verifyMain ? "bb-btn-secondary" : "bb-btn-primary"}`}
                     >
                       Publish
                     </button>
@@ -547,43 +549,45 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
                       disabled={pending || !formatOk || (live && verified && !dirty)}
                       title={sc("unverified")}
                       onClick={() => act("unverified")}
-                      className={`${btn} border border-bb-rule-gray`}
+                      className={`${btn} bb-btn-secondary`}
                     >
                       Unverified
                     </button>
                   </>
                 ) : (
-                  <button type="button" disabled={pending || !formatOk} title={sc("publish")} onClick={() => act("publish")} className={`${btn} col-span-3 bg-bb-downbeat-amber text-bb-stage-black`}>
+                  <button type="button" disabled={pending || !formatOk} title={sc("publish")} onClick={() => act("publish")} className={`${btn} col-span-3 bb-btn-primary`}>
                     Publish
                   </button>
                 )}
-                <button type="button" disabled={pending || !dirty} title={sc("save")} onClick={() => act("save")} className={`${btn} border border-bb-rule-gray`}>
+                <button type="button" disabled={pending || !dirty} title={sc("save")} onClick={() => act("save")} className={`${btn} bb-btn-secondary`}>
                   {dirty ? "Save draft" : "Saved"}
                 </button>
                 {!live && (
-                  <button type="button" disabled={pending} title={sc("cant_read")} onClick={() => act("cant_read")} className={`${btn} border border-bb-rule-gray`}>
+                  <button type="button" disabled={pending} title={sc("cant_read")} onClick={() => act("cant_read")} className={`${btn} bb-btn-secondary`}>
                     Can&apos;t read
                   </button>
                 )}
-                <button type="button" disabled={pending} title={sc("skip")} onClick={() => act("skip")} className={`${btn} border border-bb-rule-gray`}>
+                <button type="button" disabled={pending} title={sc("skip")} onClick={() => act("skip")} className={`${btn} bb-btn-secondary`}>
                   Skip ›
                 </button>
               </div>
             </div>
           )}
-          <p role="status" aria-live="polite" className={`mb-2 mt-2 min-h-7 text-lg ${msg?.ok ? "text-bb-cue-gray" : "text-red-300"}`}>
+          <p role="status" aria-live="polite" className={`mb-2 mt-2 min-h-7 text-lg ${msg?.ok ? "text-bb-cue-gray" : "bb-error"}`}>
             {pending ? "Working…" : msg?.text}
           </p>
 
           <div className="mb-4 flex flex-wrap gap-2">
             {admin && verified && !unverifying && (
-              <button type="button" disabled={pending} onClick={() => setUnverifying(true)} className="min-h-11 rounded-lg border border-bb-rule-gray px-3 text-lg">
+              <button type="button" disabled={pending} onClick={() => setUnverifying(true)} className="bb-btn bb-btn-secondary px-3 text-lg">
                 Mark unverified…
               </button>
             )}
             {admin && verified && unverifying && (
-              <div className="flex w-full flex-col gap-2 rounded-xl border border-amber-400/60 bg-amber-400/10 p-3" role="group" aria-label="Why mark it unverified?">
-                <p className="text-lg font-semibold">Mark unverified: why?</p>
+              <div className="bb-notice flex w-full flex-col gap-2 p-3" role="group" aria-label="Why mark it unverified?">
+                <p className="text-lg">
+                  <b>Mark unverified:</b> why?
+                </p>
                 <div className="grid gap-2 sm:grid-cols-3">
                   {(Object.keys(UNVERIFY_REASONS) as UnverifyReason[]).map((r) => (
                     <button
@@ -591,7 +595,7 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
                       type="button"
                       disabled={pending}
                       onClick={() => run(() => markUnverified(song.id, r), "Marked unverified.", true)}
-                      className="min-h-12 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-3 text-lg font-semibold disabled:opacity-40"
+                      className="bb-btn bb-btn-secondary min-h-12 px-3 text-lg"
                     >
                       {UNVERIFY_REASONS[r]}
                     </button>
@@ -607,33 +611,33 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
                 type="button"
                 disabled={pending}
                 onClick={() => run(() => setHold(song.id, !song.review_hold), song.review_hold ? "Back in the queue." : "On hold.", !song.review_hold)}
-                className="min-h-11 rounded-lg border border-bb-rule-gray px-3 text-lg"
+                className="bb-btn bb-btn-secondary px-3 text-lg"
               >
                 {song.review_hold ? "Take off hold" : "Hold (back of the queue for everyone)"}
               </button>
             )}
-            <button type="button" onClick={() => setHelp((h) => !h)} className="hidden min-h-11 rounded-lg border border-bb-rule-gray px-3 text-lg lg:inline-block">
+            <button type="button" onClick={() => setHelp((h) => !h)} className="bb-btn bb-btn-secondary hidden px-3 text-lg lg:inline-flex">
               Shortcuts (?)
             </button>
           </div>
           {help && (
-            <section className="mb-4 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4" aria-label="Keyboard shortcuts">
+            <section className="bb-panel mb-4 p-4" aria-label="Keyboard shortcuts">
               <h2 className="mb-2 text-xl font-semibold">Keyboard shortcuts</h2>
               <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-lg">
                 {SHORTCUTS.filter((s) => canVerify || (s.action !== "unverified" && s.action !== "verify")).map((s) => (
                   <div key={s.action} className="contents">
-                    <dt className="font-mono font-semibold">{modLabel(s.keys, apple)}</dt>
+                    <dt className="font-bb-data font-semibold">{modLabel(s.keys, apple)}</dt>
                     <dd>{s.action === "publish" && !canVerify ? "Publish" : s.label}</dd>
                   </div>
                 ))}
-                <dt className="font-mono font-semibold">?</dt>
+                <dt className="font-bb-data font-semibold">?</dt>
                 <dd>Show or hide this list</dd>
               </dl>
             </section>
           )}
 
           <h2 className="mb-2 text-xl font-semibold">Preview</h2>
-          <div ref={preview} className="max-h-[60vh] overflow-auto rounded-lg border border-bb-rule-gray p-3">
+          <div ref={preview} className="max-h-[60vh] overflow-auto border border-bb-rule-gray p-3">
             {view ? (
               <Chart
                 view={view}
