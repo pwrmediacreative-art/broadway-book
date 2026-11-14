@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { dropboxConfigured } from "@/lib/dropbox/client";
 import { worstCaseRetryUsd, worstCaseUsd } from "@/lib/ai/cost";
 import { pickVaried, takeChunk, type Candidate } from "@/lib/ai/pick";
@@ -17,6 +17,7 @@ import {
   requestParams,
   spendCap,
 } from "@/lib/ai/reader";
+import { SONGS_TAG } from "@/lib/supabase/server";
 import { getCurrentUser, sessionClient } from "@/lib/supabase/session";
 
 export interface AiState {
@@ -102,6 +103,18 @@ async function finish(db: Db, id: string, status: string, payload: object) {
   if (error) throw new Error(`Couldn't save a result: ${error.message}`);
 }
 
+/**
+ * With auto-approve on, ai_finish may have put charts live (the database decides which).
+ * Refresh the cached public song reads (home list, search index) the same way a publish
+ * does; phones pick the charts up on their next offline sync, which isn't cached.
+ * Off: nothing went live, so nothing to refresh.
+ */
+async function refreshIfAutoApproved(db: Db, saved: number) {
+  if (!saved) return;
+  const { data } = await db.from("settings").select("value").eq("key", "auto_approve_enabled");
+  if (data?.[0]?.value === 1) updateTag(SONGS_TAG);
+}
+
 /** Read 20 varied files now on the standard API, show them, and stop. */
 export async function runPilot(prev: AiState): Promise<AiState> {
   void prev;
@@ -125,6 +138,7 @@ export async function runPilot(prev: AiState): Promise<AiState> {
       await finish(db, row.reading_id, out.status, out.payload);
       done++;
     });
+    await refreshIfAutoApproved(db, done);
     revalidatePath("/admin/import");
     const capNote = res.capped ? ` Stopped at the ${usd(cap)} cap.` : "";
     return { ok: true, summary: `Read ${done} of ${picks.length} pilot charts.${capNote}` };
@@ -158,6 +172,7 @@ export async function batchStep(prev: AiState): Promise<AiState> {
   const started = Date.now();
   try {
     const collected = await collect(db, cap, started);
+    await refreshIfAutoApproved(db, collected);
     const sent: Sent =
       Date.now() - started < TIME_BUDGET_MS / 2
         ? await sendChunk(db, cap, await openBatchCount(db))

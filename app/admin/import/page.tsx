@@ -5,6 +5,7 @@ import { chartFolder, dropboxConfigured } from "@/lib/dropbox/client";
 import { aiConfigured, spendCap } from "@/lib/ai/reader";
 import { getCurrentUser, sessionClient, syncRole } from "@/lib/supabase/session";
 import { AiPanel, type AiSummary } from "./AiPanel";
+import { AutoApprove, type AutoOverview } from "./AutoApprove";
 import { FixNameForm, ScanButton } from "./forms";
 import { PilotResults, type PilotItem } from "./PilotResults";
 
@@ -118,7 +119,7 @@ async function Inventory({ searchParams }: { searchParams: SearchParams }) {
   }
 
   const connected = dropboxConfigured();
-  const { data: aiData } = await db.rpc("ai_overview");
+  const [{ data: aiData }, { data: auto }] = await Promise.all([db.rpc("ai_overview"), db.rpc("auto_approve_overview")]);
   const ai = aiData as AiOverview | null;
   const c = ai?.counts ?? {};
   const n = (k: string) => Number(c[k] ?? 0);
@@ -151,6 +152,7 @@ async function Inventory({ searchParams }: { searchParams: SearchParams }) {
       open: Number(ai?.batch.open ?? 0),
       cost: Number(ai?.batch.cost ?? 0),
     },
+    batchAuto: Number((auto as { batch_auto?: number } | null)?.batch_auto ?? 0),
     pilotCost: (ai?.pilot ?? []).reduce((sum, p) => sum + Number(p.cost_usd ?? 0), 0),
     firstChunkPending: !ai?.first_chunk_ok_at && Number(ai?.batch.total ?? 0) > 0,
     retryable: Number(ai?.retryable ?? 0),
@@ -193,6 +195,7 @@ async function Inventory({ searchParams }: { searchParams: SearchParams }) {
       </p>
 
       {ai && <AiPanel s={aiSummary} />}
+      {auto && <AutoApprove o={auto as AutoOverview} />}
     </div>
 
     {ai && <PilotResults items={ai.pilot} avgCost={ai.pilot_avg} />}

@@ -20,6 +20,7 @@
     "check:flags": "node --env-file=.env.local scripts/check-flags.mjs",
     "check:verify": "node --env-file=.env.local scripts/check-verify.mjs",
     "check:offline": "node --env-file=.env.local scripts/check-offline.mjs",
+    "check:auto": "node --env-file=.env.local scripts/check-auto.mjs",
     "icons": "node scripts/gen-icons.mjs",
     "dropbox:token": "node --env-file=.env.local scripts/dropbox-token.mjs"
   },

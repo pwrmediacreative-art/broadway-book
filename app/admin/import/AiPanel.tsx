@@ -24,6 +24,7 @@ export interface AiSummary {
   /** Everything the full batch has read so far, across resumes (pilot not included). */
   batch: { total: number; read: number; failed: number; open: number; cost: number };
   pilotCost: number;
+  batchAuto: number; // full-batch readings that went live by themselves (auto-approve)
   firstChunkPending: boolean;
   retryable: number; // files "Retry failed" would send again
   queued: number; // files queued by "Retry failed", not sent yet
@@ -255,6 +256,9 @@ function Summary({ s }: { s: AiSummary }) {
           </div>
         ))}
       </dl>
+      <p className="mb-2 text-lg tabular-nums">
+        <b>{s.batchAuto.toLocaleString()}</b> went live automatically (Unverified).
+      </p>
       <p className="mb-2 tabular-nums text-bb-cue-gray">
         Plus the pilot: {s.pilotCount} read, {usd(s.pilotCost)}. Failed means needs manual, refused or not read.
       </p>

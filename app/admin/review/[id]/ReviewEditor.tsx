@@ -22,6 +22,7 @@ import {
   publishReview,
   verifyAsIs,
   releaseReview,
+  revertAuto,
   saveDraft,
   setHold,
   type Claim,
@@ -47,6 +48,9 @@ export interface ReviewSong {
   file_status: string | null;
   file_name: string | null;
   is_admin: boolean;
+  /** Live as Unverified with no human check (see 20261114100000_auto_approve.sql). */
+  auto_approved: boolean;
+  auto_cutoff: number | null;
   draft: { chart_text: string; base_revision_id: string | null; updated_at: string; by: string } | null;
   flags: { reason: keyof typeof FLAG_REASONS; details: string | null; created_at: string; by: string | null }[];
   duplicates: { id: string; title: string; artist: string | null; status: string; file_name: string | null }[];
@@ -340,6 +344,27 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
         {song.review_hold && " · on hold"}
         {song.notes && ` · “${song.notes}”`}
       </p>
+
+      {song.auto_approved && (
+        <section className="bb-notice mb-3" aria-label="Auto-approved">
+          <h2 className="mb-1 text-xl font-semibold">Auto-approved</h2>
+          <p className="mb-3 text-lg text-bb-cue-gray">
+            Live as Unverified; nobody has checked it against the PDF
+            {song.auto_cutoff != null && ` (score was over the ${Math.round(Number(song.auto_cutoff) * 100)}% cutoff)`}. Fix it and
+            publish it as verified, or send it back to review.
+          </p>
+          {song.is_admin && mine && (
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => run(() => revertAuto(song.id), "Sent back to review. It's off the public site.", true)}
+              className={`${btn} bb-btn-secondary`}
+            >
+              Back to review
+            </button>
+          )}
+        </section>
+      )}
 
       {claimErr && <p className="bb-notice bb-error mb-3 text-lg">{claimErr}</p>}
       {claim && !mine && (

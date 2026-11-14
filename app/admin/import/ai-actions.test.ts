@@ -95,7 +95,8 @@ function fakeDb() {
   return { rpc, from };
 }
 
-vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
+vi.mock("next/cache", () => ({ revalidatePath: () => {}, updateTag: () => {} }));
+vi.mock("@/lib/supabase/server", () => ({ SONGS_TAG: "songs" }));
 vi.mock("@/lib/dropbox/client", () => ({ dropboxConfigured: () => true }));
 vi.mock("@/lib/supabase/session", () => ({
   getCurrentUser: async () => ({ role: "admin" }),

@@ -6,6 +6,7 @@ import { reviewContext } from "../access";
 import ReviewHeader from "../ReviewHeader";
 import BulkPublish from "./BulkPublish";
 import ManualFile from "./ManualFile";
+import { SendBack } from "./SendBack";
 
 export const metadata = { title: "Review queue · Broadway Book", robots: { index: false } };
 
@@ -36,9 +37,18 @@ interface Row {
   claimed_name: string | null;
   claim_expires: string | null;
   claimed_by_me: boolean | null;
+  auto_approved: boolean;
 }
 interface ListData {
-  counts: { unverified: number; verified: number; needs_review: number; needs_manual: number; duplicates: number; manual_files_without_song: number };
+  counts: {
+    unverified: number;
+    verified: number;
+    needs_review: number;
+    auto_approved: number;
+    needs_manual: number;
+    duplicates: number;
+    manual_files_without_song: number;
+  };
   matches: number;
   songs: Row[];
 }
@@ -85,7 +95,7 @@ async function Queue({ searchParams }: { searchParams: SearchParams }) {
       </p>
       <ReviewHeader prefs={prefs} progress={progress} page="queue" />
 
-      <dl className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <dl className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">{/* six tiles: 2 across on a phone, 3 above that */}
         {(Object.keys(FILTERS) as (keyof typeof FILTERS)[]).map((k) => (
           <Link
             key={k}
@@ -138,7 +148,7 @@ async function Queue({ searchParams }: { searchParams: SearchParams }) {
       ) : (
         <ul className="divide-y divide-bb-rule-gray border-y border-bb-rule-gray">
           {d.songs.map((s) => (
-            <li key={s.id}>
+            <li key={s.id} className="flex flex-col">
               <Link href={`/admin/review/${s.id}?${pq}`} className="flex min-h-14 items-center justify-between gap-3 px-4 py-2 active:bg-bb-case-charcoal">
                 <span className="min-w-0">
                   <span className="block truncate text-lg font-semibold">{s.title}</span>
@@ -151,6 +161,7 @@ async function Queue({ searchParams }: { searchParams: SearchParams }) {
                   {s.flagged && <span className="bb-chip bb-chip-error">{s.flags} flags</span>}
                   {s.has_draft && <span className="bb-chip bb-chip-muted">draft</span>}
                   {s.review_hold && <span className="bb-chip bb-chip-muted">held</span>}
+                  {s.auto_approved && <span className="bb-chip">auto-approved</span>}
                   {s.status === "published" &&
                     (s.unverified ? (
                       <span className="bb-chip">live, unverified</span>
@@ -163,6 +174,11 @@ async function Queue({ searchParams }: { searchParams: SearchParams }) {
                   {s.confidence != null && <span className="bb-chip bb-chip-muted font-bb-data">{Number(s.confidence).toFixed(2)}</span>}
                 </span>
               </Link>
+              {admin && s.auto_approved && (
+                <div className="px-4 pb-3">
+                  <SendBack songId={s.id} title={s.title} />
+                </div>
+              )}
             </li>
           ))}
         </ul>

@@ -109,3 +109,4 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Restyle: stage Light look has no Stop Red of its own; the error text and chart stop mark use the dark-mode reds on paper.
 - Next dev shows an "instant" notice on /songs/[slug] and /songs/[slug]/stage (`await params` outside Suspense); dev-only, predates the restyle.
 - Fresh worktrees need `npm install` and `next typegen` before `tsc` passes (missing pdfjs-dist/minisearch, `PageProps`).
+- check:claims: "progress counts each person's publishes and can't-reads" fails since the Verified step made review_progress() count only verifications; the check needs updating.

@@ -170,6 +170,17 @@ export async function markDuplicate(songId: string): Promise<Result> {
   return { ok: true };
 }
 
+/** Admins: send one auto-approved chart back to needs_review (off the public site). */
+export async function revertAuto(songId: string): Promise<Result> {
+  if (!isUuid(songId)) return bad;
+  const db = await sessionClient();
+  const { error } = await db.rpc("auto_approve_revert", { p_song_id: songId });
+  if (error) return fail(error);
+  updateTag(SONGS_TAG);
+  revalidatePath("/admin/review");
+  return { ok: true };
+}
+
 /** The next song in the chosen order that nobody else holds, skipping p_skip. */
 export async function nextReview(filter: Filter, order: Order, skip: string[]): Promise<Result<{ id: string | null }>> {
   const db = await sessionClient();
