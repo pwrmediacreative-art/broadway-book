@@ -162,7 +162,7 @@ export function SongActions({ slug, songId, pick }: { slug: string; songId: stri
   // Offline: suggesting, voting, personal edits and flagging all need the server.
   if (offline) {
     return (
-      <section className="mt-10 flex flex-col gap-3" aria-label="Change this chart">
+      <section id="suggest" className="mt-10 flex scroll-mt-20 flex-col gap-3" aria-label="Change this chart">
         <div aria-disabled className="flex min-h-16 flex-col justify-center rounded-2xl border-2 border-line px-5 py-2 opacity-50">
           <span className="text-xl font-bold">✎ Suggest a change</span>
           <span className="text-base text-muted">Fix it for everyone, or keep a version just for you.</span>
@@ -172,7 +172,7 @@ export function SongActions({ slug, songId, pick }: { slug: string; songId: stri
     );
   }
   return (
-    <section className="mt-10 flex flex-col gap-3" aria-label="Change this chart">
+    <section id="suggest" className="mt-10 flex scroll-mt-20 flex-col gap-3" aria-label="Change this chart">
       <Link href={`/songs/${slug}/edit`} className="flex min-h-16 flex-col justify-center rounded-2xl border-2 border-accent px-5 py-2 active:bg-accent/20">
         <span className="text-xl font-bold text-accent">✎ Suggest a change</span>
         <span className="text-base text-muted">Fix it for everyone, or keep a version just for you.</span>

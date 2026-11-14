@@ -5,8 +5,7 @@ import QueueControls from "./QueueControls";
 
 /** Top of every review page: links, filter/order, and the progress bar with per-person counts. */
 export default function ReviewHeader({ prefs, progress, page }: { prefs: Prefs; progress: Progress; page: "song" | "queue" | "empty" }) {
-  const { total, verified, unverified, people } = progress;
-  const live = verified + unverified;
+  const { total, verified, unverified, waiting, people } = progress;
   const pct = (n: number) => (total ? Math.min(100, (n / total) * 100) : 0);
   return (
     <header className="mb-4 flex flex-col gap-2">
@@ -30,16 +29,16 @@ export default function ReviewHeader({ prefs, progress, page }: { prefs: Prefs; 
           role="progressbar"
           aria-valuemin={0}
           aria-valuemax={total}
-          aria-valuenow={live}
-          aria-label={`${live} of ${total} charts live`}
+          aria-valuenow={verified}
+          aria-label={`${verified} of ${total} charts verified`}
         >
           <div className="h-full bg-green-500" style={{ width: `${pct(verified)}%` }} />
           <div className="h-full bg-amber-400" style={{ width: `${pct(unverified)}%` }} />
         </div>
         <p className="mt-1 text-base text-muted">
-          <b className="text-foreground">{live.toLocaleString()}</b> / {total.toLocaleString()} live ·{" "}
-          <span className="text-green-300">{verified.toLocaleString()} verified</span> ·{" "}
-          <span className="text-amber-200">{unverified.toLocaleString()} unverified</span>
+          <b className="text-green-300">{verified.toLocaleString()}</b> / {total.toLocaleString()} verified ·{" "}
+          <span className="text-amber-200">{unverified.toLocaleString()} live, unverified</span> ·{" "}
+          {waiting.toLocaleString()} waiting for review
           {people.length > 0 && (
             <>
               {" · "}
@@ -47,7 +46,7 @@ export default function ReviewHeader({ prefs, progress, page }: { prefs: Prefs; 
                 <span key={i}>
                   {i > 0 && ", "}
                   <span className={p.me ? "text-foreground" : undefined}>
-                    {p.name} {p.total.toLocaleString()}
+                    {p.name} verified {p.total.toLocaleString()}
                     {p.today > 0 && ` (${p.today} today)`}
                   </span>
                 </span>

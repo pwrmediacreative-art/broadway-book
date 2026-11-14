@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import { buildView, checkChart } from "@/lib/chart";
 import { FLAG_REASONS, unclearMarks } from "@/lib/review/unclear";
 import { cleanSkip, prefsQuery, type Prefs } from "@/lib/review/queue";
+import { checkedDate, UNVERIFY_REASONS, type UnverifyReason } from "@/lib/review/queue";
 import { modLabel, reviewKey, SHORTCUTS, type ReviewKey } from "@/lib/review/keys";
 import Chart from "@/app/songs/[slug]/Chart";
 import { FONTS } from "@/app/songs/[slug]/hooks";
@@ -16,8 +17,10 @@ import {
   discardDraft,
   dismissFlags,
   markDuplicate,
+  markUnverified,
   nextReview,
   publishReview,
+  verifyAsIs,
   releaseReview,
   saveDraft,
   setHold,
@@ -31,6 +34,9 @@ export interface ReviewSong {
   artist: string | null;
   status: string;
   unverified: boolean;
+  verified_at: string | null;
+  verified_by: string | null;
+  is_example: boolean;
   review_hold: boolean;
   revision_id: string | null;
   chart_text: string | null;
@@ -101,6 +107,11 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
   const dirty = text !== saved;
   const q = prefsQuery(prefs);
   const live = song.status === "published";
+  const admin = song.is_admin;
+  const verified = !!song.verified_at;
+  // Only admins verify, and examples sit outside verification: everyone else just publishes.
+  const canVerify = admin && !song.is_example;
+  const [unverifying, setUnverifying] = useState(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time read of browser-only state
@@ -192,13 +203,22 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
   const act = useCallback(
     (a: ReviewKey) => {
       if (pending || !mine) return;
-      if (a === "publish") {
+      if (a === "publish" && canVerify) {
         if (!formatOk) return setMsg({ ok: false, text: "Fix the format error first." });
         if (marks.length) return setMsg({ ok: false, text: "Fix or delete every unclear note first (or publish unverified)." });
         run(() => publishReview(song.id, text, true, song.revision_id), "Published as verified.", true);
-      } else if (a === "unverified") {
+      } else if (a === "publish" || a === "unverified") {
+        if (a === "unverified" && !canVerify) return; // reviewers have one Publish
         if (!formatOk) return setMsg({ ok: false, text: "Fix the format error first." });
-        run(() => publishReview(song.id, text, false, song.revision_id), "Published as unverified.", true);
+        if (live && verified && !dirty) return setMsg({ ok: false, text: "Nothing to publish: this chart is live and verified." });
+        run(() => publishReview(song.id, text, false, song.revision_id), canVerify ? "Published as unverified." : "Published. An admin will verify it.", true);
+      } else if (a === "verify") {
+        if (!canVerify) return;
+        if (!live) return setMsg({ ok: false, text: "“Verify as is” is for live charts. Use Publish." });
+        if (verified) return setMsg({ ok: false, text: "Already verified." });
+        if (dirty) return setMsg({ ok: false, text: "You changed the chart: use Publish, or undo your edits." });
+        if (marks.length) return setMsg({ ok: false, text: "Fix or delete every unclear note first." });
+        run(() => verifyAsIs(song.id, song.revision_id), "Verified.", true);
       } else if (a === "save") {
         start(async () => {
           const r = await saveDraft(song.id, text, song.revision_id);
@@ -219,7 +239,7 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
         });
       }
     },
-    [pending, mine, formatOk, marks.length, run, song.id, song.revision_id, text, live, goNext],
+    [pending, mine, formatOk, marks.length, run, song.id, song.revision_id, text, live, goNext, canVerify, verified, dirty],
   );
 
   // Shortcuts work while typing; "?" (outside the editor) shows the list.
@@ -305,7 +325,15 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
         {song.title} <span className="text-muted">· {song.artist ?? "no artist"}</span>
       </h1>
       <p className="mb-3 text-lg text-muted">
-        {live ? (song.unverified ? "Live, unverified" : "Live, verified") : song.file_status === "needs_manual" ? "Can't read: type it in" : "Not live yet"}
+        {live
+          ? song.is_example
+            ? "Live, example (not part of verification)"
+            : verified
+              ? `Live, verified ${checkedDate(song.verified_at!)}${song.verified_by ? ` by ${song.verified_by}` : ""}`
+              : "Live, unverified"
+          : song.file_status === "needs_manual"
+            ? "Can't read: type it in"
+            : "Not live yet"}
         {song.confidence != null && ` · reader confidence ${Number(song.confidence).toFixed(2)}`}
         {song.review_hold && " · on hold"}
         {song.notes && ` · “${song.notes}”`}
@@ -492,18 +520,43 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
           {mine && (
             <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-background/95 p-2 backdrop-blur lg:static lg:mt-4 lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
               <div className="mx-auto grid max-w-2xl grid-cols-3 gap-2 lg:flex lg:max-w-none lg:flex-wrap">
-                <button
-                  type="button"
-                  disabled={pending || !formatOk || marks.length > 0}
-                  title={marks.length ? "Fix or delete every unclear note first" : sc("publish")}
-                  onClick={() => act("publish")}
-                  className={`${btn} col-span-2 bg-accent text-black`}
-                >
-                  Publish
-                </button>
-                <button type="button" disabled={pending || !formatOk} title={sc("unverified")} onClick={() => act("unverified")} className={`${btn} border border-line`}>
-                  Unverified
-                </button>
+                {canVerify && live && !verified && (
+                  <button
+                    type="button"
+                    disabled={pending || dirty || marks.length > 0}
+                    title={dirty ? "You changed the chart: use Publish" : marks.length ? "Fix or delete every unclear note first" : sc("verify")}
+                    onClick={() => act("verify")}
+                    className={`${btn} col-span-3 bg-green-500 text-black`}
+                  >
+                    ✓ Verify as is
+                  </button>
+                )}
+                {canVerify ? (
+                  <>
+                    <button
+                      type="button"
+                      disabled={pending || !formatOk || marks.length > 0}
+                      title={marks.length ? "Fix or delete every unclear note first" : sc("publish")}
+                      onClick={() => act("publish")}
+                      className={`${btn} col-span-2 bg-accent text-black`}
+                    >
+                      Publish
+                    </button>
+                    <button
+                      type="button"
+                      disabled={pending || !formatOk || (live && verified && !dirty)}
+                      title={sc("unverified")}
+                      onClick={() => act("unverified")}
+                      className={`${btn} border border-line`}
+                    >
+                      Unverified
+                    </button>
+                  </>
+                ) : (
+                  <button type="button" disabled={pending || !formatOk} title={sc("publish")} onClick={() => act("publish")} className={`${btn} col-span-3 bg-accent text-black`}>
+                    Publish
+                  </button>
+                )}
                 <button type="button" disabled={pending || !dirty} title={sc("save")} onClick={() => act("save")} className={`${btn} border border-line`}>
                   {dirty ? "Save draft" : "Saved"}
                 </button>
@@ -523,6 +576,32 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
           </p>
 
           <div className="mb-4 flex flex-wrap gap-2">
+            {admin && verified && !unverifying && (
+              <button type="button" disabled={pending} onClick={() => setUnverifying(true)} className="min-h-11 rounded-lg border border-line px-3 text-lg">
+                Mark unverified…
+              </button>
+            )}
+            {admin && verified && unverifying && (
+              <div className="flex w-full flex-col gap-2 rounded-xl border border-amber-400/60 bg-amber-400/10 p-3" role="group" aria-label="Why mark it unverified?">
+                <p className="text-lg font-semibold">Mark unverified: why?</p>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {(Object.keys(UNVERIFY_REASONS) as UnverifyReason[]).map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      disabled={pending}
+                      onClick={() => run(() => markUnverified(song.id, r), "Marked unverified.", true)}
+                      className="min-h-12 rounded-xl border border-line bg-panel px-3 text-lg font-semibold disabled:opacity-40"
+                    >
+                      {UNVERIFY_REASONS[r]}
+                    </button>
+                  ))}
+                </div>
+                <button type="button" onClick={() => setUnverifying(false)} className="min-h-11 self-start text-lg text-muted underline">
+                  Cancel
+                </button>
+              </div>
+            )}
             {mine && song.is_admin && song.status === "needs_review" && (
               <button
                 type="button"
@@ -541,10 +620,10 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
             <section className="mb-4 rounded-xl border border-line bg-panel p-4" aria-label="Keyboard shortcuts">
               <h2 className="mb-2 text-xl font-semibold">Keyboard shortcuts</h2>
               <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-lg">
-                {SHORTCUTS.map((s) => (
+                {SHORTCUTS.filter((s) => canVerify || (s.action !== "unverified" && s.action !== "verify")).map((s) => (
                   <div key={s.action} className="contents">
                     <dt className="font-mono font-semibold">{modLabel(s.keys, apple)}</dt>
-                    <dd>{s.label}</dd>
+                    <dd>{s.action === "publish" && !canVerify ? "Publish" : s.label}</dd>
                   </div>
                 ))}
                 <dt className="font-mono font-semibold">?</dt>

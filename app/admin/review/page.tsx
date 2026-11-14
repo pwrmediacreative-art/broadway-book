@@ -22,10 +22,16 @@ export default function ReviewPage({ searchParams }: { searchParams: SearchParam
 
 async function Next({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams;
-  const { db, prefs, progress } = await reviewContext("/admin/review", sp);
+  const { db, prefs, picked, progress } = await reviewContext("/admin/review", sp);
   if (!progress) notFound(); // the database refuses anyone who isn't an admin or reviewer
   const { data: id } = await db.rpc("review_next", { p_filter: prefs.filter, p_order: prefs.order, p_skip: [] });
   if (id) redirect(`/admin/review/${id}?${prefsQuery(prefs)}`);
+  // The default view (Unverified) is empty and nobody chose it: carry on with Needs review.
+  if (!picked && prefs.filter === "unverified") {
+    const next = { ...prefs, filter: "needs_review" as const };
+    const { data: nid } = await db.rpc("review_next", { p_filter: next.filter, p_order: next.order, p_skip: [] });
+    if (nid) redirect(`/admin/review/${nid}?${prefsQuery(next)}`);
+  }
   return (
     <>
       <h1 className="text-3xl font-bold tracking-tight">Review</h1>

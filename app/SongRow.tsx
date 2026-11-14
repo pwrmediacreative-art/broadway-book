@@ -64,7 +64,10 @@ function SongRow({ d, index, onOpen }: { d: SongDoc; index: number; onOpen: () =
         className="flex min-h-16 min-w-0 flex-1 select-none items-center justify-between gap-3 py-3 pl-4 pr-2 [-webkit-touch-callout:none] active:bg-line"
       >
         <span className="min-w-0">
-          <span className="block truncate text-xl font-semibold">{d.title}</span>
+          <span className="flex items-center gap-2 text-xl font-semibold">
+            <span className="min-w-0 truncate">{d.title}</span>
+            {d.uv && <span role="img" aria-label="Unverified" title="Unverified" data-uv-dot className="size-2.5 shrink-0 rounded-full bg-amber-400" />}
+          </span>
           <span className="block truncate text-muted">
             {d.artist}
             {meta && (
@@ -76,11 +79,6 @@ function SongRow({ d, index, onOpen }: { d: SongDoc; index: number; onOpen: () =
             {yours && (
               <span className="ml-2 rounded bg-violet-400/25 px-1.5 py-0.5 text-xs font-semibold uppercase text-violet-100">
                 Yours
-              </span>
-            )}
-            {d.uv && (
-              <span className="ml-2 rounded bg-amber-400/20 px-1.5 py-0.5 text-xs font-semibold uppercase text-amber-200">
-                Unverified
               </span>
             )}
             {d.ex && (

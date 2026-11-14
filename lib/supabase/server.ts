@@ -41,7 +41,7 @@ export async function getSong(slug: string) {
   cacheTag(SONGS_TAG);
   const { data, error } = await publicClient()
     .from("songs")
-    .select("id, slug, title, artist, key, is_example, unverified, current_revision_id, current:revisions!songs_current_revision_fk(chart_text)")
+    .select("id, slug, title, artist, key, is_example, unverified, verified_at, current_revision_id, current:revisions!songs_current_revision_fk(chart_text)")
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();

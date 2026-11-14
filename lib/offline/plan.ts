@@ -10,13 +10,14 @@ export interface SavedSong {
   key: string | null;
   is_example: boolean;
   unverified: boolean;
+  verified_at?: string | null; // when an admin checked this chart (absent on copies saved before this existed)
   updated_at: string;
   chart_text: string;
 }
 
 /** What a player would notice changing (everything except the timestamp). */
 export const songSig = (s: SavedSong) =>
-  JSON.stringify([s.id, s.title, s.artist, s.key, s.is_example, s.unverified, s.chart_text]);
+  JSON.stringify([s.id, s.title, s.artist, s.key, s.is_example, s.unverified, s.verified_at ?? null, s.chart_text]);
 
 /**
  * Work out one sync: which rows to save, which saved slugs to drop, and how many songs

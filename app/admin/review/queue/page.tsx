@@ -38,12 +38,20 @@ interface Row {
   claimed_by_me: boolean | null;
 }
 interface ListData {
-  counts: { needs_review: number; needs_manual: number; duplicates: number; manual_files_without_song: number };
+  counts: { unverified: number; verified: number; needs_review: number; needs_manual: number; duplicates: number; manual_files_without_song: number };
   matches: number;
   songs: Row[];
 }
 
 const PAGE = 50;
+/** "today", "3 days", "2 weeks": how long a chart has been live and unverified. */
+function sinceLabel(since: string | null): string {
+  if (!since) return "";
+  const days = Math.floor((Date.now() - Date.parse(since)) / 86_400_000);
+  if (days < 1) return "today";
+  if (days < 14) return `${days} day${days === 1 ? "" : "s"}`;
+  return `${Math.floor(days / 7)} weeks`;
+}
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
 
 async function Queue({ searchParams }: { searchParams: SearchParams }) {
@@ -77,12 +85,12 @@ async function Queue({ searchParams }: { searchParams: SearchParams }) {
       </p>
       <ReviewHeader prefs={prefs} progress={progress} page="queue" />
 
-      <dl className="mb-4 grid grid-cols-3 gap-3">
+      <dl className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
         {(Object.keys(FILTERS) as (keyof typeof FILTERS)[]).map((k) => (
           <Link
             key={k}
             href={`/admin/review/queue?f=${k}&o=${prefs.order}`}
-            className={`rounded-xl border p-3 ${prefs.filter === k ? "border-accent bg-panel" : "border-line bg-panel"}`}
+            className={`flex min-h-16 flex-col justify-center rounded-xl border p-3 ${prefs.filter === k ? "border-accent bg-panel" : "border-line bg-panel"}`}
           >
             <dt className="text-sm text-muted">{FILTERS[k]}</dt>
             <dd className="text-2xl font-bold">{d.counts[k] + (k === "needs_manual" ? d.counts.manual_files_without_song : 0)}</dd>
@@ -91,6 +99,29 @@ async function Queue({ searchParams }: { searchParams: SearchParams }) {
       </dl>
 
       {admin && prefs.filter === "needs_review" && <BulkPublish />}
+      {admin && prefs.filter === "unverified" && d.counts.unverified > 0 && (
+        <Link href="/admin/review/bulk" className="mb-4 flex min-h-14 items-center justify-between rounded-xl border border-line bg-panel px-4 text-xl font-semibold active:bg-line">
+          Bulk verify (chart beside its PDF) <span className="text-accent">›</span>
+        </Link>
+      )}
+
+      {progress.oldest.length > 0 && (
+        <section className="mb-4 rounded-xl border border-line bg-panel p-3" aria-label="Longest unverified">
+          <h2 className="mb-1 text-sm font-bold uppercase tracking-wide text-muted">Live and unverified the longest</h2>
+          <ul className="divide-y divide-line">
+            {progress.oldest.map((o) => (
+              <li key={o.id}>
+                <Link href={`/admin/review/${o.id}?f=unverified&o=${prefs.order}`} className="flex min-h-11 items-center justify-between gap-3 py-1 text-lg active:bg-line">
+                  <span className="min-w-0 truncate">
+                    <b>{o.title}</b> <span className="text-muted">· {o.artist ?? "no artist"}</span>
+                  </span>
+                  <span className="shrink-0 text-base text-muted">{sinceLabel(o.since)}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <form method="get" className="mb-4 flex gap-2" role="search">
         <input type="hidden" name="f" value={prefs.filter} />
@@ -120,7 +151,12 @@ async function Queue({ searchParams }: { searchParams: SearchParams }) {
                   {s.flagged && <span className="rounded-full bg-red-500/25 px-2 py-0.5 font-semibold text-red-200">{s.flags} flags</span>}
                   {s.has_draft && <span className="rounded-full bg-line px-2 py-0.5 text-muted">draft</span>}
                   {s.review_hold && <span className="rounded-full bg-line px-2 py-0.5 text-muted">held</span>}
-                  {s.status === "published" && <span className="rounded-full bg-line px-2 py-0.5 text-muted">live</span>}
+                  {s.status === "published" &&
+                    (s.unverified ? (
+                      <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-amber-200">live, unverified</span>
+                    ) : (
+                      <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-green-200">live</span>
+                    ))}
                   <span className={`rounded-full px-2 py-0.5 ${s.unclear ? "bg-amber-400/20 text-amber-200" : "bg-green-500/20 text-green-200"}`}>
                     {s.unclear} unclear
                   </span>

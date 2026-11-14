@@ -126,6 +126,12 @@ export default function FilterSheet({
             </Section>
           )}
 
+          <Section title="Checked">
+            <Chip on={f.verified} onClick={() => setF({ ...f, verified: !f.verified })}>
+              ✓ Verified only
+            </Chip>
+          </Section>
+
           <Section title="Tempo (BPM)">
             {TEMPOS.map((t) => (
               <Chip

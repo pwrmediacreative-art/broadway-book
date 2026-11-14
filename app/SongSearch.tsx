@@ -207,6 +207,7 @@ export default function SongSearch() {
 
   // Chips: active filters first (tap to remove), then suggestions from the data.
   const active: { label: string; off: Filters }[] = [
+    ...(st.f.verified ? [{ label: "Verified only", off: { ...st.f, verified: false } }] : []),
     ...st.f.keys.map((v) => ({
       label: `Key ${v}`,
       off: { ...st.f, keys: st.f.keys.filter((x) => x !== v) },
@@ -406,6 +407,12 @@ export default function SongSearch() {
         )}
         {index.offline && docs && " · offline, showing saved songs"}
       </p>
+      {rows.some((r) => r.kind === "song" && r.d.uv) && (
+        <p className="-mt-1 mb-2 flex items-center gap-2 text-sm text-muted" data-uv-legend>
+          <span aria-hidden className="size-2.5 shrink-0 rounded-full bg-amber-400" />
+          Not yet checked against the original
+        </p>
+      )}
 
       {mode === "artists" && st.artist && (
         <div className="mb-2 flex items-center gap-2">

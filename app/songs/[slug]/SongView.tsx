@@ -10,6 +10,7 @@ import { BpmToggle, DisplayControls, KeyInfo } from "./controls";
 import { FONTS, useChartState, useGesture, useSongKeys, useSongNav, type Neighbors } from "./hooks";
 import { recordRecent } from "@/lib/search/recent";
 import { usePickedChart } from "@/lib/personal/versions";
+import { checkedDate } from "@/lib/review/queue";
 import { useGo, useLocalNav } from "@/lib/offline/nav";
 import { OpenBadge, PersonalBar, SongActions, useOpenCount } from "./Community";
 import { HoldSheet, MoveFlagsBanner, MyFlags, useHold, useHoldMarks, withHold, type Spot } from "./Hold";
@@ -21,6 +22,8 @@ export interface SongProps {
   artist: string | null;
   isExample: boolean;
   unverified?: boolean;
+  /** When an admin checked this exact chart against the original (null: not verified). */
+  verifiedAt?: string | null;
   chartText: string;
   neighbors: Neighbors;
 }
@@ -37,6 +40,7 @@ export function UnverifiedBadge({ className = "" }: { className?: string }) {
   return (
     <span
       title="Not checked against the original chart yet. Flag it or suggest a fix if something's off."
+      data-unverified-badge
       className={`rounded bg-amber-400/20 px-1.5 py-0.5 text-xs font-semibold uppercase text-amber-200 ${className}`}
     >
       Unverified
@@ -44,7 +48,30 @@ export function UnverifiedBadge({ className = "" }: { className?: string }) {
   );
 }
 
-export default function SongView({ slug, songId, title, artist, isExample, unverified, chartText, neighbors }: SongProps) {
+/** Small calm "Verified" mark. Tap it to see when the chart was checked. */
+function VerifiedBadge({ at }: { at?: string | null }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        className="ml-2 inline-flex min-h-11 items-center align-middle"
+        data-verified-badge
+      >
+        <span className="rounded bg-emerald-400/15 px-1.5 py-0.5 text-xs font-semibold uppercase text-emerald-200">✓ Verified</span>
+      </button>
+      {open && (
+        <span role="status" className="block text-base text-muted">
+          Checked against the original{at ? ` on ${checkedDate(at)}` : ""}.
+        </span>
+      )}
+    </>
+  );
+}
+
+export default function SongView({ slug, songId, title, artist, isExample, unverified, verifiedAt, chartText, neighbors }: SongProps) {
   // The signed-in player's own version replaces the public chart (they can flip back).
   const pick = usePickedChart(slug, chartText);
   const openCount = useOpenCount(songId);
@@ -115,9 +142,19 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
               Example
             </span>
           )}
-          {unverified && <UnverifiedBadge className="ml-2" />}
+          {/* Examples sit outside verification: they only carry the Example badge. */}
+          {!isExample && (unverified ? <UnverifiedBadge className="ml-2" /> : <VerifiedBadge at={verifiedAt} />)}
           <OpenBadge slug={slug} count={openCount} />
         </p>
+        {!isExample && unverified && (
+          <p className="mt-1 text-base text-muted" data-unverified-note>
+            Not yet checked against the original. Play it by ear and{" "}
+            <a href="#suggest" className="text-accent underline">
+              suggest a fix
+            </a>{" "}
+            if something is off.
+          </p>
+        )}
       </header>
       <PersonalBar slug={slug} songId={songId} pick={pick} publicText={chartText} />
       <MoveFlagsBanner slug={slug} />

@@ -41,14 +41,19 @@ export interface Filters {
   times: string[];
   feels: string[];
   tags: string[];
+  verified: boolean; // only charts an admin has checked (hides unverified charts and examples)
 }
-export const NO_FILTERS: Filters = { keys: [], tempos: [], bpmMin: null, bpmMax: null, times: [], feels: [], tags: [] };
+export const NO_FILTERS: Filters = { keys: [], tempos: [], bpmMin: null, bpmMax: null, times: [], feels: [], tags: [], verified: false };
 
 export const countFilters = (f: Filters) =>
-  f.keys.length + f.tempos.length + (f.bpmMin !== null || f.bpmMax !== null ? 1 : 0) + f.times.length + f.feels.length + f.tags.length;
+  f.keys.length + f.tempos.length + (f.bpmMin !== null || f.bpmMax !== null ? 1 : 0) + f.times.length + f.feels.length + f.tags.length + (f.verified ? 1 : 0);
+
+/** Verified = an admin checked it. Unverified charts carry `uv`; examples sit outside verification. */
+export const isVerified = (d: SongDoc) => !d.uv && !d.ex;
 
 /** Any value within a group matches (G or A); every active group must match. Unset groups ignore missing data. */
 export function matches(d: SongDoc, f: Filters): boolean {
+  if (f.verified && !isVerified(d)) return false;
   if (f.keys.length) {
     const k = canonKey(d.key);
     if (!k || !f.keys.includes(k)) return false;
@@ -166,6 +171,7 @@ export function parseState(qs: string): BrowseState {
       times: all("time"),
       feels: all("feel").map((v) => v.toLowerCase()),
       tags: all("tag").map((v) => v.toLowerCase()),
+      verified: p.get("verified") === "1",
     },
   };
 }
@@ -179,6 +185,7 @@ export function prefsQuery(s: Pick<BrowseState, "sort" | "f">): URLSearchParams 
   s.f.times.forEach((v) => p.append("time", v));
   s.f.feels.forEach((v) => p.append("feel", v));
   s.f.tags.forEach((v) => p.append("tag", v));
+  if (s.f.verified) p.set("verified", "1");
   if (s.sort !== "best") p.set("sort", s.sort);
   return p;
 }

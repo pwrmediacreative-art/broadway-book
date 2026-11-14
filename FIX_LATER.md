@@ -92,3 +92,12 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Install: iPhone start-up screens cover portrait iPhones only (no iPad, no landscape); other sizes show a plain dark screen while opening.
 - Install: the icon is a plain "BB" made by scripts/gen-icons.mjs (uses a macOS system font); swap the PNGs in public/icons for real artwork.
 - Offline: the top bar shows the remembered name offline but no unread-notification count or fresh admin/reviewer status until back online.
+- Verified status shipped: the stage view showing no "Unverified" badge (line above) is now by design, and "a merged community suggestion leaves it unverified" now also applies to verified charts (they go back to Unverified until an admin checks).
+- Verified: the player "This chart is right" count (separate from Verified) is not built.
+- Verified: for charts published before this step, "unverified since" is the time the song last changed (no publish time was recorded); new ones record it exactly.
+- Verified: the progress bar's total is every Dropbox PDF, including duplicates and can't-read files, so it can't reach 100% until those are resolved or left out.
+- Verified: on the bulk screen "PDF opened" is remembered only on the page (a reload locks the boxes again); the database can't tell whether the PDF was really compared.
+- Verified: the Unverified queue uses the same order choices as the rest (confidence, title, artist); "longest unverified first" is only the 5-row list and the bulk screen.
+- Verified: a revert that restores Verified isn't counted in the per-admin numbers (only real checks are); the history row names the admin who reverted.
+- Verified: a trusted reviewer's single "Publish" button was checked in the database only, not in a browser (no reviewers exist yet).
+- Verified: status rows in Chart history show "Automatic" when no signed-in user caused the change (e.g. a re-import).

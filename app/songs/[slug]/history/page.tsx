@@ -28,6 +28,14 @@ interface Rev {
   author: { display_name: string | null } | null;
 }
 
+interface StatusRow {
+  id: number;
+  created_at: string;
+  status: "verified" | "unverified";
+  reason: string;
+  by: { display_name: string | null } | null;
+}
+
 async function History({ params }: { params: PageProps<"/songs/[slug]/history">["params"] }) {
   const { slug } = await params;
   const user = await getCurrentUser(); // calls connection() first, so the Supabase client below runs at request time
@@ -40,7 +48,7 @@ async function History({ params }: { params: PageProps<"/songs/[slug]/history">[
     .maybeSingle();
   if (!song) notFound();
 
-  const [revs, merged] = await Promise.all([
+  const [revs, merged, statuses] = await Promise.all([
     db
       .from("revisions")
       .select("id, created_at, source, note, chart_text, author:profiles(display_name)")
@@ -48,8 +56,25 @@ async function History({ params }: { params: PageProps<"/songs/[slug]/history">[
       .order("created_at", { ascending: false })
       .limit(200),
     db.from("proposals").select("id, resulting_revision_id").eq("song_id", song.id).eq("status", "approved"),
+    db
+      .from("verification_log")
+      .select("id, created_at, status, reason, by:profiles(display_name)")
+      .eq("song_id", song.id)
+      .order("created_at", { ascending: false })
+      .limit(200),
   ]);
   const list = (revs.data ?? []) as unknown as Rev[];
+  const status = (statuses.data ?? []) as unknown as StatusRow[];
+  // Versions and status changes in one timeline, newest first (a status change sorts above
+  // the version it happened to when both carry the same time).
+  const timeline: ({ kind: "rev"; r: Rev; i: number } | { kind: "status"; s: StatusRow })[] = [
+    ...list.map((r, i) => ({ kind: "rev" as const, r, i })),
+    ...status.map((s) => ({ kind: "status" as const, s })),
+  ].sort((a, b) => {
+    const ta = Date.parse(a.kind === "rev" ? a.r.created_at : a.s.created_at);
+    const tb = Date.parse(b.kind === "rev" ? b.r.created_at : b.s.created_at);
+    return tb - ta || (a.kind === "status" ? -1 : 1);
+  });
   const fromProposal = new Map((merged.data ?? []).map((p) => [p.resulting_revision_id, p.id]));
   const admin = user?.role === "admin";
 
@@ -60,11 +85,29 @@ async function History({ params }: { params: PageProps<"/songs/[slug]/history">[
       </Link>
       <h1 className="text-3xl font-bold tracking-tight">Chart history</h1>
       <p className="mb-5 mt-1 text-lg text-muted">
-        Every version that has been live, newest first. Nothing here is ever deleted
+        Every version that has been live and every change of its Verified status, newest first. Nothing here is ever deleted
         {admin ? "; reverting adds a new version." : "."}
       </p>
       <ol className="flex flex-col gap-3">
-        {list.map((r, i) => {
+        {timeline.map((t) => {
+          if (t.kind === "status") {
+            const { s } = t;
+            const ok = s.status === "verified";
+            return (
+              <li key={`s${s.id}`} className="rounded-xl border border-dashed border-line px-4 py-3" data-status-row>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`rounded px-2 py-0.5 text-sm font-bold uppercase ${ok ? "bg-emerald-400/15 text-emerald-200" : "bg-amber-400/20 text-amber-200"}`}>
+                    {ok ? "✓ Verified" : "Unverified"}
+                  </span>
+                  <span className="text-muted">{when(s.created_at)}</span>
+                </div>
+                <p className="mt-1 text-lg">
+                  <b>{s.by?.display_name || (ok ? "An admin" : "Automatic")}</b> · {s.reason}
+                </p>
+              </li>
+            );
+          }
+          const { r, i } = t;
           const older = list[i + 1];
           let diff = null;
           try {

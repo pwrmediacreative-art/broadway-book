@@ -1,6 +1,6 @@
 import { gzipSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
-import { canonKey, facets, matches, NO_FILTERS, parseState, sortDocs, stateQuery, type Filters } from "./browse";
+import { canonKey, countFilters, facets, isVerified, matches, NO_FILTERS, parseState, sortDocs, stateQuery, type Filters } from "./browse";
 import { createEngine } from "./engine";
 import { packIndex, unpackIndex, type IndexRow } from "./pack";
 
@@ -135,6 +135,39 @@ describe("filters", () => {
   });
 });
 
+describe("verified only", () => {
+  const base = { slug: "a", title: "A", artist: null, key: "G", bpm: null, time: null, feel: null, tags: [] };
+  const verified = { ...base, ex: false, uv: false };
+  const unverified = { ...base, slug: "b", ex: false, uv: true };
+  const example = { ...base, slug: "c", ex: true, uv: false };
+  it("off by default: nothing is hidden", () => {
+    expect([verified, unverified, example].filter((d) => matches(d, NO_FILTERS))).toHaveLength(3);
+    expect(countFilters(NO_FILTERS)).toBe(0);
+  });
+  it("on: only charts an admin checked (unverified charts and examples are hidden)", () => {
+    const on = f({ verified: true });
+    expect([verified, unverified, example].filter((d) => matches(d, on)).map((d) => d.slug)).toEqual(["a"]);
+    expect(isVerified(verified) && !isVerified(unverified) && !isVerified(example)).toBe(true);
+    expect(countFilters(on)).toBe(1);
+  });
+  it("combines with the key filter and survives the URL", () => {
+    expect(matches(verified, f({ verified: true, keys: ["A"] }))).toBe(false);
+    const s = parseState("verified=1&key=G");
+    expect(s.f.verified).toBe(true);
+    expect(parseState(stateQuery(s))).toEqual(s);
+    expect(parseState("verified=yes").f.verified).toBe(false);
+  });
+  it("does not change the result order: status plays no part in sorting", () => {
+    const list = [
+      { ...verified, slug: "v", title: "Bravo" },
+      { ...unverified, slug: "u", title: "Alpha" },
+      { ...example, slug: "e", title: "Charlie" },
+    ];
+    expect(sortDocs(list, "title", false, new Map()).map((d) => d.slug)).toEqual(["u", "v", "e"]);
+    expect(sortDocs(list, "best", true, new Map()).map((d) => d.slug)).toEqual(["v", "u", "e"]); // search rank kept as is
+  });
+});
+
 describe("sort", () => {
   const order = (s: Parameters<typeof sortDocs>[1]) => sortDocs(docs, s, false, new Map()).map((d) => d.slug);
   it("sorts by BPM with missing last both ways", () => {
@@ -160,6 +193,7 @@ describe("URL state", () => {
       times: ["6/8"],
       feels: ["shuffle"],
       tags: ["90s"],
+      verified: false,
     });
     expect(parseState(stateQuery(s))).toEqual(s);
   });

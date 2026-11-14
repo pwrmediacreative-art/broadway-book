@@ -44,6 +44,15 @@ describe("planSync", () => {
     expect(p.updated).toBe(1);
   });
 
+  it("a status change (Verified, or a new checked date) counts as a change", () => {
+    const was = song("a", "| 1 | 4 |", { unverified: true });
+    const now = song("a", "| 1 | 4 |", { unverified: false, verified_at: "2026-11-14T03:00:00Z" });
+    expect(planSync(savedMap([was]), ["a"], [now]).updated).toBe(1);
+    const later = { ...now, verified_at: "2026-11-15T03:00:00Z" };
+    expect(planSync(savedMap([now]), ["a"], [later]).updated).toBe(1);
+    expect(planSync(savedMap([now]), ["a"], [{ ...now }]).updated).toBe(0);
+  });
+
   it("nothing changed means no note", () => {
     expect(planSync(savedMap([song("a")]), ["a"], []).updated).toBe(0);
   });

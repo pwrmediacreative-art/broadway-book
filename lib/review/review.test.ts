@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildView, parseChart } from "../chart";
 import { lineRows, unclearMarks } from "./unclear";
-import { cleanSkip, readPrefs } from "./queue";
+import { checkedDate, cleanSkip, FILTERS, pickedFilter, readPrefs, UNVERIFY_REASONS } from "./queue";
 import { reviewKey } from "./keys";
 
 const CHART = [
@@ -64,11 +64,29 @@ describe("unclearMarks", () => {
 
 describe("readPrefs", () => {
   it("URL beats cookie beats defaults, junk ignored", () => {
-    expect(readPrefs({}, null)).toEqual({ filter: "needs_review", order: "conf_desc" });
+    expect(readPrefs({}, null)).toEqual({ filter: "unverified", order: "conf_desc" });
     expect(readPrefs({}, "duplicates.artist")).toEqual({ filter: "duplicates", order: "artist" });
     expect(readPrefs({ o: "title" }, "duplicates.artist")).toEqual({ filter: "duplicates", order: "title" });
-    expect(readPrefs({ f: "nope", o: ["conf_asc"] }, "x.y")).toEqual({ filter: "needs_review", order: "conf_asc" });
-    expect(readPrefs({ f: "toString" }, "constructor.__proto__")).toEqual({ filter: "needs_review", order: "conf_desc" });
+    expect(readPrefs({ f: "nope", o: ["conf_asc"] }, "x.y")).toEqual({ filter: "unverified", order: "conf_asc" });
+    expect(readPrefs({ f: "toString" }, "constructor.__proto__")).toEqual({ filter: "unverified", order: "conf_desc" });
+  });
+  it("opens on Unverified, with Verified as a filter too", () => {
+    expect(Object.keys(FILTERS).slice(0, 2)).toEqual(["unverified", "verified"]);
+    expect(readPrefs({ f: "verified" }, null).filter).toBe("verified");
+    expect(readPrefs({}, "needs_review.title").filter).toBe("needs_review"); // a remembered choice still wins
+  });
+  it("knows whether the filter was chosen (the default falls through when empty)", () => {
+    expect(pickedFilter({}, null)).toBe(false);
+    expect(pickedFilter({ f: "nope" }, "x.y")).toBe(false);
+    expect(pickedFilter({ f: "unverified" }, null)).toBe(true);
+    expect(pickedFilter({}, "needs_review.conf_desc")).toBe(true);
+  });
+  it("three one-tap reasons for Mark unverified", () => {
+    expect(Object.keys(UNVERIFY_REASONS)).toEqual(["mistake", "original_changed", "other"]);
+  });
+  it("checked date reads the same everywhere (Nashville time)", () => {
+    expect(checkedDate("2026-11-14T03:30:00Z")).toBe("Nov 13, 2026");
+    expect(checkedDate("2026-11-14T18:00:00Z")).toBe("Nov 14, 2026");
   });
   it("cleanSkip keeps unique uuids only", () => {
     const id = "123e4567-e89b-12d3-a456-426614174000";
@@ -84,11 +102,14 @@ describe("reviewKey", () => {
     expect(key("s", { meta: true })).toBe("save");
     expect(key("U", { meta: true, shift: true })).toBe("cant_read");
     expect(key("K", { ctrl: true, shift: true })).toBe("skip");
+    expect(key("Y", { meta: true, shift: true })).toBe("verify");
+    expect(key("y", { ctrl: true, shift: true })).toBe("verify");
   });
   it("ignores plain typing and other combos", () => {
     expect(key("Enter")).toBeNull();
     expect(key("s")).toBeNull();
     expect(key("u", { meta: true })).toBeNull();
+    expect(key("y", { meta: true })).toBeNull(); // redo stays redo
     expect(key("s", { meta: true, alt: true })).toBeNull();
     expect(key("S", { meta: true, shift: true })).toBeNull();
   });

@@ -88,6 +88,7 @@ export default function SavedSongPage() {
           artist={song.artist}
           isExample={song.is_example}
           unverified={song.unverified}
+          verifiedAt={song.verified_at}
           chartText={song.chart_text}
           neighbors={neighbors}
         />

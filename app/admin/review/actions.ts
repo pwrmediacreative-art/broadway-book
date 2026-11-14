@@ -8,7 +8,7 @@ import { revalidatePath, updateTag } from "next/cache";
 import { checkChart, MAX_CUE_WORDS } from "@/lib/chart";
 import { sessionClient } from "@/lib/supabase/session";
 import { SONGS_TAG } from "@/lib/supabase/server";
-import { cleanSkip, isUuid, type Filter, type Order } from "@/lib/review/queue";
+import { cleanSkip, isUuid, UNVERIFY_REASONS, type Filter, type Order, type UnverifyReason } from "@/lib/review/queue";
 
 export type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -37,6 +37,40 @@ export async function publishReview(songId: string, chartText: string, verified:
   updateTag(SONGS_TAG);
   revalidatePath("/admin/review");
   return { ok: true };
+}
+
+/** Admins: the live chart is right as it stands. */
+export async function verifyAsIs(songId: string, baseRevisionId: string | null): Promise<Result> {
+  if (!isUuid(songId) || !isUuid(baseRevisionId)) return bad;
+  const db = await sessionClient();
+  const { error } = await db.rpc("review_verify", { p_song_id: songId, p_base_revision: baseRevisionId });
+  if (error) return fail(error);
+  updateTag(SONGS_TAG);
+  revalidatePath("/admin/review");
+  return { ok: true };
+}
+
+/** Admins: undo a verification. */
+export async function markUnverified(songId: string, reason: UnverifyReason): Promise<Result> {
+  if (!isUuid(songId) || !Object.hasOwn(UNVERIFY_REASONS, reason)) return bad;
+  const db = await sessionClient();
+  const { error } = await db.rpc("review_unverify", { p_song_id: songId, p_reason: reason });
+  if (error) return fail(error);
+  updateTag(SONGS_TAG);
+  revalidatePath("/admin/review");
+  return { ok: true };
+}
+
+/** Admins: verify up to 20 charts shown on the bulk screen (each with the revision that was shown). */
+export async function bulkVerify(items: { id: string; revision_id: string }[]): Promise<Result<{ verified: number; skipped: { id: string; why: string }[] }>> {
+  if (!Array.isArray(items) || items.length === 0 || items.length > 20 || !items.every((i) => isUuid(i.id) && isUuid(i.revision_id))) return bad;
+  const db = await sessionClient();
+  const { data, error } = await db.rpc("review_bulk_verify", { p_items: items.map((i) => ({ id: i.id, revision_id: i.revision_id })) });
+  if (error) return fail(error);
+  updateTag(SONGS_TAG);
+  revalidatePath("/admin/review");
+  const d = data as { verified: number; skipped: { id: string; why: string }[] };
+  return { ok: true, verified: d.verified, skipped: d.skipped ?? [] };
 }
 
 export async function setHold(songId: string, hold: boolean): Promise<Result> {

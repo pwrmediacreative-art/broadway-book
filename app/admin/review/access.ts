@@ -1,12 +1,14 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getCurrentUser, sessionClient, syncRole } from "@/lib/supabase/session";
-import { PREFS_COOKIE, readPrefs, type Prefs } from "@/lib/review/queue";
+import { PREFS_COOKIE, pickedFilter, readPrefs, type Prefs } from "@/lib/review/queue";
 
 export interface Progress {
   total: number;
-  verified: number;
-  unverified: number;
+  verified: number; // Dropbox charts live and verified
+  unverified: number; // live, nobody has verified them
+  waiting: number; // not published yet
+  oldest: { id: string; title: string; artist: string | null; since: string | null }[];
   people: { name: string; total: number; today: number; me: boolean }[];
 }
 
@@ -20,7 +22,8 @@ export async function reviewContext(next: string, sp: { f?: string | string[]; o
   if (!user) redirect(`/login?next=${encodeURIComponent(next)}`);
   await syncRole(user.id, user.email, user.role);
   const db = await sessionClient();
-  const prefs: Prefs = readPrefs(sp, (await cookies()).get(PREFS_COOKIE)?.value);
+  const cookie = (await cookies()).get(PREFS_COOKIE)?.value;
+  const prefs: Prefs = readPrefs(sp, cookie);
   const { data, error } = await db.rpc("review_progress");
-  return { db, prefs, progress: error ? null : (data as Progress) };
+  return { db, prefs, picked: pickedFilter(sp, cookie), progress: error ? null : (data as Progress) };
 }
