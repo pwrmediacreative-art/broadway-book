@@ -13,7 +13,7 @@ type SearchParams = Promise<{ f?: string | string[]; o?: string | string[] }>;
 export default function ReviewPage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <main className="mx-auto w-full max-w-2xl px-4 pb-16 pt-2">
-      <Suspense fallback={<p className="text-lg text-muted">Finding the next chart…</p>}>
+      <Suspense fallback={<p className="text-lg text-bb-cue-gray">Finding the next chart…</p>}>
         <Next searchParams={searchParams} />
       </Suspense>
     </main>
@@ -36,9 +36,9 @@ async function Next({ searchParams }: { searchParams: SearchParams }) {
     <>
       <h1 className="text-3xl font-bold tracking-tight">Review</h1>
       <ReviewHeader prefs={prefs} progress={progress} page="empty" />
-      <p className="rounded-xl border border-line bg-panel p-4 text-lg">
+      <p className="rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4 text-lg">
         Nothing left in “{FILTERS[prefs.filter]}” that nobody else is reviewing.{" "}
-        <Link href={`/admin/review/queue?${prefsQuery(prefs)}`} className="text-accent">
+        <Link href={`/admin/review/queue?${prefsQuery(prefs)}`} className="text-bb-downbeat-amber">
           See the queue
         </Link>
       </p>

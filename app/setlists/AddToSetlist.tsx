@@ -19,7 +19,7 @@ export default function AddToSetlist({ slug, title, variant }: { slug: string; t
           onClick={() => setOpen(true)}
           aria-label={`Add ${title} to a setlist`}
           title="Add to setlist"
-          className="flex w-14 shrink-0 items-center justify-center border-l border-line text-3xl text-muted active:bg-line active:text-accent"
+          className="flex w-14 shrink-0 items-center justify-center border-l border-bb-rule-gray text-3xl text-bb-cue-gray active:bg-bb-rule-gray active:text-bb-downbeat-amber"
         >
           +
         </button>
@@ -92,7 +92,7 @@ function Picker({ slug, title, onClose }: { slug: string; title: string; onClose
       return { name: device?.name || "My setlist", href: "/setlists/device" };
     });
 
-  const row = "flex min-h-14 w-full items-center justify-between gap-3 rounded-xl border border-line bg-panel px-4 py-2 text-left active:bg-line disabled:opacity-50";
+  const row = "flex min-h-14 w-full items-center justify-between gap-3 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 py-2 text-left active:bg-bb-rule-gray disabled:opacity-50";
 
   return (
     <div className="fixed inset-0 z-[70] flex items-end bg-black/70 sm:items-center sm:justify-center" onClick={onClose}>
@@ -100,18 +100,18 @@ function Picker({ slug, title, onClose }: { slug: string; title: string; onClose
         role="dialog"
         aria-label={`Add ${title} to a setlist`}
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[85dvh] w-full overflow-y-auto rounded-t-2xl border border-line bg-background p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:max-w-md sm:rounded-2xl"
+        className="max-h-[85dvh] w-full overflow-y-auto rounded-t-2xl border border-bb-rule-gray bg-bb-house-black p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:max-w-md sm:rounded-2xl"
       >
         <div className="mb-3 flex items-center gap-2">
           <h2 className="min-w-0 flex-1 truncate text-xl font-bold">Add “{title}”</h2>
-          <button onClick={onClose} aria-label="Close" className="grid size-11 place-items-center rounded-lg text-2xl text-muted active:bg-panel">
+          <button onClick={onClose} aria-label="Close" className="grid size-11 place-items-center rounded-lg text-2xl text-bb-cue-gray active:bg-bb-case-charcoal">
             ✕
           </button>
         </div>
 
         {done ? (
           <>
-            <p className="mb-3 text-xl text-accent" aria-live="polite">
+            <p className="mb-3 text-xl text-bb-downbeat-amber" aria-live="polite">
               Added to {done.name} ✓
             </p>
             <div className="flex gap-2">
@@ -126,19 +126,19 @@ function Picker({ slug, title, onClose }: { slug: string; title: string; onClose
         ) : (
           <>
             {err && <p className="mb-3 rounded-lg border border-red-500 p-3 text-lg text-red-300">{err}</p>}
-            {who.state === "loading" && <p className="text-lg text-muted">Loading…</p>}
+            {who.state === "loading" && <p className="text-lg text-bb-cue-gray">Loading…</p>}
             {who.state === "error" && <p className="text-lg text-red-300">{who.message}</p>}
             {who.state === "out" && (
               <>
                 <button disabled={busy} onClick={toDevice} className={`${row} mb-3`}>
                   <span className="min-w-0">
                     <span className="block truncate text-lg font-semibold">{device?.name || "My setlist"}</span>
-                    <span className="block text-sm text-muted">On this device · {device?.items.length ?? 0} songs</span>
+                    <span className="block text-sm text-bb-cue-gray">On this device · {device?.items.length ?? 0} songs</span>
                   </span>
-                  <span className="text-2xl text-accent">+</span>
+                  <span className="text-2xl text-bb-downbeat-amber">+</span>
                 </button>
-                <p className="text-base text-muted">
-                  <Link href="/login?next=/setlists" className="text-accent underline">
+                <p className="text-base text-bb-cue-gray">
+                  <Link href="/login?next=/setlists" className="text-bb-downbeat-amber underline">
                     Sign in
                   </Link>{" "}
                   for more setlists and live share links.
@@ -151,7 +151,7 @@ function Picker({ slug, title, onClose }: { slug: string; title: string; onClose
                 <li>
                   {newName === null ? (
                     <button disabled={busy} onClick={() => setNewName("")} className={row}>
-                      <span className="text-lg font-semibold text-accent">+ New setlist</span>
+                      <span className="text-lg font-semibold text-bb-downbeat-amber">+ New setlist</span>
                     </button>
                   ) : (
                     <form
@@ -168,7 +168,7 @@ function Picker({ slug, title, onClose }: { slug: string; title: string; onClose
                         onChange={(e) => setNewName(e.target.value)}
                         placeholder="Setlist name"
                         aria-label="New setlist name"
-                        className="h-12 min-w-0 flex-1 rounded-lg border border-line bg-panel px-3 text-lg"
+                        className="h-12 min-w-0 flex-1 rounded-lg border border-bb-rule-gray bg-bb-case-charcoal px-3 text-lg"
                       />
                       <button disabled={busy} className={`${btn} ${primary}`}>
                         Create
@@ -181,9 +181,9 @@ function Picker({ slug, title, onClose }: { slug: string; title: string; onClose
                     <button disabled={busy} onClick={() => toList(l)} className={row}>
                       <span className="min-w-0">
                         <span className="block truncate text-lg font-semibold">{l.name}</span>
-                        <span className="block text-sm text-muted">{[gigDate(l.gig_date), `${l.count} songs`].filter(Boolean).join(" · ")}</span>
+                        <span className="block text-sm text-bb-cue-gray">{[gigDate(l.gig_date), `${l.count} songs`].filter(Boolean).join(" · ")}</span>
                       </span>
-                      <span className="text-2xl text-accent">+</span>
+                      <span className="text-2xl text-bb-downbeat-amber">+</span>
                     </button>
                   </li>
                 ))}

@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { bulkUnverified } from "../actions";
 
-const input = "min-h-11 w-24 rounded-lg border border-line bg-background px-3 text-lg";
+const input = "min-h-11 w-24 rounded-lg border border-bb-rule-gray bg-bb-house-black px-3 text-lg";
 
 /** Publish every clean-enough chart as unverified: count first, then confirm. */
 export default function BulkPublish() {
@@ -36,10 +36,10 @@ export default function BulkPublish() {
     });
 
   return (
-    <details className="mb-4 rounded-xl border border-line bg-panel">
+    <details className="mb-4 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal">
       <summary className="flex min-h-11 cursor-pointer items-center px-4 py-3 text-xl font-semibold">Publish clean charts as unverified</summary>
-      <div className="border-t border-line px-4 py-3">
-        <p className="mb-3 text-muted">
+      <div className="border-t border-bb-rule-gray px-4 py-3">
+        <p className="mb-3 text-bb-cue-gray">
           Players see these with an “Unverified” badge and can flag or fix them. Held songs are skipped.
         </p>
         <div className="mb-3 flex flex-wrap items-end gap-4">
@@ -53,16 +53,16 @@ export default function BulkPublish() {
           </label>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={preview} disabled={pending} className="min-h-11 rounded-xl border border-line px-5 text-lg font-semibold disabled:opacity-60">
+          <button type="button" onClick={preview} disabled={pending} className="min-h-11 rounded-xl border border-bb-rule-gray px-5 text-lg font-semibold disabled:opacity-60">
             {pending && count === null ? "Counting…" : "Count matching charts"}
           </button>
           {count !== null && count > 0 && (
-            <button type="button" onClick={publish} disabled={pending} className="min-h-11 rounded-xl bg-accent px-5 text-lg font-semibold text-black disabled:opacity-60">
+            <button type="button" onClick={publish} disabled={pending} className="min-h-11 rounded-xl bg-bb-downbeat-amber px-5 text-lg font-semibold text-bb-stage-black disabled:opacity-60">
               {pending ? "Publishing…" : `Publish ${count} as unverified`}
             </button>
           )}
         </div>
-        <p role="status" aria-live="polite" className="mt-2 text-lg text-muted">
+        <p role="status" aria-live="polite" className="mt-2 text-lg text-bb-cue-gray">
           {count === 0 ? "No charts match." : null}
           {msg}
         </p>

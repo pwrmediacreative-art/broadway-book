@@ -8,7 +8,7 @@ export const metadata = { title: "Admin · Broadway Book", robots: { index: fals
 export default function AdminPage() {
   return (
     <main className="mx-auto w-full max-w-2xl px-4 pb-16 pt-2">
-      <Suspense fallback={<p className="text-lg text-muted">Loading…</p>}>
+      <Suspense fallback={<p className="text-lg text-bb-cue-gray">Loading…</p>}>
         <Dashboard />
       </Suspense>
     </main>
@@ -47,7 +47,7 @@ async function Dashboard() {
   return (
     <>
       <h1 className="text-3xl font-bold tracking-tight">Admin</h1>
-      <p className="mb-6 mt-1 text-lg text-muted">Signed in as {user.display_name ?? user.email}</p>
+      <p className="mb-6 mt-1 text-lg text-bb-cue-gray">Signed in as {user.display_name ?? user.email}</p>
 
       <dl className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
@@ -58,8 +58,8 @@ async function Dashboard() {
           ["To review", s.needs_review ?? 0],
           ["Flagged songs", s.flagged ?? 0],
         ].map(([label, n]) => (
-          <div key={label} className="rounded-xl border border-line bg-panel p-4">
-            <dt className="text-sm text-muted">{label}</dt>
+          <div key={label} className="rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4">
+            <dt className="text-sm text-bb-cue-gray">{label}</dt>
             <dd className="text-3xl font-bold">{n}</dd>
           </div>
         ))}
@@ -67,18 +67,18 @@ async function Dashboard() {
 
       <ul className="flex flex-col gap-3">
         {SECTIONS.map((sec) => (
-          <li key={sec.path} className="rounded-xl border border-line bg-panel p-4">
+          <li key={sec.path} className="rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4">
             <div className="flex items-baseline justify-between gap-3">
               <h2 className="text-xl font-semibold">{sec.title}</h2>
               {"ready" in sec ? (
-                <Link href={sec.path} className="inline-flex min-h-11 items-center text-lg text-accent">
+                <Link href={sec.path} className="inline-flex min-h-11 items-center text-lg text-bb-downbeat-amber">
                   Open →
                 </Link>
               ) : (
-                <span className="text-sm text-accent">Coming soon</span>
+                <span className="text-sm text-bb-downbeat-amber">Coming soon</span>
               )}
             </div>
-            <p className="mt-1 text-lg text-muted">{sec.text}</p>
+            <p className="mt-1 text-lg text-bb-cue-gray">{sec.text}</p>
           </li>
         ))}
       </ul>

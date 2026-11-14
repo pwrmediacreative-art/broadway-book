@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Atkinson_Hyperlegible, Geist, Geist_Mono, Inter, JetBrains_Mono } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
+import { HEX } from "@/lib/design/tokens";
 import AuthBar from "./AuthBar";
 import OfflineRoot from "./OfflineRoot";
 
@@ -44,7 +45,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0b",
+  themeColor: HEX.houseBlack,
   width: "device-width",
   initialScale: 1,
 };

@@ -30,7 +30,7 @@ function SongRow({ d, index, onOpen }: { d: SongDoc; index: number; onOpen: () =
   const yours = useMyVersions().list.some((v) => v.slug === d.slug);
 
   return (
-    <li id={`r${index}`} className="flex scroll-mt-20 items-stretch bg-panel">
+    <li id={`r${index}`} className="flex scroll-mt-20 items-stretch bg-bb-case-charcoal">
       <Link
         href={`/songs/${d.slug}`}
         onPointerDown={(e) => {
@@ -61,14 +61,14 @@ function SongRow({ d, index, onOpen }: { d: SongDoc; index: number; onOpen: () =
           }
           onOpen();
         }}
-        className="flex min-h-16 min-w-0 flex-1 select-none items-center justify-between gap-3 py-3 pl-4 pr-2 [-webkit-touch-callout:none] active:bg-line"
+        className="flex min-h-16 min-w-0 flex-1 select-none items-center justify-between gap-3 py-3 pl-4 pr-2 [-webkit-touch-callout:none] active:bg-bb-rule-gray"
       >
         <span className="min-w-0">
           <span className="flex items-center gap-2 text-xl font-semibold">
             <span className="min-w-0 truncate">{d.title}</span>
             {d.uv && <span role="img" aria-label="Unverified" title="Unverified" data-uv-dot className="size-2.5 shrink-0 rounded-full bg-amber-400" />}
           </span>
-          <span className="block truncate text-muted">
+          <span className="block truncate text-bb-cue-gray">
             {d.artist}
             {meta && (
               <span className="text-sm">
@@ -82,13 +82,13 @@ function SongRow({ d, index, onOpen }: { d: SongDoc; index: number; onOpen: () =
               </span>
             )}
             {d.ex && (
-              <span className="ml-2 rounded bg-accent/20 px-1.5 py-0.5 text-xs font-semibold uppercase text-accent">
+              <span className="ml-2 rounded bg-bb-downbeat-amber/20 px-1.5 py-0.5 text-xs font-semibold uppercase text-bb-downbeat-amber">
                 Example
               </span>
             )}
           </span>
         </span>
-        {d.key && <span className="shrink-0 font-mono text-2xl font-bold text-accent">{d.key}</span>}
+        {d.key && <span className="shrink-0 font-mono text-2xl font-bold text-bb-downbeat-amber">{d.key}</span>}
       </Link>
       <AddToSetlist slug={d.slug} title={d.title} variant="row" />
       <Link
@@ -99,7 +99,7 @@ function SongRow({ d, index, onOpen }: { d: SongDoc; index: number; onOpen: () =
         }}
         aria-label={`Open ${d.title} in stage mode`}
         title="Stage mode"
-        className="flex w-14 shrink-0 items-center justify-center border-l border-line text-muted active:bg-line active:text-accent"
+        className="flex w-14 shrink-0 items-center justify-center border-l border-bb-rule-gray text-bb-cue-gray active:bg-bb-rule-gray active:text-bb-downbeat-amber"
       >
         <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
           <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" strokeLinecap="round" strokeLinejoin="round" />

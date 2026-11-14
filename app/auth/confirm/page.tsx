@@ -18,16 +18,16 @@ export default function ConfirmPage() {
       {error ? (
         <>
           <h1 className="text-3xl font-bold tracking-tight">Sign-in problem</h1>
-          <p className="mb-6 mt-1 text-lg text-muted">{error} Send yourself a new link.</p>
+          <p className="mb-6 mt-1 text-lg text-bb-cue-gray">{error} Send yourself a new link.</p>
           <Link
             href="/login"
-            className="flex h-14 items-center justify-center rounded-xl bg-accent text-xl font-semibold text-black"
+            className="flex h-14 items-center justify-center rounded-xl bg-bb-downbeat-amber text-xl font-semibold text-bb-stage-black"
           >
             Get a new link
           </Link>
         </>
       ) : (
-        <p className="pt-6 text-xl text-muted">Signing you in…</p>
+        <p className="pt-6 text-xl text-bb-cue-gray">Signing you in…</p>
       )}
     </main>
   );

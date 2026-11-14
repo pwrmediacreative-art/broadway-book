@@ -10,11 +10,11 @@ export const metadata = { title: "Notifications · Broadway Book", robots: { ind
 export default function NotificationsPage() {
   return (
     <main className="mx-auto w-full max-w-2xl px-4 pb-16 pt-2">
-      <Link href="/" className="inline-flex h-12 items-center text-lg text-muted active:text-foreground">
+      <Link href="/" className="inline-flex h-12 items-center text-lg text-bb-cue-gray active:text-bb-chart-white">
         ← All songs
       </Link>
       <h1 className="mb-4 text-3xl font-bold tracking-tight">Notifications</h1>
-      <Suspense fallback={<p className="text-lg text-muted">Loading…</p>}>
+      <Suspense fallback={<p className="text-lg text-bb-cue-gray">Loading…</p>}>
         <List />
       </Suspense>
     </main>
@@ -50,7 +50,7 @@ async function List() {
   const rows = (data ?? []) as unknown as Row[];
   const unread = rows.some((r) => !r.read_at);
 
-  if (!rows.length) return <p className="rounded-xl border border-line bg-panel p-4 text-lg text-muted">Nothing yet.</p>;
+  if (!rows.length) return <p className="rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4 text-lg text-bb-cue-gray">Nothing yet.</p>;
   return (
     <>
       {unread && <MarkRead />}
@@ -69,7 +69,7 @@ async function List() {
                         ? `/songs/${r.song.slug}`
                         : "/community"
                 }
-                className={`flex gap-3 rounded-xl border p-4 active:bg-line ${r.read_at ? "border-line" : "border-accent bg-panel"}`}
+                className={`flex gap-3 rounded-xl border p-4 active:bg-bb-rule-gray ${r.read_at ? "border-bb-rule-gray" : "border-bb-downbeat-amber bg-bb-case-charcoal"}`}
               >
                 <span className="text-2xl" aria-hidden>
                   {icon}
@@ -77,8 +77,8 @@ async function List() {
                 <span className="min-w-0">
                   <span className="block text-lg font-semibold">{r.song?.title ?? "A song"}</span>
                   <span className="block text-lg">{text}.</span>
-                  {r.proposal?.note && <span className="block truncate text-muted">“{r.proposal.note}”</span>}
-                  <span className="block text-sm text-muted">{when(r.created_at)}</span>
+                  {r.proposal?.note && <span className="block truncate text-bb-cue-gray">“{r.proposal.note}”</span>}
+                  <span className="block text-sm text-bb-cue-gray">{when(r.created_at)}</span>
                 </span>
               </Link>
             </li>

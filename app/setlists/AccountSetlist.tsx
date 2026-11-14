@@ -33,7 +33,7 @@ function useSet(by: { id: string } | { code: string }): Load {
 function Status({ load, missing }: { load: Load; missing: string }) {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-2">
-      <Link href="/setlists" className="inline-flex h-12 items-center text-lg text-muted active:text-foreground">
+      <Link href="/setlists" className="inline-flex h-12 items-center text-lg text-bb-cue-gray active:text-bb-chart-white">
         ← Setlists
       </Link>
       <p className="mt-4 text-xl">{load.state === "loading" ? "Loading…" : load.state === "error" ? `Couldn't load: ${load.message}` : missing}</p>
@@ -87,17 +87,17 @@ export function SharedView({ code }: { code: string }) {
   const playable = set.items.filter((i) => i.song).length;
   return (
     <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-2">
-      <Link href="/" className="inline-flex h-12 items-center text-lg text-muted active:text-foreground">
+      <Link href="/" className="inline-flex h-12 items-center text-lg text-bb-cue-gray active:text-bb-chart-white">
         ← All songs
       </Link>
       <h1 className="text-3xl font-bold leading-tight">{set.name}</h1>
-      <p className="mb-3 text-lg text-muted">
+      <p className="mb-3 text-lg text-bb-cue-gray">
         {[gigDate(set.gig_date), `${playable} song${playable === 1 ? "" : "s"}`, "view only"].filter(Boolean).join(" · ")}
       </p>
       {set.mine && (
         <p className="mb-3 text-lg">
           This is your setlist.{" "}
-          <Link className="text-accent underline" href={`/setlists/${set.id ?? ""}`}>
+          <Link className="text-bb-downbeat-amber underline" href={`/setlists/${set.id ?? ""}`}>
             Edit it
           </Link>
         </p>
@@ -113,7 +113,7 @@ export function SharedView({ code }: { code: string }) {
         Play set ▸
       </button>
       <SetSongList items={set.items} />
-      <p className="mt-4 text-base text-muted">Shared from Broadway Book. Refresh to get the latest version of the list.</p>
+      <p className="mt-4 text-base text-bb-cue-gray">Shared from Broadway Book. Refresh to get the latest version of the list.</p>
     </main>
   );
 }
@@ -137,12 +137,12 @@ function ShareBox({ id, initial }: { id: string; initial: string | null }) {
     }
   };
   return (
-    <section className="mb-6 rounded-xl border border-line p-3">
+    <section className="mb-6 rounded-xl border border-bb-rule-gray p-3">
       <h2 className="mb-1 text-lg font-semibold">Share with the band</h2>
       {url ? (
         <>
-          <p className="mb-2 text-base text-muted">Anyone with this link can view and play the set (no sign-in). They see your edits when they refresh.</p>
-          <input readOnly value={url} onFocus={(e) => e.target.select()} aria-label="Share link" className="mb-2 h-12 w-full rounded-lg border border-line bg-background px-3 font-mono text-base" />
+          <p className="mb-2 text-base text-bb-cue-gray">Anyone with this link can view and play the set (no sign-in). They see your edits when they refresh.</p>
+          <input readOnly value={url} onFocus={(e) => e.target.select()} aria-label="Share link" className="mb-2 h-12 w-full rounded-lg border border-bb-rule-gray bg-bb-house-black px-3 font-mono text-base" />
           <div className="flex flex-wrap gap-2">
             <CopyButton text={url} />
             <button disabled={busy} className={`${btn} ${plain}`} onClick={() => set(false)}>
@@ -152,14 +152,14 @@ function ShareBox({ id, initial }: { id: string; initial: string | null }) {
         </>
       ) : (
         <>
-          <p className="mb-2 text-base text-muted">Private. Only you can see it until you make a link.</p>
+          <p className="mb-2 text-base text-bb-cue-gray">Private. Only you can see it until you make a link.</p>
           <button disabled={busy} className={`${btn} ${primary}`} onClick={() => set(true)}>
             Make share link
           </button>
         </>
       )}
       {msg && (
-        <p className="mt-2 text-base text-accent" aria-live="polite">
+        <p className="mt-2 text-base text-bb-downbeat-amber" aria-live="polite">
           {msg}
         </p>
       )}

@@ -12,11 +12,11 @@ export default function ReviewHeader({ prefs, progress, page }: { prefs: Prefs; 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <nav className="flex flex-wrap gap-x-4 text-lg">
           {page === "queue" ? (
-            <Link href={`/admin/review?${prefsQuery(prefs)}`} className="inline-flex min-h-11 items-center text-accent">
+            <Link href={`/admin/review?${prefsQuery(prefs)}`} className="inline-flex min-h-11 items-center text-bb-downbeat-amber">
               Start reviewing ›
             </Link>
           ) : (
-            <Link href={`/admin/review/queue?${prefsQuery(prefs)}`} className="inline-flex min-h-11 items-center text-accent">
+            <Link href={`/admin/review/queue?${prefsQuery(prefs)}`} className="inline-flex min-h-11 items-center text-bb-downbeat-amber">
               ☰ Queue
             </Link>
           )}
@@ -25,7 +25,7 @@ export default function ReviewHeader({ prefs, progress, page }: { prefs: Prefs; 
       </div>
       <div>
         <div
-          className="flex h-4 w-full overflow-hidden rounded-full bg-line"
+          className="flex h-4 w-full overflow-hidden rounded-full bg-bb-rule-gray"
           role="progressbar"
           aria-valuemin={0}
           aria-valuemax={total}
@@ -35,7 +35,7 @@ export default function ReviewHeader({ prefs, progress, page }: { prefs: Prefs; 
           <div className="h-full bg-green-500" style={{ width: `${pct(verified)}%` }} />
           <div className="h-full bg-amber-400" style={{ width: `${pct(unverified)}%` }} />
         </div>
-        <p className="mt-1 text-base text-muted">
+        <p className="mt-1 text-base text-bb-cue-gray">
           <b className="text-green-300">{verified.toLocaleString()}</b> / {total.toLocaleString()} verified ·{" "}
           <span className="text-amber-200">{unverified.toLocaleString()} live, unverified</span> ·{" "}
           {waiting.toLocaleString()} waiting for review
@@ -45,7 +45,7 @@ export default function ReviewHeader({ prefs, progress, page }: { prefs: Prefs; 
               {people.map((p, i) => (
                 <span key={i}>
                   {i > 0 && ", "}
-                  <span className={p.me ? "text-foreground" : undefined}>
+                  <span className={p.me ? "text-bb-chart-white" : undefined}>
                     {p.name} verified {p.total.toLocaleString()}
                     {p.today > 0 && ` (${p.today} today)`}
                   </span>

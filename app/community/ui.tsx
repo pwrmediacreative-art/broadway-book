@@ -19,7 +19,7 @@ const PILL: Record<string, [string, string]> = {
   stale: ["Out of date", "bg-amber-400/20 text-amber-200"],
   approved: ["Merged", "bg-emerald-400/20 text-emerald-200"],
   rejected: ["Closed", "bg-red-400/20 text-red-200"],
-  withdrawn: ["Withdrawn", "bg-panel text-muted"],
+  withdrawn: ["Withdrawn", "bg-bb-case-charcoal text-bb-cue-gray"],
 };
 
 export function StatusPill({ status, stale }: { status: string; stale?: boolean }) {
@@ -35,10 +35,10 @@ export const SOURCE_LABEL: Record<string, string> = {
 };
 
 export const btn = {
-  primary: "inline-flex min-h-12 items-center justify-center rounded-xl bg-accent px-5 text-lg font-bold text-black active:opacity-80 disabled:opacity-40",
-  ghost: "inline-flex min-h-12 items-center justify-center rounded-xl border border-line bg-panel px-4 text-lg active:bg-line disabled:opacity-40",
+  primary: "inline-flex min-h-12 items-center justify-center rounded-xl bg-bb-downbeat-amber px-5 text-lg font-bold text-bb-stage-black active:opacity-80 disabled:opacity-40",
+  ghost: "inline-flex min-h-12 items-center justify-center rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 text-lg active:bg-bb-rule-gray disabled:opacity-40",
   danger: "inline-flex min-h-12 items-center justify-center rounded-xl border border-red-500/60 px-4 text-lg text-red-300 active:bg-red-500/20 disabled:opacity-40",
-  link: "inline-flex min-h-11 items-center text-lg text-accent",
+  link: "inline-flex min-h-11 items-center text-lg text-bb-downbeat-amber",
 };
 
 /** Shown next to trusted reviewers' names on community pages. */

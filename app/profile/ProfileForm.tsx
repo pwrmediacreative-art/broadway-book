@@ -16,7 +16,7 @@ export default function ProfileForm(props: {
     <form action={action} className="flex flex-col gap-3">
       <input type="hidden" name="next" value={props.next} />
       <label htmlFor="display_name" className="text-lg font-medium">
-        Display name <span className="text-muted">(shown on your edits)</span>
+        Display name <span className="text-bb-cue-gray">(shown on your edits)</span>
       </label>
       <input
         id="display_name"
@@ -25,16 +25,16 @@ export default function ProfileForm(props: {
         maxLength={DISPLAY_NAME_MAX}
         autoComplete="nickname"
         defaultValue={props.displayName}
-        className="h-14 rounded-xl border border-line bg-panel px-4 text-xl outline-none focus:border-accent"
+        className="h-14 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 text-xl outline-none focus:border-bb-downbeat-amber"
       />
       <label htmlFor="instrument" className="mt-2 text-lg font-medium">
-        Instrument <span className="text-muted">(optional)</span>
+        Instrument <span className="text-bb-cue-gray">(optional)</span>
       </label>
       <select
         id="instrument"
         name="instrument"
         defaultValue={props.instrument}
-        className="h-14 rounded-xl border border-line bg-panel px-4 text-xl capitalize outline-none focus:border-accent"
+        className="h-14 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 text-xl capitalize outline-none focus:border-bb-downbeat-amber"
       >
         <option value="">—</option>
         {INSTRUMENTS.map((i) => (
@@ -51,7 +51,7 @@ export default function ProfileForm(props: {
       <button
         type="submit"
         disabled={pending}
-        className="mt-2 h-14 rounded-xl bg-accent text-xl font-semibold text-black active:opacity-80 disabled:opacity-60"
+        className="mt-2 h-14 rounded-xl bg-bb-downbeat-amber text-xl font-semibold text-bb-stage-black active:opacity-80 disabled:opacity-60"
       >
         {pending ? "Saving…" : props.first ? "Save and continue" : "Save"}
       </button>

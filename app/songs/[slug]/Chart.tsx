@@ -36,7 +36,7 @@ export function Fermata({ className }: { className: string }) {
 
 function Name({ b, chords }: { b: BeatView; chords: boolean }) {
   const p = chords ? b.c : b.n;
-  if (b.kind === "repeat") return <span className="text-foreground/85">%</span>;
+  if (b.kind === "repeat") return <span className="text-bb-chart-white/85">%</span>;
   if (b.kind === "nc") return <span className="text-[0.8em]">N.C.</span>;
   const [inline, sup] = splitQuality(p.qual);
   return (
@@ -65,16 +65,16 @@ function Beat({ b, chords, marks, spot }: { b: BeatView; chords: boolean; marks:
       data-beat={spot?.id}
       className={`relative inline-flex flex-col items-start px-[0.1em] ${
         spot ? "select-none [-webkit-touch-callout:none]" : ""
-      } ${selected ? "rounded-[0.12em] bg-accent/35 outline outline-[0.06em] outline-accent" : ""}`}
+      } ${selected ? "rounded-[0.12em] bg-bb-downbeat-amber/35 outline outline-[0.06em] outline-bb-downbeat-amber" : ""}`}
     >
       {spot?.hold.flagged.has(spot.id) && (
         <span className="absolute right-0 top-0 size-[0.24em] rounded-full bg-violet-400 ring-[0.03em] ring-black" aria-label="flagged" role="img" />
       )}
       {marks && (
         <span className="relative h-[0.42em] w-full min-w-[0.5em]" aria-hidden>
-          {b.push && <Caret className="absolute bottom-0 left-0 h-[0.36em] w-[0.55em] text-accent" />}
+          {b.push && <Caret className="absolute bottom-0 left-0 h-[0.36em] w-[0.55em] text-bb-downbeat-amber" />}
           {b.end === "fermata" && (
-            <Fermata className="absolute bottom-0 left-1/2 h-[0.4em] w-[0.75em] -translate-x-1/2 text-accent" />
+            <Fermata className="absolute bottom-0 left-1/2 h-[0.4em] w-[0.75em] -translate-x-1/2 text-bb-downbeat-amber" />
           )}
           {b.end === "stop" && (
             <span className="absolute bottom-[0.04em] right-0 size-[0.28em] rounded-full bg-red-400" />
@@ -100,7 +100,7 @@ function Beat({ b, chords, marks, spot }: { b: BeatView; chords: boolean; marks:
 
 function Bar({ cell, chords, marks, spot }: { cell: BarCell; chords: boolean; marks: boolean; spot?: { id: string; hold: HoldMarks } | null }) {
   const beats = cell.beats.map((b, i) => (
-    <span key={i} className={i ? "border-l-[0.05em] border-foreground/45" : ""}>
+    <span key={i} className={i ? "border-l-[0.05em] border-bb-chart-white/45" : ""}>
       <Beat b={b} chords={chords} marks={marks} spot={spot && { id: `${spot.id}.${i}`, hold: spot.hold }} />
     </span>
   ));
@@ -109,7 +109,7 @@ function Bar({ cell, chords, marks, spot }: { cell: BarCell; chords: boolean; ma
       {cell.beats.length === 1 ? (
         beats
       ) : (
-        <span className="inline-flex items-end rounded-[0.14em] border-[0.06em] border-foreground/75 px-[0.06em]" title="Split bar">
+        <span className="inline-flex items-end rounded-[0.14em] border-[0.06em] border-bb-chart-white/75 px-[0.06em]" title="Split bar">
           {beats}
         </span>
       )}
@@ -120,12 +120,12 @@ function Bar({ cell, chords, marks, spot }: { cell: BarCell; chords: boolean; ma
 function NoteChip({ n }: { n: Note }) {
   if (n.kind === "change")
     return (
-      <span className="rounded-[0.3em] border-[0.08em] border-[var(--chg,#7dd3fc)] px-[0.4em] py-[0.12em] text-[0.45em] font-semibold leading-tight text-[var(--chg,#7dd3fc)]">
+      <span className="rounded-[0.3em] border-[0.08em] border-bb-key-change-blue px-[0.4em] py-[0.12em] text-[0.45em] font-semibold leading-tight text-bb-key-change-blue">
         {pretty(n.text.replace(/^Key: /, "Key → "))}
       </span>
     );
-  if (n.kind === "dynamic") return <span className="text-[0.45em] italic text-muted">{n.text}</span>;
-  return <span className="text-[0.45em] font-semibold italic leading-tight text-accent">“{n.text}”</span>;
+  if (n.kind === "dynamic") return <span className="text-[0.45em] italic text-bb-cue-gray">{n.text}</span>;
+  return <span className="text-[0.45em] font-semibold italic leading-tight text-bb-downbeat-amber">“{n.text}”</span>;
 }
 
 function Wedge({ h }: { h: Hairpin }) {
@@ -136,7 +136,7 @@ function Wedge({ h }: { h: Hairpin }) {
     <svg
       viewBox="0 0 100 10"
       preserveAspectRatio="none"
-      className="h-[0.4em] w-full text-muted"
+      className="h-[0.4em] w-full text-bb-cue-gray"
       style={{ gridColumn: `${h.col + 1} / span ${h.span}`, gridRow: 3 }}
       role="img"
       aria-label={h.dir === "cresc" ? "crescendo" : "decrescendo"}
@@ -232,7 +232,7 @@ export default function Chart({
         {view.sections.map((s, i) => (
           <section key={i} className="flex flex-col gap-[0.2em] @md:flex-row @md:gap-[0.35em]">
             <h2 className="shrink-0 @md:w-[2.2em] @md:pt-[0.3em]">
-              <span className="inline-flex items-baseline gap-[0.15em] rounded-[0.15em] border-[0.06em] border-accent px-[0.3em] py-[0.12em] text-[0.55em] leading-none text-accent">
+              <span className="inline-flex items-baseline gap-[0.15em] rounded-[0.15em] border-[0.06em] border-bb-downbeat-amber px-[0.3em] py-[0.12em] text-[0.55em] leading-none text-bb-downbeat-amber">
                 {s.label.replace(/ x\d+$/, "")}
                 {s.repeat > 1 && <span className="text-[0.85em]">×{s.repeat}</span>}
               </span>

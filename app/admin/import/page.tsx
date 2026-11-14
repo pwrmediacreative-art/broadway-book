@@ -17,7 +17,7 @@ type SearchParams = Promise<{ q?: string | string[] }>;
 export default function ImportPage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-2">
-      <Suspense fallback={<p className="text-lg text-muted">Loading…</p>}>
+      <Suspense fallback={<p className="text-lg text-bb-cue-gray">Loading…</p>}>
         <Inventory searchParams={searchParams} />
       </Suspense>
     </main>
@@ -73,7 +73,7 @@ function ViewPdf({ id }: { id: string }) {
       href={`/admin/import/pdf/${id}`}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex min-h-11 shrink-0 items-center rounded-lg border border-line px-3 text-base text-accent"
+      className="inline-flex min-h-11 shrink-0 items-center rounded-lg border border-bb-rule-gray px-3 text-base text-bb-downbeat-amber"
     >
       View PDF
     </a>
@@ -82,12 +82,12 @@ function ViewPdf({ id }: { id: string }) {
 
 function Section({ title, count, open, children }: { title: string; count: number; open?: boolean; children: ReactNode }) {
   return (
-    <details open={open} className="mb-4 rounded-xl border border-line bg-panel">
+    <details open={open} className="mb-4 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal">
       <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 px-4 py-3 text-xl font-semibold">
         <span>{title}</span>
-        <span className="text-muted">{count}</span>
+        <span className="text-bb-cue-gray">{count}</span>
       </summary>
-      <div className="border-t border-line px-4 py-3">{count === 0 ? <p className="text-muted">None.</p> : children}</div>
+      <div className="border-t border-bb-rule-gray px-4 py-3">{count === 0 ? <p className="text-bb-cue-gray">None.</p> : children}</div>
     </details>
   );
 }
@@ -160,16 +160,16 @@ async function Inventory({ searchParams }: { searchParams: SearchParams }) {
   return (
     <>
     <div className="mx-auto max-w-2xl">
-      <Link href="/admin" className="inline-flex min-h-11 items-center text-lg text-accent">
+      <Link href="/admin" className="inline-flex min-h-11 items-center text-lg text-bb-downbeat-amber">
         ← Admin
       </Link>
       <h1 className="text-3xl font-bold tracking-tight">Import from Dropbox</h1>
-      <p className="mb-4 mt-1 text-lg text-muted">
-        Folder <span className="text-foreground">{chartFolder()}</span> · last scan {when(o.last_scan)}
+      <p className="mb-4 mt-1 text-lg text-bb-cue-gray">
+        Folder <span className="text-bb-chart-white">{chartFolder()}</span> · last scan {when(o.last_scan)}
       </p>
 
       {!connected && (
-        <p className="mb-4 rounded-xl border border-line bg-panel p-4 text-lg">
+        <p className="mb-4 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4 text-lg">
           Dropbox isn&apos;t connected yet: set DROPBOX_APP_KEY, DROPBOX_APP_SECRET and DROPBOX_REFRESH_TOKEN.
         </p>
       )}
@@ -182,13 +182,13 @@ async function Inventory({ searchParams }: { searchParams: SearchParams }) {
           ["Unparsed", o.unparsed],
           ["Duplicates", o.duplicates],
         ].map(([label, n]) => (
-          <div key={label} className="rounded-xl border border-line bg-panel p-4">
-            <dt className="text-sm text-muted">{label}</dt>
+          <div key={label} className="rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4">
+            <dt className="text-sm text-bb-cue-gray">{label}</dt>
             <dd className="text-3xl font-bold">{n}</dd>
           </div>
         ))}
       </dl>
-      <p className="mb-6 text-lg text-muted">
+      <p className="mb-6 text-lg text-bb-cue-gray">
         {o.duplicate_groups} duplicate groups · {o.changed} changed since import · {o.missing} missing from Dropbox
       </p>
 
@@ -206,9 +206,9 @@ async function Inventory({ searchParams }: { searchParams: SearchParams }) {
           name="q"
           defaultValue={q}
           placeholder="Search filenames"
-          className="min-h-11 w-full rounded-lg border border-line bg-background px-3 text-lg"
+          className="min-h-11 w-full rounded-lg border border-bb-rule-gray bg-bb-house-black px-3 text-lg"
         />
-        <button type="submit" className="min-h-11 rounded-xl bg-accent px-5 text-lg font-semibold text-black">
+        <button type="submit" className="min-h-11 rounded-xl bg-bb-downbeat-amber px-5 text-lg font-semibold text-bb-stage-black">
           Search
         </button>
       </form>
@@ -218,19 +218,19 @@ async function Inventory({ searchParams }: { searchParams: SearchParams }) {
             {results.map((r) => (
               <li key={r.id} className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="break-words text-lg">{r.title ?? "—"} <span className="text-muted">· {r.artist ?? "no artist"}</span></p>
-                  <p className="break-words text-sm text-muted">{r.file_name}{r.missing ? " · missing" : ""}</p>
+                  <p className="break-words text-lg">{r.title ?? "—"} <span className="text-bb-cue-gray">· {r.artist ?? "no artist"}</span></p>
+                  <p className="break-words text-sm text-bb-cue-gray">{r.file_name}{r.missing ? " · missing" : ""}</p>
                 </div>
                 <ViewPdf id={r.id} />
               </li>
             ))}
           </ul>
-          {results.length === 50 && <p className="mt-3 text-muted">Showing the first 50.</p>}
+          {results.length === 50 && <p className="mt-3 text-bb-cue-gray">Showing the first 50.</p>}
         </Section>
       )}
 
       <Section title="Unparsed names" count={o.unparsed} open>
-        <p className="mb-3 text-muted">No artist in the filename. Set both; saving creates the draft song.</p>
+        <p className="mb-3 text-bb-cue-gray">No artist in the filename. Set both; saving creates the draft song.</p>
         <ul className="flex flex-col gap-5">
           {o.unparsed_list.map((f) => (
             <li key={f.id}>
@@ -249,8 +249,8 @@ async function Inventory({ searchParams }: { searchParams: SearchParams }) {
           {o.duplicate_list.map((f) => (
             <li key={f.id} className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="break-words text-lg">{f.title} <span className="text-muted">· {f.artist}</span></p>
-                <p className="break-words text-sm text-muted">{f.file_name}</p>
+                <p className="break-words text-lg">{f.title} <span className="text-bb-cue-gray">· {f.artist}</span></p>
+                <p className="break-words text-sm text-bb-cue-gray">{f.file_name}</p>
               </div>
               <ViewPdf id={f.id} />
             </li>
@@ -264,7 +264,7 @@ async function Inventory({ searchParams }: { searchParams: SearchParams }) {
             <li key={f.id} className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="break-words text-lg">{f.file_name}</p>
-                <p className="text-sm text-muted">changed {when(f.changed_at)}</p>
+                <p className="text-sm text-bb-cue-gray">changed {when(f.changed_at)}</p>
               </div>
               <ViewPdf id={f.id} />
             </li>
@@ -276,7 +276,7 @@ async function Inventory({ searchParams }: { searchParams: SearchParams }) {
         <ul className="flex flex-col gap-2">
           {o.missing_list.map((f) => (
             <li key={f.id} className="break-words text-lg">
-              {f.file_name} <span className="text-sm text-muted">{f.path}</span>
+              {f.file_name} <span className="text-sm text-bb-cue-gray">{f.path}</span>
             </li>
           ))}
         </ul>

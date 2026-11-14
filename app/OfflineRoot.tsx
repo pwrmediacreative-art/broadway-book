@@ -57,7 +57,7 @@ export default function OfflineRoot() {
       {note && (
         <p
           role="status"
-          className="pointer-events-none fixed bottom-4 left-1/2 z-40 -translate-x-1/2 rounded-full border border-line bg-panel px-4 py-2 text-base text-foreground shadow-lg"
+          className="pointer-events-none fixed bottom-4 left-1/2 z-40 -translate-x-1/2 rounded-full border border-bb-rule-gray bg-bb-case-charcoal px-4 py-2 text-base text-bb-chart-white shadow-lg"
         >
           Updated {note.n} song{note.n === 1 ? "" : "s"}
         </p>

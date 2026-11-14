@@ -12,7 +12,7 @@ const MAX = 4;
 const MAX_FIT = 1600; // px: the "100%" page width never exceeds this
 const ZOOM_KEY = "bb_review_zoom";
 const clamp = (z: number) => Math.min(MAX, Math.max(MIN, Math.round(z * 100) / 100));
-const btn = "min-h-11 min-w-11 rounded-lg border border-line px-3 text-lg font-semibold active:bg-line disabled:opacity-40";
+const btn = "min-h-11 min-w-11 rounded-lg border border-bb-rule-gray px-3 text-lg font-semibold active:bg-bb-rule-gray disabled:opacity-40";
 
 function savedZoom() {
   try {
@@ -133,14 +133,14 @@ export default function PdfViewer({ src, title }: { src: string; title: string }
         <button type="button" className={btn} onClick={() => setZoom(zoom - 0.25)} disabled={zoom <= MIN} aria-label="Zoom out">
           −
         </button>
-        <span className="min-w-14 text-center text-lg tabular-nums text-muted">{Math.round(zoom * 100)}%</span>
+        <span className="min-w-14 text-center text-lg tabular-nums text-bb-cue-gray">{Math.round(zoom * 100)}%</span>
         <button type="button" className={btn} onClick={() => setZoom(zoom + 0.25)} disabled={zoom >= MAX} aria-label="Zoom in">
           +
         </button>
         <button type="button" className={btn} onClick={() => setZoom(1)} disabled={zoom === 1}>
           Fit
         </button>
-        <a href={src.replace("?inline=1", "")} target="_blank" rel="noopener noreferrer" className="ml-auto inline-flex min-h-11 items-center px-2 text-lg text-accent">
+        <a href={src.replace("?inline=1", "")} target="_blank" rel="noopener noreferrer" className="ml-auto inline-flex min-h-11 items-center px-2 text-lg text-bb-downbeat-amber">
           Open PDF ↗
         </a>
       </div>

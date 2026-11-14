@@ -27,8 +27,8 @@
 
 /*
  * Design tokens (DESIGN.md, "The Session Chart"). Every UI change uses these.
- * Not used by any screen yet: the restyle step moves screens from the older
- * tokens above (--background, --accent, ...) onto --bb-* and retires the old names.
+ * Components use the Tailwind classes below (bg-bb-*, text-bb-*, rounded-bb-*, font-bb-*)
+ * or the shared bb-* classes at the end of this file. Never hex in components.
  */
 :root {
   /* App palette */
@@ -133,9 +133,205 @@
   --radius-bb-control: var(--bb-radius-control);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
-  -webkit-tap-highlight-color: transparent;
+/*
+ * Stage mode looks. Stage mode swaps the --bb-* values on its own root, so the
+ * same classes draw Dark (pure black ground) and Light (paper) without hex in components.
+ */
+.bb-stage-dark {
+  --bb-color-house-black: var(--bb-color-stage-black);
+}
+.bb-stage-light {
+  --bb-color-house-black: var(--bb-stage-light-paper);
+  --bb-color-stage-black: var(--bb-stage-light-paper); /* text on amber */
+  --bb-color-chart-white: var(--bb-stage-light-ink);
+  --bb-color-cue-gray: var(--bb-stage-light-muted);
+  --bb-color-case-charcoal: var(--bb-stage-light-panel);
+  --bb-color-rule-gray: var(--bb-stage-light-line);
+  --bb-color-downbeat-amber: var(--bb-stage-light-amber);
+  --bb-color-key-change-blue: var(--bb-stage-light-key-change);
+  color-scheme: light;
+}
+
+@layer base {
+  body {
+    background: var(--bb-color-house-black);
+    color: var(--bb-color-chart-white);
+    font-family: var(--bb-font-ui);
+    font-size: var(--bb-text-body);
+    line-height: var(--bb-text-body-line);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Focus: 2px solid Downbeat Amber, 2px offset, on everything you can tab to. */
+  :focus-visible {
+    outline: var(--bb-focus-width) solid var(--bb-color-downbeat-amber);
+    outline-offset: var(--bb-focus-offset);
+  }
+
+  /* State changes: 150ms ease-out. Nothing else animates. */
+  a,
+  button,
+  input,
+  select,
+  textarea,
+  summary,
+  label,
+  [role="button"],
+  [role="tab"],
+  [role="switch"] {
+    transition-property: color, background-color, border-color, outline-color, opacity;
+    transition-duration: var(--bb-motion-duration);
+    transition-timing-function: var(--bb-motion-ease);
+  }
+
+  ::placeholder {
+    color: var(--bb-color-cue-gray);
+    opacity: 1;
+  }
+}
+
+/* Shared controls (DESIGN.md → Components). Utilities can still override sizes. */
+@layer components {
+  .bb-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--bb-space-2);
+    min-height: var(--bb-size-tap);
+    min-width: var(--bb-size-tap);
+    padding-inline: var(--bb-space-4);
+    border: 1px solid transparent;
+    border-radius: var(--bb-radius-control);
+    font-size: var(--bb-text-body);
+    line-height: 1.2;
+    font-weight: 600;
+    user-select: none;
+  }
+  /* Primary: one per screen, Downbeat Amber. Pressed goes to Case Charcoal. */
+  .bb-btn-primary {
+    background-color: var(--bb-color-downbeat-amber);
+    border-color: var(--bb-color-downbeat-amber);
+    color: var(--bb-color-stage-black);
+    font-weight: 700;
+  }
+  .bb-btn-primary:active {
+    background-color: var(--bb-color-case-charcoal);
+    color: var(--bb-color-chart-white);
+  }
+  .bb-btn-secondary {
+    background-color: transparent;
+    border-color: var(--bb-color-rule-gray);
+    color: var(--bb-color-chart-white);
+  }
+  .bb-btn-danger {
+    background-color: transparent;
+    border-color: var(--bb-color-stop-red);
+    color: var(--bb-color-stop-red);
+  }
+  /* Borderless icon/text button (toolbars, stage controls). */
+  .bb-btn-quiet {
+    background-color: transparent;
+    color: var(--bb-color-chart-white);
+  }
+  .bb-btn-secondary:active,
+  .bb-btn-danger:active,
+  .bb-btn-quiet:active {
+    background-color: var(--bb-color-case-charcoal);
+  }
+  /* An active toggle / selected option: live right now, so amber. */
+  .bb-on,
+  .bb-on:active {
+    background-color: var(--bb-color-downbeat-amber);
+    border-color: var(--bb-color-downbeat-amber);
+    color: var(--bb-color-stage-black);
+  }
+
+  .bb-input {
+    min-height: var(--bb-size-tap);
+    padding-inline: var(--bb-space-3);
+    border: 1px solid var(--bb-color-rule-gray);
+    border-radius: var(--bb-radius-control);
+    background-color: var(--bb-color-house-black);
+    color: var(--bb-color-chart-white);
+    font-size: var(--bb-text-body);
+  }
+
+  /* Status chip: words first, no fills. */
+  .bb-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bb-space-1);
+    padding: 0 var(--bb-space-2);
+    border: 1px solid var(--bb-color-rule-gray);
+    border-radius: var(--bb-radius-control);
+    font-size: var(--bb-text-label);
+    line-height: var(--bb-text-label-line);
+    font-weight: 600;
+    color: var(--bb-color-chart-white);
+    white-space: nowrap;
+  }
+  .bb-chip-muted {
+    color: var(--bb-color-cue-gray);
+  }
+  .bb-chip-error {
+    color: var(--bb-color-stop-red);
+  }
+
+  /* Panel: Case Charcoal, square, never inside another panel. */
+  .bb-panel {
+    background-color: var(--bb-color-case-charcoal);
+    border-radius: var(--bb-radius-none);
+  }
+  /* Notice / warning: a panel that leads with a word ("Out of date:"). No color. */
+  .bb-notice {
+    background-color: var(--bb-color-case-charcoal);
+    border-radius: var(--bb-radius-none);
+    color: var(--bb-color-chart-white);
+    padding: var(--bb-space-3) var(--bb-space-4);
+    font-size: var(--bb-text-body);
+  }
+  .bb-error {
+    color: var(--bb-color-stop-red);
+  }
+  /* Status dots are round by nature (not pills). Size them with size-*. */
+  .bb-dot {
+    display: inline-block;
+    flex-shrink: 0;
+    border-radius: 9999px;
+  }
+  /* Unverified: Cue Gray outline dot. */
+  .bb-dot-unverified {
+    border: 2px solid var(--bb-color-cue-gray);
+  }
+  /* Personal flag: solid Chart White dot with a Stage Black ring. */
+  .bb-dot-flag {
+    background-color: var(--bb-color-chart-white);
+    border: max(1px, 0.03em) solid var(--bb-color-stage-black);
+  }
+}
+
+/*
+ * Disabled (and offline): no fading. Case Charcoal ground, Cue Gray text, Rule Gray border,
+ * and the control says why in words next to it. Unlayered so it wins over any color utility.
+ */
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled,
+[aria-disabled="true"] {
+  background-color: var(--bb-color-case-charcoal);
+  border-color: var(--bb-color-rule-gray);
+  color: var(--bb-color-cue-gray);
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+    scroll-behavior: auto !important;
+  }
 }

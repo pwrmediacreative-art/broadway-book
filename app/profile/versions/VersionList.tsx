@@ -11,11 +11,11 @@ export default function VersionList() {
   const [pending, start] = useTransition();
   const [err, setErr] = useState<string | null>(null);
 
-  if (!ready) return <p className="text-lg text-muted">Loading…</p>;
+  if (!ready) return <p className="text-lg text-bb-cue-gray">Loading…</p>;
   if (!userId)
     return (
       <p className="text-lg">
-        <Link href="/login?next=/profile/versions" className="text-accent">
+        <Link href="/login?next=/profile/versions" className="text-bb-downbeat-amber">
           Sign in
         </Link>{" "}
         to see your versions.
@@ -23,7 +23,7 @@ export default function VersionList() {
     );
   if (!list.length)
     return (
-      <p className="rounded-xl border border-line bg-panel p-4 text-lg text-muted">
+      <p className="rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4 text-lg text-bb-cue-gray">
         None yet. Open a song, tap “Suggest a change”, then “Just for me”.
       </p>
     );
@@ -33,15 +33,15 @@ export default function VersionList() {
       {err && <p className="mb-3 text-lg text-red-300">{err}</p>}
       <ul className="flex flex-col gap-3">
         {list.map((v) => (
-          <li key={v.song_id} className="rounded-xl border border-line bg-panel p-4">
+          <li key={v.song_id} className="rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4">
             <p className="text-xl font-semibold">{v.title}</p>
-            <p className="text-muted">
+            <p className="text-bb-cue-gray">
               {v.artist ? `${v.artist} · ` : ""}saved {when(v.updated_at)}
             </p>
             {isStale(v) && <p className="mt-1 text-amber-200">The public chart changed since your version.</p>}
-            {v.note && <p className="mt-1 text-muted">“{v.note}”</p>}
+            {v.note && <p className="mt-1 text-bb-cue-gray">“{v.note}”</p>}
             <div className="mt-3 grid grid-cols-2 gap-3">
-              <Link href={`/songs/${v.slug}`} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-accent text-lg font-bold text-black">
+              <Link href={`/songs/${v.slug}`} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-bb-downbeat-amber text-lg font-bold text-bb-stage-black">
                 Open
               </Link>
               <button
@@ -54,7 +54,7 @@ export default function VersionList() {
                     await loadMyVersions();
                   });
                 }}
-                className="min-h-12 rounded-xl border border-line text-lg disabled:opacity-40"
+                className="min-h-12 rounded-xl border border-bb-rule-gray text-lg disabled:opacity-40"
               >
                 Reset to public
               </button>

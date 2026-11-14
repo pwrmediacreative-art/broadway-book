@@ -12,14 +12,14 @@ export default function NeedsConnection() {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-8 text-center">
       <h1 className="mb-2 text-3xl font-bold">You&apos;re offline</h1>
-      <p className="mb-6 text-xl text-muted">This page needs a connection. Your saved charts and setlists still work.</p>
-      <Link href="/" className="inline-flex h-14 items-center justify-center rounded-lg bg-accent px-6 text-xl font-bold text-black active:opacity-80">
+      <p className="mb-6 text-xl text-bb-cue-gray">This page needs a connection. Your saved charts and setlists still work.</p>
+      <Link href="/" className="inline-flex h-14 items-center justify-center rounded-lg bg-bb-downbeat-amber px-6 text-xl font-bold text-bb-stage-black active:opacity-80">
         Back to search
       </Link>
       {back && !offline && (
         <p className="mt-6 text-lg">
           You&apos;re back online.{" "}
-          <a href={back} className="text-accent underline">
+          <a href={back} className="text-bb-downbeat-amber underline">
             Open the page
           </a>
         </p>

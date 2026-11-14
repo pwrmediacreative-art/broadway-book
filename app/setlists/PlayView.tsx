@@ -45,7 +45,7 @@ export default function PlayView({ set, id, exitHref, onExit }: { set: PlaySet; 
       <div className="fixed inset-0 z-50 grid place-items-center bg-black p-6 text-center">
         <div>
           <p className="mb-4 text-2xl">No playable songs in this set.</p>
-          <button className="h-12 rounded-lg bg-accent px-5 text-lg font-bold text-black" onClick={exit}>
+          <button className="h-12 rounded-lg bg-bb-downbeat-amber px-5 text-lg font-bold text-bb-stage-black" onClick={exit}>
             Back
           </button>
         </div>
@@ -83,13 +83,13 @@ export default function PlayView({ set, id, exitHref, onExit }: { set: PlaySet; 
         }}
       />
       {jump && (
-        <div className="fixed inset-0 z-[60] flex flex-col bg-background" role="dialog" aria-label="Jump to a song">
-          <header className="flex h-14 shrink-0 items-center gap-2 border-b border-line px-2">
-            <button onClick={() => setJump(false)} aria-label="Close" className="grid size-12 place-items-center rounded-lg text-2xl text-muted active:bg-panel">
+        <div className="fixed inset-0 z-[60] flex flex-col bg-bb-house-black" role="dialog" aria-label="Jump to a song">
+          <header className="flex h-14 shrink-0 items-center gap-2 border-b border-bb-rule-gray px-2">
+            <button onClick={() => setJump(false)} aria-label="Close" className="grid size-12 place-items-center rounded-lg text-2xl text-bb-cue-gray active:bg-bb-case-charcoal">
               ✕
             </button>
             <b className="min-w-0 flex-1 truncate text-xl">{set.name}</b>
-            <span className="shrink-0 pr-2 text-lg text-muted">{label.count}</span>
+            <span className="shrink-0 pr-2 text-lg text-bb-cue-gray">{label.count}</span>
           </header>
           <div className="min-h-0 flex-1 overflow-y-auto p-3">
             <SetSongList

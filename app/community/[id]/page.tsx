@@ -12,10 +12,10 @@ export const metadata = { title: "Suggestion · Broadway Book" };
 export default function ProposalPage({ params }: PageProps<"/community/[id]">) {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-2">
-      <Link href="/community" className="inline-flex h-12 items-center text-lg text-muted active:text-foreground">
+      <Link href="/community" className="inline-flex h-12 items-center text-lg text-bb-cue-gray active:text-bb-chart-white">
         ← Community
       </Link>
-      <Suspense fallback={<p className="text-lg text-muted">Loading…</p>}>
+      <Suspense fallback={<p className="text-lg text-bb-cue-gray">Loading…</p>}>
         <Proposal params={params} />
       </Suspense>
     </main>
@@ -82,18 +82,18 @@ async function Proposal({ params }: { params: PageProps<"/community/[id]">["para
       <header className="mb-4">
         <p className="mb-1 flex flex-wrap items-center gap-2">
           <StatusPill status={p.status} stale={p.out_of_date} />
-          <span className="text-muted">Suggested {when(p.created_at)}</span>
+          <span className="text-bb-cue-gray">Suggested {when(p.created_at)}</span>
         </p>
         <h1 className="text-3xl font-bold leading-tight">
-          <Link href={`/songs/${p.song.slug}`} className="active:text-accent">
+          <Link href={`/songs/${p.song.slug}`} className="active:text-bb-downbeat-amber">
             {p.song.title}
           </Link>
         </h1>
-        {p.song.artist && <p className="text-lg text-muted">{p.song.artist}</p>}
+        {p.song.artist && <p className="text-lg text-bb-cue-gray">{p.song.artist}</p>}
       </header>
 
-      <section className="mb-5 rounded-xl border border-line bg-panel p-4">
-        <p className="text-sm text-muted">
+      <section className="mb-5 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4">
+        <p className="text-sm text-bb-cue-gray">
           {author}
           <ReviewerBadge on={p.author?.reviewer} /> wrote{p.updated_at !== p.created_at && <> · updated {when(p.updated_at)}</>}
         </p>
@@ -124,7 +124,7 @@ async function Proposal({ params }: { params: PageProps<"/community/[id]">["para
         <h2 className="mb-2 flex flex-wrap items-baseline justify-between gap-2 text-2xl font-bold">
           What changed
           {diff && (
-            <span className="text-base font-normal text-muted">
+            <span className="text-base font-normal text-bb-cue-gray">
               <DiffSummary diff={diff} />
             </span>
           )}
@@ -135,8 +135,8 @@ async function Proposal({ params }: { params: PageProps<"/community/[id]">["para
           <p className="text-lg text-red-300">This suggestion can&apos;t be compared: {diffError}</p>
         )}
         <details className="mt-4">
-          <summary className="inline-flex min-h-11 cursor-pointer items-center text-lg text-muted">Show the full suggested chart text</summary>
-          <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded-xl border border-line bg-panel p-3 font-mono text-lg">{p.chart_text}</pre>
+          <summary className="inline-flex min-h-11 cursor-pointer items-center text-lg text-bb-cue-gray">Show the full suggested chart text</summary>
+          <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-3 font-mono text-lg">{p.chart_text}</pre>
         </details>
       </section>
     </>

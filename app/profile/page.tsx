@@ -10,7 +10,7 @@ export const metadata = { title: "Your profile · Broadway Book", robots: { inde
 export default function ProfilePage({ searchParams }: PageProps<"/profile">) {
   return (
     <main className="mx-auto w-full max-w-md px-4 pb-16 pt-2">
-      <Suspense fallback={<p className="text-lg text-muted">Loading…</p>}>
+      <Suspense fallback={<p className="text-lg text-bb-cue-gray">Loading…</p>}>
         <Profile searchParams={searchParams} />
       </Suspense>
     </main>
@@ -25,7 +25,7 @@ async function Profile({ searchParams }: { searchParams: PageProps<"/profile">["
   return (
     <>
       <h1 className="text-3xl font-bold tracking-tight">{first ? "Welcome!" : "Your profile"}</h1>
-      <p className="mb-6 mt-1 text-lg text-muted">
+      <p className="mb-6 mt-1 text-lg text-bb-cue-gray">
         {first ? "One quick step: what should other players call you?" : user.email}
       </p>
       <ProfileForm
@@ -37,9 +37,9 @@ async function Profile({ searchParams }: { searchParams: PageProps<"/profile">["
       {!first && (
         <Link
           href="/profile/versions"
-          className="mt-8 flex min-h-14 items-center justify-between rounded-xl border border-line bg-panel px-4 text-lg"
+          className="mt-8 flex min-h-14 items-center justify-between rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 text-lg"
         >
-          My versions <span className="text-muted">Songs you changed for yourself ›</span>
+          My versions <span className="text-bb-cue-gray">Songs you changed for yourself ›</span>
         </Link>
       )}
     </>

@@ -34,18 +34,18 @@ function Sheet({ onClose }: { onClose: () => void }) {
         role="dialog"
         aria-label="Install Broadway Book"
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[85dvh] w-full overflow-y-auto rounded-t-2xl border border-line bg-background p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:max-w-md sm:rounded-2xl"
+        className="max-h-[85dvh] w-full overflow-y-auto rounded-t-2xl border border-bb-rule-gray bg-bb-house-black p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:max-w-md sm:rounded-2xl"
       >
         <div className="mb-3 flex items-center gap-2">
           <h2 className="min-w-0 flex-1 text-xl font-bold">Install Broadway Book</h2>
-          <button onClick={onClose} aria-label="Close" className="grid size-11 place-items-center rounded-lg text-2xl text-muted active:bg-panel">
+          <button onClick={onClose} aria-label="Close" className="grid size-11 place-items-center rounded-lg text-2xl text-bb-cue-gray active:bg-bb-case-charcoal">
             ✕
           </button>
         </div>
-        <p className="mb-4 text-lg text-muted">It opens from your home screen like an app and works with no signal.</p>
+        <p className="mb-4 text-lg text-bb-cue-gray">It opens from your home screen like an app and works with no signal.</p>
         {canPrompt ? (
           <button
-            className="mb-4 h-14 w-full rounded-lg bg-accent text-xl font-bold text-black active:opacity-80"
+            className="mb-4 h-14 w-full rounded-lg bg-bb-downbeat-amber text-xl font-bold text-bb-stage-black active:opacity-80"
             onClick={async () => {
               if (await prompt()) onClose();
             }}
@@ -59,7 +59,7 @@ function Sheet({ onClose }: { onClose: () => void }) {
           </>
         )}
         {kind === "ios" && (
-          <p className="text-base text-muted">
+          <p className="text-base text-bb-cue-gray">
             Installing also keeps your saved charts on the phone. In Safari alone, iOS can clear them after a week without opening the site.
           </p>
         )}
@@ -74,15 +74,15 @@ export function InstallCard() {
   const [open, setOpen] = useState(false);
   if (!showCard) return null;
   return (
-    <div className="mb-3 flex items-center gap-2 rounded-xl border border-accent/60 bg-accent/10 py-1 pl-3 pr-1">
+    <div className="mb-3 flex items-center gap-2 rounded-xl border border-bb-downbeat-amber/60 bg-bb-downbeat-amber/10 py-1 pl-3 pr-1">
       <p className="min-w-0 flex-1 text-base leading-snug">Install the app: works with no signal.</p>
       <button
-        className="h-11 shrink-0 rounded-lg bg-accent px-4 text-base font-bold text-black active:opacity-80"
+        className="h-11 shrink-0 rounded-lg bg-bb-downbeat-amber px-4 text-base font-bold text-bb-stage-black active:opacity-80"
         onClick={() => (canPrompt ? void prompt() : setOpen(true))}
       >
         {canPrompt ? "Install" : "How"}
       </button>
-      <button onClick={dismiss} aria-label="Dismiss" className="grid size-11 shrink-0 place-items-center rounded-lg text-xl text-muted active:bg-panel">
+      <button onClick={dismiss} aria-label="Dismiss" className="grid size-11 shrink-0 place-items-center rounded-lg text-xl text-bb-cue-gray active:bg-bb-case-charcoal">
         ✕
       </button>
       {open && <Sheet onClose={() => setOpen(false)} />}
@@ -112,14 +112,14 @@ export function HomeFooter() {
     line = `${count(s.saved)} chart${s.saved === 1 ? "" : "s"} saved on this phone${s.at ? ` · updated ${ago(s.at, Math.max(now, s.at))}` : ""}`;
 
   return (
-    <footer className="mt-8 flex flex-col items-center gap-1 text-center text-base text-muted">
+    <footer className="mt-8 flex flex-col items-center gap-1 text-center text-base text-bb-cue-gray">
       {line && (
         <p role="status" data-saved-status>
           {line}
         </p>
       )}
       {kind !== null && kind !== "installed" && (
-        <button onClick={() => setOpen(true)} className="min-h-11 px-3 underline active:text-foreground">
+        <button onClick={() => setOpen(true)} className="min-h-11 px-3 underline active:text-bb-chart-white">
           Install app
         </button>
       )}

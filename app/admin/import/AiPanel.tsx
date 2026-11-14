@@ -29,15 +29,15 @@ export interface AiSummary {
   queued: number; // files queued by "Retry failed", not sent yet
 }
 
-const button = "min-h-11 rounded-xl bg-accent px-5 text-lg font-semibold text-black disabled:opacity-60";
-const ghost = "min-h-11 rounded-xl border border-line px-5 text-lg font-semibold text-foreground disabled:opacity-60";
+const button = "min-h-11 rounded-xl bg-bb-downbeat-amber px-5 text-lg font-semibold text-bb-stage-black disabled:opacity-60";
+const ghost = "min-h-11 rounded-xl border border-bb-rule-gray px-5 text-lg font-semibold text-bb-chart-white disabled:opacity-60";
 const usd = (n: number) => `$${n.toFixed(2)}`;
 
 function Status({ state }: { state: AiState }) {
   return (
     <p role="status" aria-live="polite" className="mt-2 text-lg">
       {state.error && <span className="text-red-400">{state.error}</span>}
-      {state.summary && <span className="text-muted">{state.summary}</span>}
+      {state.summary && <span className="text-bb-cue-gray">{state.summary}</span>}
     </p>
   );
 }
@@ -47,11 +47,11 @@ export function AiPanel({ s }: { s: AiSummary }) {
   const [approve, approveAction, approvePending] = useActionState<AiState, FormData>(approvePilot, {});
 
   return (
-    <section aria-labelledby="ai-h" className="mb-6 rounded-xl border border-line bg-panel p-4">
+    <section aria-labelledby="ai-h" className="mb-6 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4">
       <h2 id="ai-h" className="text-2xl font-bold">Read charts with AI</h2>
-      <p className="mb-3 text-muted">
+      <p className="mb-3 text-bb-cue-gray">
         Claude Opus 5.5 reads each PDF into chart text. Every result waits for a human in needs review. Cap{" "}
-        <span className="text-foreground">{s.cap ? usd(s.cap) : "not set"}</span>.
+        <span className="text-bb-chart-white">{s.cap ? usd(s.cap) : "not set"}</span>.
       </p>
 
       <dl className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -66,13 +66,13 @@ export function AiPanel({ s }: { s: AiSummary }) {
             [`Est. remaining · ${s.remaining} files`, usd(s.remaining * s.estPerSong)],
           ] as const
         ).map(([label, v]) => (
-          <div key={label} className="rounded-lg border border-line p-3">
-            <dt className="text-sm text-muted">{label}</dt>
+          <div key={label} className="rounded-lg border border-bb-rule-gray p-3">
+            <dt className="text-sm text-bb-cue-gray">{label}</dt>
             <dd className="text-2xl font-bold">{v}</dd>
           </div>
         ))}
       </dl>
-      <p className="mb-3 text-muted">
+      <p className="mb-3 text-bb-cue-gray">
         Skipped: {s.skipped.alreadyRead} already read · {s.skipped.duplicates} duplicate PDFs (read once) ·{" "}
         {s.skipped.unnamed} with no title/artist (read once they&apos;re named below)
       </p>
@@ -92,7 +92,7 @@ export function AiPanel({ s }: { s: AiSummary }) {
           {s.pilotCount > 0 && (
             <form action={approveAction}>
               <p className="mb-2 text-lg">
-                Check the <a href="#pilot" className="text-accent underline">pilot results</a> against their PDFs. The
+                Check the <a href="#pilot" className="text-bb-downbeat-amber underline">pilot results</a> against their PDFs. The
                 full batch stays locked until you approve.
               </p>
               <button type="submit" className={button} disabled={approvePending}>
@@ -166,7 +166,7 @@ function BatchRunner({ s }: { s: AiSummary }) {
       {finished && !running && <Summary s={s} />}
 
       {checkFirst && !running ? (
-        <div className="rounded-lg border border-accent p-3">
+        <div className="rounded-lg border border-bb-downbeat-amber p-3">
           <p className="mb-2 text-lg">
             First chunk done: {s.batch.read} read, {s.batch.failed} failed, {usd(s.batch.cost)}. Check those charts in
             the review queue before the rest is sent.
@@ -193,7 +193,7 @@ function BatchRunner({ s }: { s: AiSummary }) {
         )
       )}
       {running && (
-        <p className="text-muted">
+        <p className="text-bb-cue-gray">
           Keep this page open; it sends {25} PDFs per batch. Stop any time, and Resume picks up where it left off.
         </p>
       )}
@@ -201,7 +201,7 @@ function BatchRunner({ s }: { s: AiSummary }) {
       {s.retryable > 0 && !running && !checkFirst && (
         <div>
           {askRetry ? (
-            <div className="rounded-lg border border-line p-3">
+            <div className="rounded-lg border border-bb-rule-gray p-3">
               <p className="mb-2 text-lg">
                 Read {s.retryable} failed file{s.retryable === 1 ? "" : "s"} again? About {usd(s.retryable * s.estPerSong)}{" "}
                 at batch price, billed again, under the same cap. Done files are not touched.
@@ -238,7 +238,7 @@ function BatchRunner({ s }: { s: AiSummary }) {
 
 function Summary({ s }: { s: AiSummary }) {
   return (
-    <div className="rounded-lg border border-line p-3">
+    <div className="rounded-lg border border-bb-rule-gray p-3">
       <h3 className="text-xl font-bold">Full batch finished</h3>
       <dl className="my-2 grid grid-cols-3 gap-3">
         {(
@@ -249,12 +249,12 @@ function Summary({ s }: { s: AiSummary }) {
           ] as const
         ).map(([label, v]) => (
           <div key={label}>
-            <dt className="text-sm text-muted">{label}</dt>
+            <dt className="text-sm text-bb-cue-gray">{label}</dt>
             <dd className="text-2xl font-bold">{v}</dd>
           </div>
         ))}
       </dl>
-      <p className="mb-2 text-muted">
+      <p className="mb-2 text-bb-cue-gray">
         Plus the pilot: {s.pilotCount} read, {usd(s.pilotCost)}. Failed means needs manual, refused or not read.
       </p>
       <Link href={reviewQueue} className={`${button} inline-flex items-center`}>

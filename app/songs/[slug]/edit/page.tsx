@@ -9,7 +9,7 @@ export const metadata = { title: "Edit chart · Broadway Book", robots: { index:
 export default function EditPage({ params, searchParams }: PageProps<"/songs/[slug]/edit">) {
   return (
     <main className="mx-auto w-full max-w-5xl px-4 pb-16 pt-2">
-      <Suspense fallback={<p className="text-lg text-muted">Loading…</p>}>
+      <Suspense fallback={<p className="text-lg text-bb-cue-gray">Loading…</p>}>
         <Edit params={params} searchParams={searchParams} />
       </Suspense>
     </main>
@@ -57,7 +57,7 @@ async function Edit({
       return (
         <p className="mt-6 text-lg">
           Only the author can edit an open suggestion.{" "}
-          <Link href={`/community/${pid}`} className="text-accent">
+          <Link href={`/community/${pid}`} className="text-bb-downbeat-amber">
             Back to the suggestion
           </Link>
         </p>

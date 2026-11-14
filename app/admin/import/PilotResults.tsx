@@ -22,13 +22,13 @@ const STATUS: Record<string, [string, string]> = {
   needs_manual: ["Needs manual", "text-red-400"],
   refused: ["Refused", "text-red-400"],
   error: ["Error", "text-red-400"],
-  reserved: ["Reading…", "text-muted"],
-  submitted: ["Reading…", "text-muted"],
+  reserved: ["Reading…", "text-bb-cue-gray"],
+  submitted: ["Reading…", "text-bb-cue-gray"],
 };
 
 function ChartText({ text }: { text: string }) {
   return (
-    <pre className="overflow-x-auto whitespace-pre-wrap rounded-lg bg-background p-3 font-mono text-base leading-relaxed">
+    <pre className="overflow-x-auto whitespace-pre-wrap rounded-lg bg-bb-house-black p-3 font-mono text-base leading-relaxed">
       {text.split("\n").map((line, i) => (
         <span
           key={i}
@@ -48,23 +48,23 @@ export function PilotResults({ items, avgCost }: { items: PilotItem[]; avgCost: 
   return (
     <section id="pilot" aria-labelledby="pilot-h" className="mb-8 scroll-mt-4">
       <h2 id="pilot-h" className="text-2xl font-bold">Pilot results</h2>
-      <p className="mb-4 text-lg text-muted">
+      <p className="mb-4 text-lg text-bb-cue-gray">
         {items.length} charts · {parsed} parsed · {unclear} spots flagged unclear · average{" "}
-        <span className="text-foreground">${(avgCost ?? 0).toFixed(4)}</span> per song (about half that on the full
+        <span className="text-bb-chart-white">${(avgCost ?? 0).toFixed(4)}</span> per song (about half that on the full
         batch). Highlighted lines are spots to check against the PDF.
       </p>
       <ol className="flex flex-col gap-6">
         {items.map((it) => {
-          const [label, cls] = STATUS[it.status] ?? [it.status, "text-muted"];
+          const [label, cls] = STATUS[it.status] ?? [it.status, "text-bb-cue-gray"];
           return (
-            <li key={it.id} className="rounded-xl border border-line bg-panel p-4">
+            <li key={it.id} className="rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4">
               <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
                 <h3 className="text-xl font-semibold">
-                  {it.title ?? "—"} <span className="text-muted">· {it.artist ?? "no artist"}</span>
+                  {it.title ?? "—"} <span className="text-bb-cue-gray">· {it.artist ?? "no artist"}</span>
                 </h3>
                 <p className="text-base">
                   <span className={`font-semibold ${cls}`}>{label}</span>
-                  <span className="text-muted">
+                  <span className="text-bb-cue-gray">
                     {it.confidence != null && ` · confidence ${Number(it.confidence).toFixed(2)}`} · $
                     {Number(it.cost_usd).toFixed(4)}
                     {it.handwriting && ` · ${it.handwriting}`}
@@ -83,13 +83,13 @@ export function PilotResults({ items, avgCost }: { items: PilotItem[]; avgCost: 
                     href={`/admin/import/pdf/${it.import_file_id}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mb-3 inline-flex min-h-11 items-center rounded-lg border border-line px-3 text-base text-accent lg:hidden"
+                    className="mb-3 inline-flex min-h-11 items-center rounded-lg border border-bb-rule-gray px-3 text-base text-bb-downbeat-amber lg:hidden"
                   >
                     View PDF
                   </a>
-                  <p className="mb-2 break-words text-sm text-muted">{it.file_name}</p>
+                  <p className="mb-2 break-words text-sm text-bb-cue-gray">{it.file_name}</p>
                   {it.error && <p className="mb-2 text-amber-300">{it.error}</p>}
-                  {it.chart_text ? <ChartText text={it.chart_text} /> : <p className="text-muted">No chart text.</p>}
+                  {it.chart_text ? <ChartText text={it.chart_text} /> : <p className="text-bb-cue-gray">No chart text.</p>}
                   {!!it.unclear?.length && (
                     <ul className="mt-3 list-disc pl-5 text-base">
                       {it.unclear.map((u, i) => (
@@ -99,7 +99,7 @@ export function PilotResults({ items, avgCost }: { items: PilotItem[]; avgCost: 
                       ))}
                     </ul>
                   )}
-                  {it.notes && <p className="mt-3 text-muted">{it.notes}</p>}
+                  {it.notes && <p className="mt-3 text-bb-cue-gray">{it.notes}</p>}
                 </div>
               </div>
             </li>

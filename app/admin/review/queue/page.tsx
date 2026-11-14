@@ -14,7 +14,7 @@ type SearchParams = Promise<{ q?: string | string[]; page?: string | string[]; f
 export default function QueuePage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <main className="mx-auto w-full max-w-2xl px-4 pb-16 pt-2">
-      <Suspense fallback={<p className="text-lg text-muted">Loading…</p>}>
+      <Suspense fallback={<p className="text-lg text-bb-cue-gray">Loading…</p>}>
         <Queue searchParams={searchParams} />
       </Suspense>
     </main>
@@ -75,12 +75,12 @@ async function Queue({ searchParams }: { searchParams: SearchParams }) {
   return (
     <>
       {admin && (
-        <Link href="/admin" className="inline-flex min-h-11 items-center text-lg text-accent">
+        <Link href="/admin" className="inline-flex min-h-11 items-center text-lg text-bb-downbeat-amber">
           ← Admin
         </Link>
       )}
       <h1 className="text-3xl font-bold tracking-tight">Review queue</h1>
-      <p className="mb-3 mt-1 text-lg text-muted">
+      <p className="mb-3 mt-1 text-lg text-bb-cue-gray">
         Check imported charts against their PDFs. Flagged songs come first; held ones last.
       </p>
       <ReviewHeader prefs={prefs} progress={progress} page="queue" />
@@ -90,9 +90,9 @@ async function Queue({ searchParams }: { searchParams: SearchParams }) {
           <Link
             key={k}
             href={`/admin/review/queue?f=${k}&o=${prefs.order}`}
-            className={`flex min-h-16 flex-col justify-center rounded-xl border p-3 ${prefs.filter === k ? "border-accent bg-panel" : "border-line bg-panel"}`}
+            className={`flex min-h-16 flex-col justify-center rounded-xl border p-3 ${prefs.filter === k ? "border-bb-downbeat-amber bg-bb-case-charcoal" : "border-bb-rule-gray bg-bb-case-charcoal"}`}
           >
-            <dt className="text-sm text-muted">{FILTERS[k]}</dt>
+            <dt className="text-sm text-bb-cue-gray">{FILTERS[k]}</dt>
             <dd className="text-2xl font-bold">{d.counts[k] + (k === "needs_manual" ? d.counts.manual_files_without_song : 0)}</dd>
           </Link>
         ))}
@@ -100,22 +100,22 @@ async function Queue({ searchParams }: { searchParams: SearchParams }) {
 
       {admin && prefs.filter === "needs_review" && <BulkPublish />}
       {admin && prefs.filter === "unverified" && d.counts.unverified > 0 && (
-        <Link href="/admin/review/bulk" className="mb-4 flex min-h-14 items-center justify-between rounded-xl border border-line bg-panel px-4 text-xl font-semibold active:bg-line">
-          Bulk verify (chart beside its PDF) <span className="text-accent">›</span>
+        <Link href="/admin/review/bulk" className="mb-4 flex min-h-14 items-center justify-between rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 text-xl font-semibold active:bg-bb-rule-gray">
+          Bulk verify (chart beside its PDF) <span className="text-bb-downbeat-amber">›</span>
         </Link>
       )}
 
       {progress.oldest.length > 0 && (
-        <section className="mb-4 rounded-xl border border-line bg-panel p-3" aria-label="Longest unverified">
-          <h2 className="mb-1 text-sm font-bold uppercase tracking-wide text-muted">Live and unverified the longest</h2>
-          <ul className="divide-y divide-line">
+        <section className="mb-4 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-3" aria-label="Longest unverified">
+          <h2 className="mb-1 text-sm font-bold uppercase tracking-wide text-bb-cue-gray">Live and unverified the longest</h2>
+          <ul className="divide-y divide-bb-rule-gray">
             {progress.oldest.map((o) => (
               <li key={o.id}>
-                <Link href={`/admin/review/${o.id}?f=unverified&o=${prefs.order}`} className="flex min-h-11 items-center justify-between gap-3 py-1 text-lg active:bg-line">
+                <Link href={`/admin/review/${o.id}?f=unverified&o=${prefs.order}`} className="flex min-h-11 items-center justify-between gap-3 py-1 text-lg active:bg-bb-rule-gray">
                   <span className="min-w-0 truncate">
-                    <b>{o.title}</b> <span className="text-muted">· {o.artist ?? "no artist"}</span>
+                    <b>{o.title}</b> <span className="text-bb-cue-gray">· {o.artist ?? "no artist"}</span>
                   </span>
-                  <span className="shrink-0 text-base text-muted">{sinceLabel(o.since)}</span>
+                  <span className="shrink-0 text-base text-bb-cue-gray">{sinceLabel(o.since)}</span>
                 </Link>
               </li>
             ))}
@@ -127,30 +127,30 @@ async function Queue({ searchParams }: { searchParams: SearchParams }) {
         <input type="hidden" name="f" value={prefs.filter} />
         <input type="hidden" name="o" value={prefs.order} />
         <label htmlFor="q" className="sr-only">Search songs</label>
-        <input id="q" name="q" defaultValue={q} placeholder="Title or artist" className="min-h-11 w-full rounded-lg border border-line bg-background px-3 text-lg" />
-        <button type="submit" className="min-h-11 rounded-xl bg-accent px-5 text-lg font-semibold text-black">
+        <input id="q" name="q" defaultValue={q} placeholder="Title or artist" className="min-h-11 w-full rounded-lg border border-bb-rule-gray bg-bb-house-black px-3 text-lg" />
+        <button type="submit" className="min-h-11 rounded-xl bg-bb-downbeat-amber px-5 text-lg font-semibold text-bb-stage-black">
           Search
         </button>
       </form>
 
       {d.songs.length === 0 ? (
-        <p className="rounded-xl border border-line bg-panel p-4 text-lg text-muted">{q ? "No matches." : "Nothing here."}</p>
+        <p className="rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4 text-lg text-bb-cue-gray">{q ? "No matches." : "Nothing here."}</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {d.songs.map((s) => (
             <li key={s.id}>
-              <Link href={`/admin/review/${s.id}?${pq}`} className="flex min-h-14 items-center justify-between gap-3 rounded-xl border border-line bg-panel px-4 py-2 active:bg-line">
+              <Link href={`/admin/review/${s.id}?${pq}`} className="flex min-h-14 items-center justify-between gap-3 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 py-2 active:bg-bb-rule-gray">
                 <span className="min-w-0">
                   <span className="block truncate text-lg font-semibold">{s.title}</span>
-                  <span className="block truncate text-muted">{s.artist ?? "no artist"}</span>
+                  <span className="block truncate text-bb-cue-gray">{s.artist ?? "no artist"}</span>
                 </span>
                 <span className="flex shrink-0 flex-wrap justify-end gap-1.5 text-sm">
                   {s.claim_expires && s.claimed_by_me === false && (
                     <span className="rounded-full bg-sky-400/25 px-2 py-0.5 font-semibold text-sky-100">{s.claimed_name} reviewing</span>
                   )}
                   {s.flagged && <span className="rounded-full bg-red-500/25 px-2 py-0.5 font-semibold text-red-200">{s.flags} flags</span>}
-                  {s.has_draft && <span className="rounded-full bg-line px-2 py-0.5 text-muted">draft</span>}
-                  {s.review_hold && <span className="rounded-full bg-line px-2 py-0.5 text-muted">held</span>}
+                  {s.has_draft && <span className="rounded-full bg-bb-rule-gray px-2 py-0.5 text-bb-cue-gray">draft</span>}
+                  {s.review_hold && <span className="rounded-full bg-bb-rule-gray px-2 py-0.5 text-bb-cue-gray">held</span>}
                   {s.status === "published" &&
                     (s.unverified ? (
                       <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-amber-200">live, unverified</span>
@@ -160,7 +160,7 @@ async function Queue({ searchParams }: { searchParams: SearchParams }) {
                   <span className={`rounded-full px-2 py-0.5 ${s.unclear ? "bg-amber-400/20 text-amber-200" : "bg-green-500/20 text-green-200"}`}>
                     {s.unclear} unclear
                   </span>
-                  {s.confidence != null && <span className="rounded-full bg-line px-2 py-0.5 text-muted">{Number(s.confidence).toFixed(2)}</span>}
+                  {s.confidence != null && <span className="rounded-full bg-bb-rule-gray px-2 py-0.5 text-bb-cue-gray">{Number(s.confidence).toFixed(2)}</span>}
                 </span>
               </Link>
             </li>
@@ -169,11 +169,11 @@ async function Queue({ searchParams }: { searchParams: SearchParams }) {
       )}
 
       <nav className="mt-4 flex items-center justify-between text-lg" aria-label="Pages">
-        {page > 0 ? <Link href={qs(page - 1)} className="inline-flex min-h-11 items-center text-accent">‹ Previous</Link> : <span />}
-        <span className="text-muted">
+        {page > 0 ? <Link href={qs(page - 1)} className="inline-flex min-h-11 items-center text-bb-downbeat-amber">‹ Previous</Link> : <span />}
+        <span className="text-bb-cue-gray">
           {d.matches ? `${page * PAGE + 1}–${Math.min((page + 1) * PAGE, d.matches)} of ${d.matches}` : ""}
         </span>
-        {(page + 1) * PAGE < d.matches ? <Link href={qs(page + 1)} className="inline-flex min-h-11 items-center text-accent">Next ›</Link> : <span />}
+        {(page + 1) * PAGE < d.matches ? <Link href={qs(page + 1)} className="inline-flex min-h-11 items-center text-bb-downbeat-amber">Next ›</Link> : <span />}
       </nav>
 
       {files.length > 0 && (

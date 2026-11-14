@@ -16,8 +16,8 @@ import { Caret, Fermata } from "./Chart";
 import type { ChartState } from "./hooks";
 
 export const btn = "h-12 min-w-12 rounded-lg px-4 text-lg font-semibold";
-export const on = "bg-accent text-black";
-export const off = "bg-panel text-foreground border border-line";
+export const on = "bg-bb-downbeat-amber text-bb-stage-black";
+export const off = "bg-bb-case-charcoal text-bb-chart-white border border-bb-rule-gray";
 
 /** Key picker, Numbers/Chords, minor symbol (6- / 6m) and, for minor keys, Relative / Parallel. */
 export function DisplayControls({ s }: { s: ChartState }) {
@@ -75,7 +75,7 @@ export function DisplayControls({ s }: { s: ChartState }) {
         </div>
       )}
       <div className="flex items-center" role="group" aria-label="Minor style">
-        <span className="mr-2 text-sm text-muted">Minor</span>
+        <span className="mr-2 text-sm text-bb-cue-gray">Minor</span>
         {(["-", "m"] as const).map((sym, i) => (
           <button
             key={sym}
@@ -100,10 +100,10 @@ export function KeyInfo({ s, children }: { s: ChartState; children?: ReactNode }
   const cut = label ? label.indexOf(" (") : -1;
   return (
     <div className="mb-2">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-lg text-muted">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-lg text-bb-cue-gray">
         {label && (
           <span>
-            Key <b className="text-foreground">{pretty(cut > 0 ? label.slice(0, cut) : label)}</b>
+            Key <b className="text-bb-chart-white">{pretty(cut > 0 ? label.slice(0, cut) : label)}</b>
             {cut > 0 && <span> {pretty(label.slice(cut + 1))}</span>}
           </span>
         )}
@@ -111,7 +111,7 @@ export function KeyInfo({ s, children }: { s: ChartState; children?: ReactNode }
           <button
             onClick={() => setOpen(!open)}
             aria-expanded={open}
-            className="inline-flex h-11 items-center gap-1 rounded-full border border-accent px-3 text-base font-semibold text-accent"
+            className="inline-flex h-11 items-center gap-1 rounded-full border border-bb-downbeat-amber px-3 text-base font-semibold text-bb-downbeat-amber"
           >
             {view.minor ? "Minor" : "Major"} <span aria-hidden>ⓘ</span>
             <span className="sr-only">: what does this mean?</span>
@@ -131,17 +131,17 @@ function KeyExplainer({ view, sym, onClose }: { view: ChartView; sym: MinorSymbo
   const song = pretty(keyLongName(k));
   const rel = pretty(keyLongName(other));
   return (
-    <div className="my-2 rounded-xl border border-line bg-panel p-4 text-lg leading-snug text-foreground">
+    <div className="my-2 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4 text-lg leading-snug text-bb-chart-white">
       {view.minor ? (
         <p>
           This song is in <b>{song}</b>, a minor key. Every minor key uses the same notes as a major key three half
-          steps up, called its <b className="text-accent">relative major</b>: {song} and {rel} share every note.
+          steps up, called its <b className="text-bb-downbeat-amber">relative major</b>: {song} and {rel} share every note.
           So the chart can count from {pretty(keyName(other))} (Relative, home chord = 6{sym}) or from{" "}
           {pretty(keyName(k).slice(0, -1))} (Parallel, home chord = 1{sym}). The chords you play are the same either way.
         </p>
       ) : (
         <p>
-          This song is in <b>{song}</b>, a major key: the home chord is 1. Its <b className="text-accent">relative minor</b>{" "}
+          This song is in <b>{song}</b>, a major key: the home chord is 1. Its <b className="text-bb-downbeat-amber">relative minor</b>{" "}
           is {rel}, which uses the same notes, so a 6{sym} chord here is the {pretty(keyName(other))} chord.
         </p>
       )}
@@ -159,9 +159,9 @@ export function Legend({ s }: { s: ChartState }) {
     ["♭7", "flat"],
     ["1/3", "bass note"],
     ["%", "repeat bar"],
-    [<Caret key="p" className="inline h-[0.6em] w-[0.9em] text-accent" />, "push"],
+    [<Caret key="p" className="inline h-[0.6em] w-[0.9em] text-bb-downbeat-amber" />, "push"],
     ["◇", "let ring"],
-    [<Fermata key="f" className="inline h-[0.7em] w-[1.1em] text-accent" />, "hold"],
+    [<Fermata key="f" className="inline h-[0.7em] w-[1.1em] text-bb-downbeat-amber" />, "hold"],
     [<span key="s" className="inline-block size-[0.5em] rounded-full bg-red-400" />, "stop"],
   ];
   return (
@@ -169,15 +169,15 @@ export function Legend({ s }: { s: ChartState }) {
       <button
         onClick={() => s.setLegend(!s.legend)}
         aria-expanded={s.legend}
-        className="inline-flex h-11 items-center gap-1 text-base text-muted active:text-foreground"
+        className="inline-flex h-11 items-center gap-1 text-base text-bb-cue-gray active:text-bb-chart-white"
       >
         Symbols {s.legend ? "▾" : "▸"}
       </button>
       {s.legend && (
-        <p className="flex flex-wrap gap-x-3 gap-y-1 pb-2 text-lg text-muted">
+        <p className="flex flex-wrap gap-x-3 gap-y-1 pb-2 text-lg text-bb-cue-gray">
           {items.map(([sym, what]) => (
             <span key={what}>
-              <b className="font-mono text-foreground">{sym}</b> {what}
+              <b className="font-mono text-bb-chart-white">{sym}</b> {what}
             </span>
           ))}
         </p>
@@ -201,9 +201,9 @@ export function BeatPulse({ bpm, time, active }: { bpm: number; time: string | n
       const phase = n - Math.floor(n);
       const down = Math.floor(n) % perBar === 0;
       const lit = phase < 0.18;
-      el.style.opacity = lit ? "1" : "0.2";
+      // Every beat is Downbeat Amber; the downbeat is bigger and full strength, the others a bit dimmer.
+      el.style.opacity = lit ? (down ? "1" : "0.7") : "0.2";
       el.style.transform = lit && down ? "scale(1.35)" : "scale(1)";
-      el.style.background = lit && down ? "#fde68a" : "var(--accent)";
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -213,7 +213,7 @@ export function BeatPulse({ bpm, time, active }: { bpm: number; time: string | n
     <span
       ref={dot}
       aria-hidden
-      className={`inline-block size-3 rounded-full ${active ? "bg-accent" : "border-2 border-muted"}`}
+      className={`inline-block size-3 rounded-full ${active ? "bg-bb-downbeat-amber" : "border-2 border-bb-cue-gray"}`}
       style={active ? undefined : { opacity: 1 }}
     />
   );
@@ -232,7 +232,7 @@ export function BpmToggle({ s, className = "" }: { s: ChartState; className?: st
     >
       <BeatPulse key={String(s.pulse)} bpm={bpm} time={time} active={s.pulse} />
       <span>
-        <b className="text-foreground">{bpm}</b> bpm
+        <b className="text-bb-chart-white">{bpm}</b> bpm
       </span>
     </button>
   );

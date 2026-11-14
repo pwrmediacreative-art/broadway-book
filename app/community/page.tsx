@@ -16,14 +16,14 @@ type Filter = (typeof FILTERS)[number][0];
 export default function CommunityPage({ searchParams }: PageProps<"/community">) {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-2">
-      <Link href="/" className="inline-flex h-12 items-center text-lg text-muted active:text-foreground">
+      <Link href="/" className="inline-flex h-12 items-center text-lg text-bb-cue-gray active:text-bb-chart-white">
         ← All songs
       </Link>
       <h1 className="text-3xl font-bold tracking-tight">Community</h1>
-      <p className="mb-4 mt-1 text-lg text-muted">
+      <p className="mb-4 mt-1 text-lg text-bb-cue-gray">
         Suggested chart fixes waiting for votes. A suggestion goes live after enough players approve it.
       </p>
-      <Suspense fallback={<p className="text-lg text-muted">Loading…</p>}>
+      <Suspense fallback={<p className="text-lg text-bb-cue-gray">Loading…</p>}>
         <List searchParams={searchParams} />
       </Suspense>
     </main>
@@ -91,7 +91,7 @@ async function List({ searchParams }: { searchParams: PageProps<"/community">["s
             href={href({ f: k })}
             aria-current={f === k ? "page" : undefined}
             className={`inline-flex min-h-11 shrink-0 items-center rounded-full border px-4 text-lg ${
-              f === k ? "border-accent bg-accent font-semibold text-black" : "border-line bg-panel"
+              f === k ? "border-bb-downbeat-amber bg-bb-downbeat-amber font-semibold text-bb-stage-black" : "border-bb-rule-gray bg-bb-case-charcoal"
             }`}
           >
             {label}
@@ -106,21 +106,21 @@ async function List({ searchParams }: { searchParams: PageProps<"/community">["s
           defaultValue={q}
           type="search"
           placeholder="Filter by song or artist"
-          className="min-h-12 min-w-0 flex-1 rounded-xl border border-line bg-panel px-4 text-lg"
+          className="min-h-12 min-w-0 flex-1 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 text-lg"
         />
-        <button className="min-h-12 rounded-xl border border-line bg-panel px-4 text-lg">Go</button>
+        <button className="min-h-12 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 text-lg">Go</button>
       </form>
       {song && (
         <p className="mb-3 text-lg">
           Showing one song.{" "}
-          <Link href={href({ song: "" })} className="text-accent">
+          <Link href={href({ song: "" })} className="text-bb-downbeat-amber">
             Show all songs
           </Link>
         </p>
       )}
       {(f === "needs" || f === "mine") && !user && (
         <p className="mb-3 text-lg">
-          <Link href={`/login?next=${encodeURIComponent(href({}))}`} className="text-accent">
+          <Link href={`/login?next=${encodeURIComponent(href({}))}`} className="text-bb-downbeat-amber">
             Sign in
           </Link>{" "}
           to see this list.
@@ -128,7 +128,7 @@ async function List({ searchParams }: { searchParams: PageProps<"/community">["s
       )}
 
       {rows.length === 0 ? (
-        <p className="rounded-xl border border-line bg-panel p-4 text-lg text-muted">
+        <p className="rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4 text-lg text-bb-cue-gray">
           {f === "needs" ? "Nothing needs your vote right now. Thanks!" : "No open suggestions here."}
         </p>
       ) : (
@@ -139,16 +139,16 @@ async function List({ searchParams }: { searchParams: PageProps<"/community">["s
             const no = counted.length - yes;
             return (
               <li key={r.id}>
-                <Link href={`/community/${r.id}`} className="block rounded-xl border border-line bg-panel p-4 active:bg-line">
+                <Link href={`/community/${r.id}`} className="block rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4 active:bg-bb-rule-gray">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate text-xl font-semibold">{r.song.title}</p>
-                      {r.song.artist && <p className="truncate text-muted">{r.song.artist}</p>}
+                      {r.song.artist && <p className="truncate text-bb-cue-gray">{r.song.artist}</p>}
                     </div>
                     <StatusPill status="open" stale={r.out_of_date} />
                   </div>
                   <p className="mt-2 text-lg">“{r.note}”</p>
-                  <p className="mt-1 text-sm text-muted">
+                  <p className="mt-1 text-sm text-bb-cue-gray">
                     {r.author?.display_name || "A player"}
                     <ReviewerBadge on={r.author?.reviewer} /> · {when(r.created_at)} · <span className="text-emerald-300">✓ {yes}</span>{" "}
                     <span className="text-red-300">✕ {no}</span>

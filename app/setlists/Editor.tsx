@@ -178,10 +178,10 @@ export default function Editor({
   return (
     <main className="mx-auto w-full max-w-3xl px-4 pb-24 pt-2">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <Link href="/setlists" className="inline-flex h-12 items-center text-lg text-muted active:text-foreground">
+        <Link href="/setlists" className="inline-flex h-12 items-center text-lg text-bb-cue-gray active:text-bb-chart-white">
           ← Setlists
         </Link>
-        <span className={`text-base ${status === "error" ? "text-red-400" : "text-muted"}`} aria-live="polite">
+        <span className={`text-base ${status === "error" ? "text-red-400" : "text-bb-cue-gray"}`} aria-live="polite">
           {statusText}
         </span>
       </div>
@@ -195,10 +195,10 @@ export default function Editor({
         maxLength={100}
         onChange={(e) => setName(e.target.value)}
         placeholder="Setlist name"
-        className="mb-2 h-14 w-full rounded-lg border border-line bg-panel px-3 text-2xl font-bold"
+        className="mb-2 h-14 w-full rounded-lg border border-bb-rule-gray bg-bb-case-charcoal px-3 text-2xl font-bold"
       />
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <label htmlFor="sl-date" className="text-lg text-muted">
+        <label htmlFor="sl-date" className="text-lg text-bb-cue-gray">
           Date
         </label>
         <input
@@ -206,7 +206,7 @@ export default function Editor({
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="h-12 rounded-lg border border-line bg-panel px-3 text-lg [color-scheme:dark]"
+          className="h-12 rounded-lg border border-bb-rule-gray bg-bb-case-charcoal px-3 text-lg [color-scheme:dark]"
         />
         {date && (
           <button className={`${btn} ${plain} text-base`} onClick={() => setDate("")}>
@@ -221,7 +221,7 @@ export default function Editor({
         Play set ▸ {playable ? `(${playable} song${playable === 1 ? "" : "s"})` : ""}
       </button>
 
-      {rows.length === 0 && <p className="mb-4 text-lg text-muted">No songs yet. Search below to add some.</p>}
+      {rows.length === 0 && <p className="mb-4 text-lg text-bb-cue-gray">No songs yet. Search below to add some.</p>}
       <ol ref={list} className="mb-4 flex flex-col gap-2">
         {rows.map((r, i) => (
           <SongEditRow
@@ -239,9 +239,9 @@ export default function Editor({
         ))}
       </ol>
 
-      <section className="mb-6 rounded-xl border border-line p-3">
+      <section className="mb-6 rounded-xl border border-bb-rule-gray p-3">
         <label htmlFor="sl-add" className="mb-2 block text-lg font-semibold">
-          Add songs {full && <span className="font-normal text-muted">· full ({MAX_SONGS} songs)</span>}
+          Add songs {full && <span className="font-normal text-bb-cue-gray">· full ({MAX_SONGS} songs)</span>}
         </label>
         <input
           id="sl-add"
@@ -251,28 +251,28 @@ export default function Editor({
           onChange={(e) => setQ(e.target.value)}
           placeholder={docs ? "Search title or artist" : "Loading songs…"}
           autoComplete="off"
-          className="h-12 w-full rounded-lg border border-line bg-panel px-3 text-lg"
+          className="h-12 w-full rounded-lg border border-bb-rule-gray bg-bb-case-charcoal px-3 text-lg"
         />
         {added && (
-          <p className="mt-2 text-lg text-accent" aria-live="polite">
+          <p className="mt-2 text-lg text-bb-downbeat-amber" aria-live="polite">
             Added {added}
           </p>
         )}
         {results.length > 0 && (
-          <ul className="mt-2 divide-y divide-line overflow-hidden rounded-lg border border-line">
+          <ul className="mt-2 divide-y divide-bb-rule-gray overflow-hidden rounded-lg border border-bb-rule-gray">
             {results.map((d) => (
               <li key={d.slug}>
                 <button
                   disabled={!!adding || full}
                   onClick={() => add(d.slug, d.title)}
-                  className="flex min-h-14 w-full items-center gap-3 bg-panel px-3 py-2 text-left active:bg-line disabled:opacity-50"
+                  className="flex min-h-14 w-full items-center gap-3 bg-bb-case-charcoal px-3 py-2 text-left active:bg-bb-rule-gray disabled:opacity-50"
                 >
-                  <span className="text-2xl text-accent">+</span>
+                  <span className="text-2xl text-bb-downbeat-amber">+</span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-lg font-semibold">{d.title}</span>
-                    {d.artist && <span className="block truncate text-muted">{d.artist}</span>}
+                    {d.artist && <span className="block truncate text-bb-cue-gray">{d.artist}</span>}
                   </span>
-                  {d.key && <span className="font-mono text-xl font-bold text-accent">{pretty(d.key)}</span>}
+                  {d.key && <span className="font-mono text-xl font-bold text-bb-downbeat-amber">{pretty(d.key)}</span>}
                 </button>
               </li>
             ))}
@@ -313,26 +313,26 @@ function SongEditRow({
   const check = noteCheck(note);
   const small = `grid size-11 shrink-0 place-items-center rounded-lg ${plain} text-xl disabled:opacity-30`;
   return (
-    <li className={`rounded-xl border bg-panel p-2 ${dragging ? "border-accent shadow-2xl" : "border-line"}`}>
+    <li className={`rounded-xl border bg-bb-case-charcoal p-2 ${dragging ? "border-bb-downbeat-amber shadow-2xl" : "border-bb-rule-gray"}`}>
       <div className="flex items-center gap-2">
         <button
           onPointerDown={onHandle}
           aria-label={`Drag to reorder ${r.song?.title ?? "song"}`}
-          className="grid h-12 w-10 shrink-0 cursor-grab touch-none place-items-center rounded-lg text-2xl text-muted active:bg-line"
+          className="grid h-12 w-10 shrink-0 cursor-grab touch-none place-items-center rounded-lg text-2xl text-bb-cue-gray active:bg-bb-rule-gray"
         >
           ≡
         </button>
-        <span className="w-7 shrink-0 text-right text-lg tabular-nums text-muted">{n}</span>
+        <span className="w-7 shrink-0 text-right text-lg tabular-nums text-bb-cue-gray">{n}</span>
         <span className="min-w-0 flex-1">
-          <span className={`block truncate text-xl font-semibold ${r.song ? "" : "text-muted line-through"}`}>{r.song?.title ?? "Not available"}</span>
-          {r.song?.artist && <span className="block truncate text-sm text-muted">{r.song.artist}</span>}
+          <span className={`block truncate text-xl font-semibold ${r.song ? "" : "text-bb-cue-gray line-through"}`}>{r.song?.title ?? "Not available"}</span>
+          {r.song?.artist && <span className="block truncate text-sm text-bb-cue-gray">{r.song.artist}</span>}
         </span>
         {opts.length > 0 && (
           <select
             value={r.key && r.key !== orig ? r.key : (orig ?? "")}
             onChange={(e) => onPatch({ key: e.target.value === orig ? null : e.target.value })}
             aria-label={`Key for ${r.song?.title}`}
-            className={`h-12 shrink-0 rounded-lg px-2 font-mono text-lg font-bold ${r.key && r.key !== orig ? "bg-accent text-black" : plain}`}
+            className={`h-12 shrink-0 rounded-lg px-2 font-mono text-lg font-bold ${r.key && r.key !== orig ? "bg-bb-downbeat-amber text-bb-stage-black" : plain}`}
           >
             {opts.map((o) => (
               <option key={o.value} value={o.value}>
@@ -352,7 +352,7 @@ function SongEditRow({
           onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
           placeholder="Note (e.g. start on the chorus)"
           aria-label={`Note for ${r.song?.title ?? "song"}`}
-          className="h-11 min-w-0 flex-1 rounded-lg border border-line bg-background px-3 text-base"
+          className="h-11 min-w-0 flex-1 rounded-lg border border-bb-rule-gray bg-bb-house-black px-3 text-base"
         />
         <button onClick={onUp} disabled={n === 1} aria-label="Move up" className={small}>
           ↑

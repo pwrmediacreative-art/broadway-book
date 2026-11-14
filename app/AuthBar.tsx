@@ -62,7 +62,7 @@ export default function AuthBar() {
     };
   }, [pathname, authPage, offline]);
 
-  const link = "inline-flex h-11 items-center px-2 text-base text-muted active:text-foreground";
+  const link = "inline-flex h-11 items-center px-2 text-base text-bb-cue-gray active:text-bb-chart-white";
   if (pathname === "/login" || authPage) return <Bar />;
   if (me === undefined) return <Bar />;
   const community = (
@@ -104,18 +104,18 @@ export default function AuthBar() {
           <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
         {me.unread > 0 && (
-          <span className="absolute right-0 top-1 min-w-5 rounded-full bg-accent px-1 text-center text-xs font-bold leading-5 text-black">
+          <span className="absolute right-0 top-1 min-w-5 rounded-full bg-bb-downbeat-amber px-1 text-center text-xs font-bold leading-5 text-bb-stage-black">
             {me.unread > 9 ? "9+" : me.unread}
           </span>
         )}
       </Link>
       {me.admin && (
-        <Link href="/admin" className={`${link} text-accent`}>
+        <Link href="/admin" className={`${link} text-bb-downbeat-amber`}>
           Admin
         </Link>
       )}
       {me.reviewer && !me.admin && (
-        <Link href="/admin/review" className={`${link} text-accent`}>
+        <Link href="/admin/review" className={`${link} text-bb-downbeat-amber`}>
           Review
         </Link>
       )}

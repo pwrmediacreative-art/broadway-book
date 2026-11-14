@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { HEX } from "@/lib/design/tokens";
 
 /** Makes the site installable ("Add to Home Screen"). Icons come from scripts/gen-icons.mjs. */
 export default function manifest(): MetadataRoute.Manifest {
@@ -10,8 +11,8 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     scope: "/",
     display: "standalone",
-    background_color: "#0a0a0b",
-    theme_color: "#0a0a0b",
+    background_color: HEX.houseBlack,
+    theme_color: HEX.houseBlack,
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },

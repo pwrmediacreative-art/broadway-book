@@ -80,7 +80,7 @@ export default function VotePanel(p: Props) {
     });
 
   return (
-    <section className="rounded-xl border border-line p-4">
+    <section className="rounded-xl border border-bb-rule-gray p-4">
       <div className="mb-3 grid grid-cols-2 gap-3 text-center">
         <Meter label="Approve" n={approvals} of={p.approvalsNeeded} cls="bg-emerald-400" />
         <Meter label="Reject" n={rejections} of={p.rejectionsNeeded} cls="bg-red-400" />
@@ -91,7 +91,7 @@ export default function VotePanel(p: Props) {
           Sign in to vote
         </Link>
       )}
-      {open && isAuthor && <p className="mb-3 text-lg text-muted">This is your suggestion, so you can&apos;t vote on it.</p>}
+      {open && isAuthor && <p className="mb-3 text-lg text-bb-cue-gray">This is your suggestion, so you can&apos;t vote on it.</p>}
       {open && mine && (
         <p className="mb-3 text-lg">
           You voted <b>{mine.value === "approve" ? "Approve" : "Reject"}</b>.
@@ -102,21 +102,21 @@ export default function VotePanel(p: Props) {
       {canVote && !offline && (
         <div className="flex flex-col gap-3">
           <label className="flex flex-col gap-1">
-            <span className="text-sm text-muted">Comment (optional)</span>
+            <span className="text-sm text-bb-cue-gray">Comment (optional)</span>
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               maxLength={300}
               rows={2}
-              className="rounded-xl border border-line bg-panel p-3 text-lg"
+              className="rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-3 text-lg"
               placeholder="e.g. Yes, that's how the band plays it"
             />
           </label>
           <div className="grid grid-cols-2 gap-3">
-            <button disabled={pending} onClick={() => castVote(true)} className="min-h-14 rounded-xl bg-emerald-500 text-xl font-bold text-black active:opacity-80 disabled:opacity-40">
+            <button disabled={pending} onClick={() => castVote(true)} className="min-h-14 rounded-xl bg-emerald-500 text-xl font-bold text-bb-stage-black active:opacity-80 disabled:opacity-40">
               ✓ Approve
             </button>
-            <button disabled={pending} onClick={() => castVote(false)} className="min-h-14 rounded-xl bg-red-500 text-xl font-bold text-black active:opacity-80 disabled:opacity-40">
+            <button disabled={pending} onClick={() => castVote(false)} className="min-h-14 rounded-xl bg-red-500 text-xl font-bold text-bb-stage-black active:opacity-80 disabled:opacity-40">
               ✕ Reject
             </button>
           </div>
@@ -139,8 +139,8 @@ export default function VotePanel(p: Props) {
       )}
 
       {p.me?.admin && open && (
-        <div className="mt-4 flex flex-wrap gap-3 border-t border-line pt-4">
-          <span className="w-full text-sm font-semibold uppercase tracking-wide text-accent">Admin</span>
+        <div className="mt-4 flex flex-wrap gap-3 border-t border-bb-rule-gray pt-4">
+          <span className="w-full text-sm font-semibold uppercase tracking-wide text-bb-downbeat-amber">Admin</span>
           {!isAuthor && (
             <button
               disabled={pending || p.stale}
@@ -182,15 +182,15 @@ export default function VotePanel(p: Props) {
       )}
 
       {p.votes.length > 0 && (
-        <ul className="mt-5 flex flex-col gap-2 border-t border-line pt-4">
+        <ul className="mt-5 flex flex-col gap-2 border-t border-bb-rule-gray pt-4">
           {p.votes.map((v) => (
             <li key={v.voter_id} className="text-lg">
               <span className={v.value === "approve" ? "text-emerald-300" : "text-red-300"}>{v.value === "approve" ? "✓" : "✕"}</span>{" "}
               <b>{v.voter?.display_name || "A player"}</b>
-              <ReviewerBadge on={v.voter?.reviewer} /> <span className="text-sm text-muted">{when(v.created_at)}</span>
-              {v.comment && <p className="ml-5 text-muted">“{v.comment}”</p>}
+              <ReviewerBadge on={v.voter?.reviewer} /> <span className="text-sm text-bb-cue-gray">{when(v.created_at)}</span>
+              {v.comment && <p className="ml-5 text-bb-cue-gray">“{v.comment}”</p>}
               {v.comment && p.me && v.voter_id !== p.me.id && (
-                <button className="ml-5 min-h-11 text-sm text-muted underline" onClick={() => setReporting({ voterId: v.voter_id })}>
+                <button className="ml-5 min-h-11 text-sm text-bb-cue-gray underline" onClick={() => setReporting({ voterId: v.voter_id })}>
                   Report comment
                 </button>
               )}
@@ -200,7 +200,7 @@ export default function VotePanel(p: Props) {
       )}
 
       {p.me && !isAuthor && (
-        <button className="mt-4 min-h-11 text-base text-muted underline" onClick={() => setReporting({ voterId: null })}>
+        <button className="mt-4 min-h-11 text-base text-bb-cue-gray underline" onClick={() => setReporting({ voterId: null })}>
           Report this suggestion
         </button>
       )}
@@ -228,7 +228,7 @@ function Meter({ label, n, of, cls }: { label: string; n: number; of: number; cl
       <p className="text-lg">
         <b className="text-2xl">{n}</b> / {of} {label.toLowerCase()}
       </p>
-      <div className="mt-1 h-2 overflow-hidden rounded bg-panel">
+      <div className="mt-1 h-2 overflow-hidden rounded bg-bb-case-charcoal">
         <div className={`h-full ${cls}`} style={{ width: `${Math.min(100, (n / of) * 100)}%` }} />
       </div>
     </div>
@@ -239,7 +239,7 @@ function ReportForm({ onSend, onCancel, pending }: { onSend: (reason: string, de
   const [reason, setReason] = useState<string>("lyrics");
   const [details, setDetails] = useState("");
   return (
-    <div className="mt-4 flex flex-col gap-3 rounded-xl border border-line bg-panel p-4">
+    <div className="mt-4 flex flex-col gap-3 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-4">
       <p className="text-lg font-semibold">What&apos;s wrong?</p>
       <div className="flex flex-col gap-1">
         {REASONS.map(([value, label]) => (
@@ -255,7 +255,7 @@ function ReportForm({ onSend, onCancel, pending }: { onSend: (reason: string, de
         maxLength={300}
         rows={2}
         placeholder="Details (optional)"
-        className="rounded-xl border border-line bg-background p-3 text-lg"
+        className="rounded-xl border border-bb-rule-gray bg-bb-house-black p-3 text-lg"
       />
       <div className="flex gap-3">
         <button disabled={pending} className={btn.primary} onClick={() => onSend(reason, details)}>

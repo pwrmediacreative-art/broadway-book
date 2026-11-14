@@ -23,7 +23,7 @@ export function DiffSummary({ diff }: { diff: ChartDiff }) {
 export default function BarDiff({ diff, className = "" }: { diff: ChartDiff; className?: string }) {
   return (
     <div className={`flex flex-col gap-1 font-mono text-lg ${className}`}>
-      <p className="mb-1 flex flex-wrap gap-x-4 gap-y-1 font-sans text-sm text-muted">
+      <p className="mb-1 flex flex-wrap gap-x-4 gap-y-1 font-sans text-sm text-bb-cue-gray">
         <span>
           <i className="mr-1 inline-block size-3 rounded-sm bg-amber-400 align-middle" />
           changed
@@ -40,17 +40,17 @@ export default function BarDiff({ diff, className = "" }: { diff: ChartDiff; cla
       {diff.rows.map((r, i) => (
         <div
           key={i}
-          className={`flex items-start gap-2 rounded-lg px-1 py-1 ${r.state === "same" ? "opacity-45" : "bg-panel"} ${
+          className={`flex items-start gap-2 rounded-lg px-1 py-1 ${r.state === "same" ? "opacity-45" : "bg-bb-case-charcoal"} ${
             r.state === "removed" ? "opacity-80" : ""
           }`}
         >
-          <span className="w-16 shrink-0 pt-1 font-sans text-sm font-semibold text-muted">
+          <span className="w-16 shrink-0 pt-1 font-sans text-sm font-semibold text-bb-cue-gray">
             {r.label}
             {r.state === "added" && <span className="block text-emerald-300">new</span>}
             {r.state === "removed" && <span className="block text-red-300">gone</span>}
           </span>
           <span className="flex min-w-0 flex-wrap gap-1">
-            {r.cells.length === 0 && <span className="text-muted">—</span>}
+            {r.cells.length === 0 && <span className="text-bb-cue-gray">—</span>}
             {r.cells.map((c, j) => (
               <span key={j} className={`flex min-w-11 flex-col items-center rounded-md border-2 px-1.5 leading-tight ${CELL[c.state]}`}>
                 {c.state === "changed" && c.old !== null && <s className="text-sm text-red-300/90">{c.old}</s>}

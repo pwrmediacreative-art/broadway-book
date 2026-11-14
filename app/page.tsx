@@ -10,7 +10,7 @@ export default function Home() {
     <main className="mx-auto w-full max-w-2xl px-4 pb-16 pt-4">
       <header className="mb-2">
         <h1 className="text-3xl font-bold tracking-tight">Broadway Book</h1>
-        <p className="text-muted">Nashville number charts. Free, no login to view.</p>
+        <p className="text-bb-cue-gray">Nashville number charts. Free, no login to view.</p>
       </header>
       <InstallCard />
       <SongSearch />

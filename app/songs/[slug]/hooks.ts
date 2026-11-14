@@ -14,7 +14,7 @@ export interface Neighbors {
 }
 
 export const FONTS = {
-  atkinson: { label: "Legible", css: "var(--font-atkinson), system-ui, sans-serif", weight: 700 },
+  atkinson: { label: "Legible", css: "var(--bb-font-chart)", weight: 700 },
   inter: { label: "Sans", css: "var(--font-inter), system-ui, sans-serif", weight: 700 },
   mono: { label: "Mono", css: "var(--font-jbmono), ui-monospace, monospace", weight: 700 },
   heavy: { label: "Bold", css: "var(--font-inter), system-ui, sans-serif", weight: 900 },

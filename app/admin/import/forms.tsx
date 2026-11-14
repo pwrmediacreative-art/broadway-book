@@ -4,9 +4,9 @@ import { useActionState } from "react";
 import { fixName, scanDropbox, type FixState, type ScanState } from "./actions";
 
 const button =
-  "min-h-11 rounded-xl bg-accent px-5 text-lg font-semibold text-black disabled:opacity-60";
+  "min-h-11 rounded-xl bg-bb-downbeat-amber px-5 text-lg font-semibold text-bb-stage-black disabled:opacity-60";
 const input =
-  "min-h-11 w-full rounded-lg border border-line bg-background px-3 text-lg text-foreground";
+  "min-h-11 w-full rounded-lg border border-bb-rule-gray bg-bb-house-black px-3 text-lg text-bb-chart-white";
 
 export function ScanButton({ disabled }: { disabled?: boolean }) {
   const [state, action, pending] = useActionState<ScanState, FormData>(scanDropbox, {});
@@ -17,7 +17,7 @@ export function ScanButton({ disabled }: { disabled?: boolean }) {
       </button>
       <p role="status" aria-live="polite" className="mt-2 text-lg">
         {state.error && <span className="text-red-400">{state.error}</span>}
-        {state.summary && <span className="text-muted">{state.summary}</span>}
+        {state.summary && <span className="text-bb-cue-gray">{state.summary}</span>}
       </p>
     </form>
   );

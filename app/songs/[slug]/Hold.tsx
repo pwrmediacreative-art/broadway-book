@@ -101,8 +101,8 @@ export function useHoldMarks(slug: string, view: ChartView | null, selected: Spo
 }
 
 const big = "flex min-h-14 w-full items-center justify-center rounded-xl px-4 text-xl font-bold";
-const primary = `${big} bg-accent text-black active:opacity-80`;
-const plain = `${big} border border-line bg-panel text-foreground active:bg-background`;
+const primary = `${big} bg-bb-downbeat-amber text-bb-stage-black active:opacity-80`;
+const plain = `${big} border border-bb-rule-gray bg-bb-case-charcoal text-bb-chart-white active:bg-bb-house-black`;
 
 /**
  * The bottom sheet. Rendered on <body> so it always uses the app's dark high-contrast colors,
@@ -152,13 +152,13 @@ export function HoldSheet({
 
   if (typeof document === "undefined") return null;
   return createPortal(
-    <div className="fixed inset-0 z-[80] flex flex-col justify-end text-foreground" role="dialog" aria-modal="true" aria-label="Chart spot">
+    <div className="fixed inset-0 z-[80] flex flex-col justify-end text-bb-chart-white" role="dialog" aria-modal="true" aria-label="Chart spot">
       <div {...backdrop} className="min-h-0 flex-1 touch-pan-y bg-black/70" />
-      <div className="rounded-t-2xl border-t border-line bg-panel px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 shadow-2xl">
-        <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-line" aria-hidden />
+      <div className="rounded-t-2xl border-t border-bb-rule-gray bg-bb-case-charcoal px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 shadow-2xl">
+        <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-bb-rule-gray" aria-hidden />
         <p className="mb-4 flex items-baseline gap-3">
           <span className="text-4xl font-bold">{spot.shown}</span>
-          <span className="text-xl text-muted">{spotLabel(spot.ref, spot.split)}</span>
+          <span className="text-xl text-bb-cue-gray">{spotLabel(spot.ref, spot.split)}</span>
         </p>
         {mode === "menu" && (
           <div className="grid gap-3">
@@ -181,7 +181,7 @@ export function HoldSheet({
               Suggest an edit
             </button>
             {offline && <p className="text-lg text-amber-200">{OFFLINE_MSG}</p>}
-            <button className={`${plain} text-muted`} onClick={onClose}>
+            <button className={`${plain} text-bb-cue-gray`} onClick={onClose}>
               Cancel
             </button>
           </div>
@@ -194,7 +194,7 @@ export function HoldSheet({
               void run(() => (existing ? setFlagNote(existing.id, note) : addFlag(slug, spot.ref, note, onMine)));
             }}
           >
-            <label htmlFor="flag-note" className="text-lg text-muted">
+            <label htmlFor="flag-note" className="text-lg text-bb-cue-gray">
               Note for you (optional, no lyrics)
             </label>
             <input
@@ -204,7 +204,7 @@ export function HoldSheet({
               onChange={(e) => setNote(e.target.value.slice(0, NOTE_MAX))}
               placeholder="e.g. watch the push"
               enterKeyHint="done"
-              className="min-h-14 rounded-xl border border-line bg-background px-4 text-xl"
+              className="min-h-14 rounded-xl border border-bb-rule-gray bg-bb-house-black px-4 text-xl"
             />
             <button type="submit" className={primary} disabled={busy}>
               {busy ? "Saving…" : existing ? "Save note" : "Save flag"}
@@ -212,7 +212,7 @@ export function HoldSheet({
             <button type="button" className={plain} onClick={() => setMode("menu")}>
               Back
             </button>
-            {!signedIn && <p className="text-base text-muted">Saved on this phone. Sign in to keep flags in your account.</p>}
+            {!signedIn && <p className="text-base text-bb-cue-gray">Saved on this phone. Sign in to keep flags in your account.</p>}
           </form>
         )}
         {mode === "signin" && (
@@ -251,7 +251,7 @@ export function MoveFlagsBanner({ slug }: { slug: string }) {
       </p>
       <div className="flex gap-2">
         <button
-          className="min-h-12 flex-1 rounded-xl bg-violet-300 px-4 text-lg font-bold text-black disabled:opacity-50"
+          className="min-h-12 flex-1 rounded-xl bg-violet-300 px-4 text-lg font-bold text-bb-stage-black disabled:opacity-50"
           disabled={busy}
           onClick={async () => {
             setBusy(true);
@@ -261,7 +261,7 @@ export function MoveFlagsBanner({ slug }: { slug: string }) {
         >
           {busy ? "Moving…" : "Move"}
         </button>
-        <button className="min-h-12 flex-1 rounded-xl border border-line px-4 text-lg" onClick={() => setPref(PREF.flagsLater, "1", "session")}>
+        <button className="min-h-12 flex-1 rounded-xl border border-bb-rule-gray px-4 text-lg" onClick={() => setPref(PREF.flagsLater, "1", "session")}>
           Not now
         </button>
       </div>
@@ -286,25 +286,25 @@ export function MyFlags({ slug, view }: { slug: string; view: ChartView | null }
     return spotLabel(f.ref, (beats?.length ?? 1) > 1);
   };
   return (
-    <section className="mt-8 rounded-xl border border-line p-4" aria-labelledby="my-flags">
+    <section className="mt-8 rounded-xl border border-bb-rule-gray p-4" aria-labelledby="my-flags">
       <h2 id="my-flags" className="mb-1 text-xl font-bold">
         <span className="mr-2 inline-block size-3 rounded-full bg-violet-400 align-middle" aria-hidden />
         My flags ({flags.length})
       </h2>
-      <p className="mb-3 text-base text-muted">Only you can see these. Press and hold any chord to add one.</p>
+      <p className="mb-3 text-base text-bb-cue-gray">Only you can see these. Press and hold any chord to add one.</p>
       <ul className="grid gap-2">
         {sorted.map((f) => {
           const ok = refMatches(view, f.ref);
           return (
-            <li key={f.id} className="flex items-center gap-3 rounded-lg bg-panel px-3 py-2">
+            <li key={f.id} className="flex items-center gap-3 rounded-lg bg-bb-case-charcoal px-3 py-2">
               <div className="min-w-0 flex-1">
                 <p className="text-lg">
-                  <b>{pretty(f.ref.text)}</b> <span className="text-muted">· {label(f)}</span>
+                  <b>{pretty(f.ref.text)}</b> <span className="text-bb-cue-gray">· {label(f)}</span>
                 </p>
                 {f.note && <p className="text-lg">“{f.note}”</p>}
                 {!ok && <p className="text-base text-amber-300">Chart changed since you flagged this.</p>}
               </div>
-              <button className="min-h-11 shrink-0 rounded-lg border border-line px-3 text-lg" onClick={() => clear([f.id])} aria-label={`Clear flag at ${label(f)}`}>
+              <button className="min-h-11 shrink-0 rounded-lg border border-bb-rule-gray px-3 text-lg" onClick={() => clear([f.id])} aria-label={`Clear flag at ${label(f)}`}>
                 Clear
               </button>
             </li>
@@ -315,15 +315,15 @@ export function MyFlags({ slug, view }: { slug: string; view: ChartView | null }
         {confirm ? (
           <>
             <span className="text-lg">Clear all {flags.length}?</span>
-            <button className="min-h-11 rounded-lg bg-red-400 px-4 text-lg font-bold text-black" onClick={() => clear(flags.map((f) => f.id))}>
+            <button className="min-h-11 rounded-lg bg-red-400 px-4 text-lg font-bold text-bb-stage-black" onClick={() => clear(flags.map((f) => f.id))}>
               Yes, clear all
             </button>
-            <button className="min-h-11 rounded-lg border border-line px-4 text-lg" onClick={() => setConfirm(false)}>
+            <button className="min-h-11 rounded-lg border border-bb-rule-gray px-4 text-lg" onClick={() => setConfirm(false)}>
               No
             </button>
           </>
         ) : (
-          <button className="min-h-11 rounded-lg border border-line px-4 text-lg text-muted" onClick={() => setConfirm(true)}>
+          <button className="min-h-11 rounded-lg border border-bb-rule-gray px-4 text-lg text-bb-cue-gray" onClick={() => setConfirm(true)}>
             Clear all
           </button>
         )}

@@ -277,7 +277,7 @@ export default function SongSearch() {
       <label htmlFor="search" className="sr-only">
         Search songs
       </label>
-      <div className="sticky top-0 z-20 -mx-4 bg-background px-4 pb-2 pt-2">
+      <div className="sticky top-0 z-20 -mx-4 bg-bb-house-black px-4 pb-2 pt-2">
         <div className="relative">
           <input
             ref={input}
@@ -292,7 +292,7 @@ export default function SongSearch() {
             value={st.q}
             onChange={(e) => update({ q: e.target.value })}
             onKeyDown={(e) => e.key === "Enter" && input.current?.blur()}
-            className="h-14 w-full rounded-xl border border-line bg-panel pl-4 pr-14 text-xl text-foreground placeholder:text-muted focus:border-accent focus:outline-none [&::-webkit-search-cancel-button]:hidden"
+            className="h-14 w-full rounded-xl border border-bb-rule-gray bg-bb-case-charcoal pl-4 pr-14 text-xl text-bb-chart-white placeholder:text-bb-cue-gray focus:border-bb-downbeat-amber focus:outline-none [&::-webkit-search-cancel-button]:hidden"
           />
           {st.q && (
             <button
@@ -302,7 +302,7 @@ export default function SongSearch() {
                 update({ q: "" });
                 input.current?.focus();
               }}
-              className="absolute right-1 top-1 flex h-12 w-12 items-center justify-center text-2xl text-muted active:text-foreground"
+              className="absolute right-1 top-1 flex h-12 w-12 items-center justify-center text-2xl text-bb-cue-gray active:text-bb-chart-white"
             >
               ×
             </button>
@@ -314,7 +314,7 @@ export default function SongSearch() {
         <div
           role="tablist"
           aria-label="Browse"
-          className="mb-3 grid grid-cols-3 gap-1 rounded-xl border border-line bg-panel p-1"
+          className="mb-3 grid grid-cols-3 gap-1 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-1"
         >
           {(
             [
@@ -329,7 +329,7 @@ export default function SongSearch() {
               type="button"
               aria-selected={view === id}
               onClick={() => update({ view: id, artist: null })}
-              className={`h-12 rounded-lg text-lg font-semibold ${view === id ? "bg-accent text-black" : "text-foreground active:bg-line"}`}
+              className={`h-12 rounded-lg text-lg font-semibold ${view === id ? "bg-bb-downbeat-amber text-bb-stage-black" : "text-bb-chart-white active:bg-bb-rule-gray"}`}
             >
               {label}
             </button>
@@ -343,9 +343,9 @@ export default function SongSearch() {
           onClick={() => setSheet(true)}
           className={`h-12 shrink-0 rounded-xl border px-4 text-lg font-semibold ${
             nFilters
-              ? "border-accent text-accent"
-              : "border-line text-foreground"
-          } active:bg-line`}
+              ? "border-bb-downbeat-amber text-bb-downbeat-amber"
+              : "border-bb-rule-gray text-bb-chart-white"
+          } active:bg-bb-rule-gray`}
         >
           Filters{nFilters ? ` · ${nFilters}` : ""}
         </button>
@@ -356,7 +356,7 @@ export default function SongSearch() {
           id="sort"
           value={st.sort}
           onChange={(e) => update({ sort: e.target.value as Sort })}
-          className="h-12 min-w-0 flex-1 rounded-xl border border-line bg-panel px-3 text-lg text-foreground focus:border-accent focus:outline-none"
+          className="h-12 min-w-0 flex-1 rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-3 text-lg text-bb-chart-white focus:border-bb-downbeat-amber focus:outline-none"
         >
           {SORTS.map((s) => (
             <option key={s.id} value={s.id}>
@@ -391,7 +391,7 @@ export default function SongSearch() {
         </div>
       )}
 
-      <p className="mb-2 text-sm text-muted" aria-live="polite">
+      <p className="mb-2 text-sm text-bb-cue-gray" aria-live="polite">
         {docs ? `${count} ${noun}` : ""}
         {docs && hidden > 0 && count > 0 && (
           <>
@@ -399,7 +399,7 @@ export default function SongSearch() {
             <button
               type="button"
               onClick={() => setF(NO_FILTERS)}
-              className="text-accent underline"
+              className="text-bb-downbeat-amber underline"
             >
               {hidden} hidden by filters
             </button>
@@ -408,7 +408,7 @@ export default function SongSearch() {
         {index.offline && docs && " · offline, showing saved songs"}
       </p>
       {rows.some((r) => r.kind === "song" && r.d.uv) && (
-        <p className="-mt-1 mb-2 flex items-center gap-2 text-sm text-muted" data-uv-legend>
+        <p className="-mt-1 mb-2 flex items-center gap-2 text-sm text-bb-cue-gray" data-uv-legend>
           <span aria-hidden className="size-2.5 shrink-0 rounded-full bg-amber-400" />
           Not yet checked against the original
         </p>
@@ -419,7 +419,7 @@ export default function SongSearch() {
           <button
             type="button"
             onClick={() => update({ artist: null })}
-            className="h-12 pr-3 text-lg text-muted active:text-foreground"
+            className="h-12 pr-3 text-lg text-bb-cue-gray active:text-bb-chart-white"
           >
             ← All artists
           </button>
@@ -428,7 +428,7 @@ export default function SongSearch() {
       )}
 
       {!docs ? (
-        <p className="rounded-xl border border-line bg-panel px-4 py-6 text-center text-muted">
+        <p className="rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 py-6 text-center text-bb-cue-gray">
           {index.offline
             ? "Can’t reach the song list. Check your connection and reload."
             : "Loading songs…"}
@@ -444,7 +444,7 @@ export default function SongSearch() {
         />
       ) : (
         <div className="flex items-start gap-1">
-          <ul className="min-w-0 flex-1 divide-y divide-line overflow-hidden rounded-xl border border-line">
+          <ul className="min-w-0 flex-1 divide-y divide-bb-rule-gray overflow-hidden rounded-xl border border-bb-rule-gray">
             {rows.slice(0, limit).map((r, i) =>
               r.kind === "song" ? (
                 <SongRow key={r.d.slug} d={r.d} index={i} onOpen={onOpen} />
@@ -456,12 +456,12 @@ export default function SongSearch() {
                       update({ artist: r.name });
                       window.scrollTo({ top: 0 });
                     }}
-                    className="flex min-h-14 w-full items-center justify-between gap-3 bg-panel px-4 py-3 text-left active:bg-line"
+                    className="flex min-h-14 w-full items-center justify-between gap-3 bg-bb-case-charcoal px-4 py-3 text-left active:bg-bb-rule-gray"
                   >
                     <span className="truncate text-xl font-semibold">
                       {r.name}
                     </span>
-                    <span className="shrink-0 text-muted">{r.count}</span>
+                    <span className="shrink-0 text-bb-cue-gray">{r.count}</span>
                   </button>
                 </li>
               ),
@@ -501,7 +501,7 @@ function Empty({
   clear: () => void;
   browse: () => void;
 }) {
-  const box = "rounded-xl border border-line bg-panel px-4 py-6 text-center";
+  const box = "rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 py-6 text-center";
   if (hidden > 0)
     return (
       <div className={box}>
@@ -512,28 +512,28 @@ function Empty({
         <button
           type="button"
           onClick={clear}
-          className="h-12 rounded-xl bg-accent px-6 text-lg font-bold text-black active:opacity-80"
+          className="h-12 rounded-xl bg-bb-downbeat-amber px-6 text-lg font-bold text-bb-stage-black active:opacity-80"
         >
           Clear filters
         </button>
       </div>
     );
   if (searching)
-    return <p className={`${box} text-muted`}>No songs match “{q.trim()}”.</p>;
+    return <p className={`${box} text-bb-cue-gray`}>No songs match “{q.trim()}”.</p>;
   if (view === "recent")
     return (
       <div className={box}>
-        <p className="mb-3 text-muted">Songs you open show up here.</p>
+        <p className="mb-3 text-bb-cue-gray">Songs you open show up here.</p>
         <button
           type="button"
           onClick={browse}
-          className="h-12 rounded-xl border border-line px-6 text-lg font-semibold active:bg-line"
+          className="h-12 rounded-xl border border-bb-rule-gray px-6 text-lg font-semibold active:bg-bb-rule-gray"
         >
           Browse A–Z
         </button>
       </div>
     );
-  return <p className={`${box} text-muted`}>No songs yet.</p>;
+  return <p className={`${box} text-bb-cue-gray`}>No songs yet.</p>;
 }
 
 /** Thin A–Z strip on the right edge; tap or drag a thumb along it to jump. */
@@ -556,7 +556,7 @@ function LetterStrip({
   return (
     <nav
       aria-label="Jump to letter"
-      className="sticky top-[4.75rem] flex h-[calc(100dvh-6rem)] max-h-[48rem] w-8 shrink-0 touch-none select-none flex-col items-center justify-around rounded-xl border border-line bg-panel py-1"
+      className="sticky top-[4.75rem] flex h-[calc(100dvh-6rem)] max-h-[48rem] w-8 shrink-0 touch-none select-none flex-col items-center justify-around rounded-xl border border-bb-rule-gray bg-bb-case-charcoal py-1"
       onPointerDown={(e) => {
         last.current = "";
         (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
@@ -571,7 +571,7 @@ function LetterStrip({
           data-letter={l}
           onClick={() => onJump(l)}
           aria-label={`Jump to ${l}`}
-          className="w-8 text-center text-sm font-bold text-accent"
+          className="w-8 text-center text-sm font-bold text-bb-downbeat-amber"
         >
           {l}
         </button>

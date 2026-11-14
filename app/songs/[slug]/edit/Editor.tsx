@@ -139,13 +139,13 @@ export default function Editor({ song, publicText, publicRevisionId, proposal, i
       <div className="mb-1 flex items-center justify-between gap-2">
         <Link
           href={proposal ? `/community/${proposal.id}` : `/songs/${song.slug}`}
-          className="inline-flex h-12 items-center text-lg text-muted active:text-foreground"
+          className="inline-flex h-12 items-center text-lg text-bb-cue-gray active:text-bb-chart-white"
         >
           ← Cancel
         </Link>
       </div>
       <h1 className="text-3xl font-bold leading-tight">{proposal ? "Edit your suggestion" : "Change this chart"}</h1>
-      <p className="mb-3 text-lg text-muted">{song.title}</p>
+      <p className="mb-3 text-lg text-bb-cue-gray">{song.title}</p>
 
       {proposal?.stale && (
         <div className="mb-4 rounded-xl border border-amber-400/60 bg-amber-400/10 p-4 text-lg text-amber-100">
@@ -154,7 +154,7 @@ export default function Editor({ song, publicText, publicRevisionId, proposal, i
             start over.
           </p>
           <div className="mt-3 flex flex-wrap gap-3">
-            <button className="min-h-12 rounded-xl bg-accent px-4 text-lg font-bold text-black" onClick={() => loadFrom("public")}>
+            <button className="min-h-12 rounded-xl bg-bb-downbeat-amber px-4 text-lg font-bold text-bb-stage-black" onClick={() => loadFrom("public")}>
               Start from the newest chart
             </button>
           </div>
@@ -163,7 +163,7 @@ export default function Editor({ song, publicText, publicRevisionId, proposal, i
               <summary className="min-h-11 cursor-pointer">
                 What changed in the public chart (<DiffSummary diff={publicMoved} />)
               </summary>
-              <BarDiff diff={publicMoved} className="mt-2 text-foreground" />
+              <BarDiff diff={publicMoved} className="mt-2 text-bb-chart-white" />
             </details>
           )}
         </div>
@@ -171,13 +171,13 @@ export default function Editor({ song, publicText, publicRevisionId, proposal, i
 
       {!proposal && ready && mine && (
         <div className="mb-3 flex flex-wrap items-center gap-2 text-lg">
-          <span className="text-muted">Starting from:</span>
+          <span className="text-bb-cue-gray">Starting from:</span>
           {(["mine", "public"] as const).map((w) => (
             <button
               key={w}
               onClick={() => loadFrom(w)}
               aria-pressed={source === w}
-              className={`min-h-11 rounded-full border px-4 ${source === w ? "border-accent bg-accent font-semibold text-black" : "border-line bg-panel"}`}
+              className={`min-h-11 rounded-full border px-4 ${source === w ? "border-bb-downbeat-amber bg-bb-downbeat-amber font-semibold text-bb-stage-black" : "border-bb-rule-gray bg-bb-case-charcoal"}`}
             >
               {w === "mine" ? "Your version" : "Public chart"}
             </button>
@@ -187,7 +187,7 @@ export default function Editor({ song, publicText, publicRevisionId, proposal, i
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="flex flex-col gap-2">
-          <label htmlFor="chart" className="text-sm text-muted">
+          <label htmlFor="chart" className="text-sm text-bb-cue-gray">
             Chart text
           </label>
           <textarea
@@ -198,10 +198,10 @@ export default function Editor({ song, publicText, publicRevisionId, proposal, i
             spellCheck={false}
             autoCapitalize="off"
             autoCorrect="off"
-            className="min-h-72 w-full rounded-xl border border-line bg-panel p-3 font-mono text-lg leading-relaxed"
+            className="min-h-72 w-full rounded-xl border border-bb-rule-gray bg-bb-case-charcoal p-3 font-mono text-lg leading-relaxed"
           />
           <Status check={check} />
-          <details className="text-base text-muted">
+          <details className="text-base text-bb-cue-gray">
             <summary className="min-h-11 cursor-pointer">Chart format cheat sheet</summary>
             <ul className="mt-1 list-inside list-disc leading-relaxed">
               <li>
@@ -228,13 +228,13 @@ export default function Editor({ song, publicText, publicRevisionId, proposal, i
                 role="tab"
                 aria-selected={tab === t}
                 onClick={() => setTab(t)}
-                className={`min-h-12 rounded-xl border text-lg ${tab === t ? "border-accent bg-accent font-semibold text-black" : "border-line bg-panel"}`}
+                className={`min-h-12 rounded-xl border text-lg ${tab === t ? "border-bb-downbeat-amber bg-bb-downbeat-amber font-semibold text-bb-stage-black" : "border-bb-rule-gray bg-bb-case-charcoal"}`}
               >
                 {t === "preview" ? "Preview" : `Changes${diff && diff.changedBars ? ` (${diff.changedBars})` : ""}`}
               </button>
             ))}
           </div>
-          <div className="min-h-40 rounded-xl border border-line p-3">
+          <div className="min-h-40 rounded-xl border border-bb-rule-gray p-3">
             {tab === "preview" ? (
               view ? (
                 <Chart
@@ -246,17 +246,17 @@ export default function Editor({ song, publicText, publicRevisionId, proposal, i
                   hold={spot ? { flagged: new Set(), selected: refKey(spot.ref) } : undefined}
                 />
               ) : (
-                <p className="text-lg text-muted">Fix the format error to see the preview.</p>
+                <p className="text-lg text-bb-cue-gray">Fix the format error to see the preview.</p>
               )
             ) : diff ? (
               <>
-                <p className="mb-2 text-lg text-muted">
+                <p className="mb-2 text-lg text-bb-cue-gray">
                   Compared with the public chart: <DiffSummary diff={diff} />
                 </p>
                 <BarDiff diff={diff} />
               </>
             ) : (
-              <p className="text-lg text-muted">Fix the format error to see the changes.</p>
+              <p className="text-lg text-bb-cue-gray">Fix the format error to see the changes.</p>
             )}
           </div>
         </div>
@@ -264,12 +264,12 @@ export default function Editor({ song, publicText, publicRevisionId, proposal, i
 
       <label className="mt-5 flex flex-col gap-1">
         {spot && (
-          <span className="text-lg text-accent">
+          <span className="text-lg text-bb-downbeat-amber">
             Editing: {spotLabel(spot.ref, spot.split)} ({spot.ref.text})
           </span>
         )}
         <span className="text-lg font-semibold">
-          Note <span className="font-normal text-muted">{proposal ? "(required)" : "(required for everyone, optional just for you)"}</span>
+          Note <span className="font-normal text-bb-cue-gray">{proposal ? "(required)" : "(required for everyone, optional just for you)"}</span>
         </span>
         <input
           id="note"
@@ -281,7 +281,7 @@ export default function Editor({ song, publicText, publicRevisionId, proposal, i
           maxLength={500}
           placeholder="e.g. Bridge goes to the 6-, not the 4"
           aria-invalid={noteMissing}
-          className={`min-h-12 rounded-xl border bg-panel px-4 text-lg ${noteMissing ? "border-red-400" : "border-line"}`}
+          className={`min-h-12 rounded-xl border bg-bb-case-charcoal px-4 text-lg ${noteMissing ? "border-red-400" : "border-bb-rule-gray"}`}
         />
       </label>
 
@@ -329,11 +329,11 @@ function SaveButton({ onClick, disabled, title, sub, primary }: { onClick: () =>
       onClick={onClick}
       disabled={disabled}
       className={`flex min-h-20 w-full flex-col items-start justify-center rounded-2xl border-2 px-5 py-3 text-left active:opacity-80 disabled:opacity-40 ${
-        primary ? "border-accent bg-accent text-black" : "border-line bg-panel"
+        primary ? "border-bb-downbeat-amber bg-bb-downbeat-amber text-bb-stage-black" : "border-bb-rule-gray bg-bb-case-charcoal"
       }`}
     >
       <span className="text-xl font-bold">{title}</span>
-      <span className={`text-base ${primary ? "text-black/75" : "text-muted"}`}>{sub}</span>
+      <span className={`text-base ${primary ? "text-bb-stage-black/75" : "text-bb-cue-gray"}`}>{sub}</span>
     </button>
   );
 }

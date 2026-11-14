@@ -5,7 +5,7 @@ export const metadata = { title: "Setlist · Broadway Book" };
 
 export default function SetlistPage({ params }: PageProps<"/setlists/[id]">) {
   return (
-    <Suspense fallback={<p className="p-4 text-lg text-muted">Loading…</p>}>
+    <Suspense fallback={<p className="p-4 text-lg text-bb-cue-gray">Loading…</p>}>
       <Inner params={params} />
     </Suspense>
   );

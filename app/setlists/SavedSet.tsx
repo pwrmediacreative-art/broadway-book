@@ -17,11 +17,11 @@ export default function SavedSet({ set, id, startPlaying = false }: { set: PlayS
   const playable = set.items.filter((i) => i.song).length;
   return (
     <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-2">
-      <Link href="/setlists" className="inline-flex h-12 items-center text-lg text-muted active:text-foreground">
+      <Link href="/setlists" className="inline-flex h-12 items-center text-lg text-bb-cue-gray active:text-bb-chart-white">
         ← Setlists
       </Link>
       <h1 className="text-3xl font-bold leading-tight">{set.name}</h1>
-      <p className="mb-3 text-lg text-muted">
+      <p className="mb-3 text-lg text-bb-cue-gray">
         {[gigDate(set.gig_date), `${playable} song${playable === 1 ? "" : "s"}`, "saved copy"].filter(Boolean).join(" · ")}
       </p>
       <button
@@ -36,7 +36,7 @@ export default function SavedSet({ set, id, startPlaying = false }: { set: PlayS
       </button>
       <SetSongList items={set.items} />
       <OfflineNote className="mt-4" />
-      <p className="mt-2 text-base text-muted">Editing and sharing come back when you&apos;re online.</p>
+      <p className="mt-2 text-base text-bb-cue-gray">Editing and sharing come back when you&apos;re online.</p>
     </main>
   );
 }

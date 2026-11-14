@@ -46,7 +46,7 @@ const toSnap = (s: PlaySet): Snapshot => ({
 function Loading({ error }: { error?: string | null }) {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-2">
-      <Link href="/setlists" className="inline-flex h-12 items-center text-lg text-muted active:text-foreground">
+      <Link href="/setlists" className="inline-flex h-12 items-center text-lg text-bb-cue-gray active:text-bb-chart-white">
         ← Setlists
       </Link>
       <p className="mt-4 text-xl">{error ? `Couldn't load: ${error}` : "Loading…"}</p>
@@ -74,17 +74,17 @@ function DeviceEditorInner({ device }: { device: Snapshot }) {
       save={save}
       playHref="/setlists/device/play"
       share={(cur) => (
-        <section className="mb-6 rounded-xl border border-line p-3">
+        <section className="mb-6 rounded-xl border border-bb-rule-gray p-3">
           <h2 className="mb-1 text-lg font-semibold">Share with the band</h2>
-          <p className="mb-2 text-base text-muted">
+          <p className="mb-2 text-base text-bb-cue-gray">
             Makes a snapshot link of the list as it is now: songs, keys, notes, name and date. Later changes need a new link, and a snapshot link can&apos;t be turned
             off.{" "}
-            <Link href="/login?next=/setlists" className="text-accent underline">
+            <Link href="/login?next=/setlists" className="text-bb-downbeat-amber underline">
               Sign in
             </Link>{" "}
             for a live link you can turn off.
           </p>
-          {link && <input readOnly value={link} onFocus={(e) => e.target.select()} aria-label="Snapshot link" className="mb-2 h-12 w-full rounded-lg border border-line bg-background px-3 font-mono text-base" />}
+          {link && <input readOnly value={link} onFocus={(e) => e.target.select()} aria-label="Snapshot link" className="mb-2 h-12 w-full rounded-lg border border-bb-rule-gray bg-bb-house-black px-3 font-mono text-base" />}
           <div className="flex flex-wrap gap-2">
             <button
               className={`${btn} ${link ? plain : primary}`}
@@ -150,11 +150,11 @@ export function SnapshotView() {
   const playable = set.items.filter((i) => i.song).length;
   return (
     <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-2">
-      <Link href="/" className="inline-flex h-12 items-center text-lg text-muted active:text-foreground">
+      <Link href="/" className="inline-flex h-12 items-center text-lg text-bb-cue-gray active:text-bb-chart-white">
         ← All songs
       </Link>
       <h1 className="text-3xl font-bold leading-tight">{set.name}</h1>
-      <p className="mb-3 text-lg text-muted">
+      <p className="mb-3 text-lg text-bb-cue-gray">
         {[gigDate(set.gig_date), `${playable} song${playable === 1 ? "" : "s"}`, "snapshot"].filter(Boolean).join(" · ")}
       </p>
       <button
@@ -168,7 +168,7 @@ export function SnapshotView() {
         Play set ▸
       </button>
       <SetSongList items={set.items} />
-      <p className="mt-4 text-base text-muted">Snapshot of a setlist. If the list changed, ask for a new link.</p>
+      <p className="mt-4 text-base text-bb-cue-gray">Snapshot of a setlist. If the list changed, ask for a new link.</p>
     </main>
   );
 }

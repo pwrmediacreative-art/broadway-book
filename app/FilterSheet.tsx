@@ -23,7 +23,7 @@ export function Chip({
       aria-label={label}
       onClick={onClick}
       className={`inline-flex min-h-11 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-4 text-base font-semibold ${
-        on ? "border-accent bg-accent text-black" : "border-line bg-panel text-foreground active:bg-line"
+        on ? "border-bb-downbeat-amber bg-bb-downbeat-amber text-bb-stage-black" : "border-bb-rule-gray bg-bb-case-charcoal text-bb-chart-white active:bg-bb-rule-gray"
       }`}
     >
       {children}
@@ -36,7 +36,7 @@ const toggle = <T,>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="mb-5">
-      <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted">{title}</h3>
+      <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-bb-cue-gray">{title}</h3>
       <div className="flex flex-wrap gap-2">{children}</div>
     </section>
   );
@@ -44,7 +44,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 function NumberBox({ label, value, onChange }: { label: string; value: number | null; onChange: (v: number | null) => void }) {
   return (
-    <label className="flex items-center gap-2 text-muted">
+    <label className="flex items-center gap-2 text-bb-cue-gray">
       {label}
       <input
         type="number"
@@ -56,7 +56,7 @@ function NumberBox({ label, value, onChange }: { label: string; value: number | 
           const n = parseInt(e.target.value, 10);
           onChange(Number.isFinite(n) && n > 0 && n < 1000 ? n : null);
         }}
-        className="h-11 w-20 rounded-lg border border-line bg-background px-3 text-lg text-foreground focus:border-accent focus:outline-none"
+        className="h-11 w-20 rounded-lg border border-bb-rule-gray bg-bb-house-black px-3 text-lg text-bb-chart-white focus:border-bb-downbeat-amber focus:outline-none"
       />
     </label>
   );
@@ -104,13 +104,13 @@ export default function FilterSheet({
         aria-modal="true"
         aria-labelledby="filter-title"
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[88dvh] w-full max-w-lg flex-col rounded-t-2xl border border-line bg-panel sm:rounded-2xl"
+        className="flex max-h-[88dvh] w-full max-w-lg flex-col rounded-t-2xl border border-bb-rule-gray bg-bb-case-charcoal sm:rounded-2xl"
       >
-        <div className="flex items-center justify-between border-b border-line px-4 py-2">
+        <div className="flex items-center justify-between border-b border-bb-rule-gray px-4 py-2">
           <h2 id="filter-title" className="text-xl font-bold">
             Filters
           </h2>
-          <button ref={closeRef} type="button" onClick={onClose} className="h-12 px-3 text-lg text-muted active:text-foreground">
+          <button ref={closeRef} type="button" onClick={onClose} className="h-12 px-3 text-lg text-bb-cue-gray active:text-bb-chart-white">
             Close
           </button>
         </div>
@@ -143,7 +143,7 @@ export default function FilterSheet({
               </Chip>
             ))}
             <div className="mt-1 flex w-full flex-wrap items-center gap-x-3 gap-y-2">
-              <span className="text-muted">Custom BPM</span>
+              <span className="text-bb-cue-gray">Custom BPM</span>
               <NumberBox label="from" value={f.bpmMin} onChange={(v) => setF({ ...f, tempos: [], bpmMin: v })} />
               <NumberBox label="to" value={f.bpmMax} onChange={(v) => setF({ ...f, tempos: [], bpmMax: v })} />
             </div>
@@ -177,7 +177,7 @@ export default function FilterSheet({
                 </Chip>
               ))}
               {fx.tags.length > tags.length && (
-                <button type="button" onClick={() => setAllTags(true)} className="min-h-11 px-3 text-accent">
+                <button type="button" onClick={() => setAllTags(true)} className="min-h-11 px-3 text-bb-downbeat-amber">
                   All {fx.tags.length} tags…
                 </button>
               )}
@@ -185,16 +185,16 @@ export default function FilterSheet({
           )}
         </div>
 
-        <div className="flex gap-3 border-t border-line p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="flex gap-3 border-t border-bb-rule-gray p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <button
             type="button"
             disabled={!countFilters(f)}
             onClick={() => setF(NO_FILTERS)}
-            className="h-12 rounded-xl border border-line px-4 text-lg font-semibold disabled:opacity-40"
+            className="h-12 rounded-xl border border-bb-rule-gray px-4 text-lg font-semibold disabled:opacity-40"
           >
             Clear all
           </button>
-          <button type="button" onClick={onClose} className="h-12 flex-1 rounded-xl bg-accent text-lg font-bold text-black active:opacity-80">
+          <button type="button" onClick={onClose} className="h-12 flex-1 rounded-xl bg-bb-downbeat-amber text-lg font-bold text-bb-stage-black active:opacity-80">
             Show {count} {count === 1 ? "song" : "songs"}
           </button>
         </div>

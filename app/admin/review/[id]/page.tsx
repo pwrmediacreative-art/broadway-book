@@ -12,7 +12,7 @@ type SearchParams = Promise<{ f?: string | string[]; o?: string | string[] }>;
 export default function ReviewSongPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: SearchParams }) {
   return (
     <main className="mx-auto w-full max-w-7xl px-4 pb-16 pt-2">
-      <Suspense fallback={<p className="text-lg text-muted">Loading…</p>}>
+      <Suspense fallback={<p className="text-lg text-bb-cue-gray">Loading…</p>}>
         <Review params={params} searchParams={searchParams} />
       </Suspense>
     </main>

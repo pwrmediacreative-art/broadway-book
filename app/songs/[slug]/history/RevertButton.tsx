@@ -20,7 +20,7 @@ export default function RevertButton({ songId, revisionId, when }: { songId: str
             router.refresh();
           });
         }}
-        className="min-h-12 rounded-xl border border-accent px-4 text-lg text-accent active:bg-accent/20 disabled:opacity-40"
+        className="min-h-12 rounded-xl border border-bb-downbeat-amber px-4 text-lg text-bb-downbeat-amber active:bg-bb-downbeat-amber/20 disabled:opacity-40"
       >
         {pending ? "Reverting…" : "Revert to this version"}
       </button>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { clampSpeed, clampStageSize, MAX_SPEED, MAX_STAGE_SIZE, pretty, SPEEDS, suggestSpeed } from "@/lib/chart";
 import { PREF, setPref, usePref } from "@/lib/prefs";
 import Chart from "./Chart";
@@ -16,18 +16,8 @@ const FIT_MIN = 30; // px: smallest size we shrink to so the whole chart fits wi
 const SCROLL_SIZE = 40; // px: size used when it can't fit and has to scroll (if the width allows)
 const PAD_Y = 16; // scroller py-2
 const HIDE_MS = 3500;
-// Stage-only colors: dark (default) is pure black; light is a high-contrast paper look.
-const DARK = { "--background": "#000" } as CSSProperties;
-const LIGHT = {
-  "--background": "#ffffff",
-  "--foreground": "#0a0a0b",
-  "--muted": "#44403c",
-  "--accent": "#b45309",
-  "--panel": "#f5f5f4",
-  "--line": "#a8a29e",
-  "--chg": "#0369a1",
-  colorScheme: "light",
-} as CSSProperties;
+// Stage-only looks (app/globals.css): Dark is pure black; Light is the high-contrast paper look.
+const stageLook = (light: boolean) => (light ? "bb-stage-light" : "bb-stage-dark");
 const num = (s: string | null) => (s && Number.isFinite(Number(s)) ? Number(s) : null);
 
 function useWakeLock() {
@@ -317,7 +307,7 @@ export default function StageView({
 
   if (!s.view) {
     return (
-      <div className="fixed inset-0 grid place-items-center bg-background p-6 text-center" style={theme === "light" ? LIGHT : DARK}>
+      <div className={`fixed inset-0 grid place-items-center bg-bb-house-black p-6 text-center ${stageLook(theme === "light")}`}>
         <p className="text-xl">This chart has a format error.</p>
       </div>
     );
@@ -330,28 +320,28 @@ export default function StageView({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-background text-foreground" style={light ? LIGHT : DARK} onPointerDownCapture={poke}>
-      <header className="flex h-12 shrink-0 items-center gap-1 border-b border-line/60 pl-1 pr-2 text-base">
-        <button onClick={exit} aria-label={set ? "Exit play mode" : "Exit stage mode"} className="grid size-11 shrink-0 place-items-center rounded-lg text-2xl text-muted active:bg-panel">
+    <div className={`fixed inset-0 z-50 flex flex-col bg-bb-house-black text-bb-chart-white ${stageLook(light)}`} onPointerDownCapture={poke}>
+      <header className="flex h-12 shrink-0 items-center gap-1 border-b border-bb-rule-gray/60 pl-1 pr-2 text-base">
+        <button onClick={exit} aria-label={set ? "Exit play mode" : "Exit stage mode"} className="grid size-11 shrink-0 place-items-center rounded-lg text-2xl text-bb-cue-gray active:bg-bb-case-charcoal">
           ✕
         </button>
         <div className="flex min-w-20 flex-1 items-baseline gap-1">
           <b className="truncate">{title}</b>
-          {view.keyShort && <span className="shrink-0 whitespace-nowrap text-muted">· {pretty(view.keyShort)}</span>}
+          {view.keyShort && <span className="shrink-0 whitespace-nowrap text-bb-cue-gray">· {pretty(view.keyShort)}</span>}
         </div>
         {pick.mine && (
           <button
             onClick={() => pick.setShowPublic(pick.usingMine)}
             aria-label={pick.usingMine ? "Showing your version. Tap to view the public version" : "Showing the public version. Tap to view yours"}
-            className={`h-11 shrink-0 self-center rounded-md px-1 text-[0.7rem] font-bold uppercase ${pick.usingMine ? "text-violet-300" : "text-muted"}`}
+            className={`h-11 shrink-0 self-center rounded-md px-1 text-[0.7rem] font-bold uppercase ${pick.usingMine ? "text-violet-300" : "text-bb-cue-gray"}`}
           >
             {pick.usingMine ? "Yours" : "Public"}
           </button>
         )}
-        <BpmToggle s={s} className="shrink-0 text-sm text-muted" />
+        <BpmToggle s={s} className="shrink-0 text-sm text-bb-cue-gray" />
         {set ? (
           <>
-            <button onClick={set.onJump} aria-label="Jump to a song in the set" className="grid size-11 shrink-0 place-items-center rounded-lg text-muted active:bg-panel">
+            <button onClick={set.onJump} aria-label="Jump to a song in the set" className="grid size-11 shrink-0 place-items-center rounded-lg text-bb-cue-gray active:bg-bb-case-charcoal">
               <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
                 <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" />
               </svg>
@@ -359,26 +349,26 @@ export default function StageView({
           </>
         ) : (
           nav.next && (
-            <button onClick={() => go(1)} className="h-11 min-w-0 max-w-[36%] shrink truncate text-right text-sm text-muted">
-              Next: <span className="text-foreground">{nav.next.title}</span> ›
+            <button onClick={() => go(1)} className="h-11 min-w-0 max-w-[36%] shrink truncate text-right text-sm text-bb-cue-gray">
+              Next: <span className="text-bb-chart-white">{nav.next.title}</span> ›
             </button>
           )
         )}
       </header>
       {set && (
-        <button onClick={() => go(1)} className="flex h-10 shrink-0 items-center gap-2 border-b border-line/60 px-3 text-left text-base text-muted">
-          <span className="shrink-0 font-bold tabular-nums text-foreground">{set.count}</span>
+        <button onClick={() => go(1)} className="flex h-10 shrink-0 items-center gap-2 border-b border-bb-rule-gray/60 px-3 text-left text-base text-bb-cue-gray">
+          <span className="shrink-0 font-bold tabular-nums text-bb-chart-white">{set.count}</span>
           <span aria-hidden>·</span>
           {set.next ? (
             <span className="min-w-0 truncate">
-              Next: <span className="font-semibold text-foreground">{set.next}</span> ›
+              Next: <span className="font-semibold text-bb-chart-white">{set.next}</span> ›
             </span>
           ) : (
-            <span className="font-semibold text-foreground">Last song</span>
+            <span className="font-semibold text-bb-chart-white">Last song</span>
           )}
         </button>
       )}
-      {set?.note && <p className="shrink-0 truncate border-b border-accent/40 bg-accent/15 px-4 py-1.5 text-xl font-bold text-accent">{set.note}</p>}
+      {set?.note && <p className="shrink-0 truncate border-b border-bb-downbeat-amber/40 bg-bb-downbeat-amber/15 px-4 py-1.5 text-xl font-bold text-bb-downbeat-amber">{set.note}</p>}
 
       <div
         ref={scroller}
@@ -394,7 +384,7 @@ export default function StageView({
 
       {toast && (
         <div className="pointer-events-none absolute inset-x-0 top-16 z-20 text-center">
-          <span className="rounded-full bg-panel px-4 py-2 text-lg">{toast}</span>
+          <span className="rounded-full bg-bb-case-charcoal px-4 py-2 text-lg">{toast}</span>
         </div>
       )}
 
@@ -403,13 +393,13 @@ export default function StageView({
         className={`absolute inset-x-0 bottom-0 z-10 transition-opacity duration-300 ${shown ? "opacity-100" : "pointer-events-none opacity-0"}`}
       >
         {panel && (
-          <div className="mx-2 mb-2 max-h-[65dvh] overflow-y-auto rounded-2xl border border-line bg-panel p-4 shadow-2xl">
+          <div className="mx-2 mb-2 max-h-[65dvh] overflow-y-auto rounded-2xl border border-bb-rule-gray bg-bb-case-charcoal p-4 shadow-2xl">
             <div className="mb-4 flex flex-wrap items-center gap-2">
               <DisplayControls s={s} />
             </div>
             <div className="mb-1 flex items-center justify-between text-lg">
               <label htmlFor="stage-size">Text size</label>
-              <span className="text-muted">{manual ? `${fontPx}px` : `Auto · ${fontPx}px`}</span>
+              <span className="text-bb-cue-gray">{manual ? `${fontPx}px` : `Auto · ${fontPx}px`}</span>
             </div>
             <div className="mb-4 flex items-center gap-2">
               <input
@@ -461,7 +451,7 @@ export default function StageView({
 
         <div
           className={`flex flex-col gap-1 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 ${
-            scrollable || panel ? "border-t border-line/60 bg-background/90 backdrop-blur" : "pointer-events-none [&_button]:pointer-events-auto"
+            scrollable || panel ? "border-t border-bb-rule-gray/60 bg-bb-house-black/90 backdrop-blur" : "pointer-events-none [&_button]:pointer-events-auto"
           }`}
         >
           <div className="flex items-center gap-1.5">
@@ -470,7 +460,7 @@ export default function StageView({
                 <button
                   onClick={() => (playing ? setPlaying(false) : play())}
                   aria-label={playing ? "Pause scrolling" : "Play scrolling"}
-                  className="grid h-12 w-14 shrink-0 place-items-center rounded-lg bg-accent text-2xl text-black"
+                  className="grid h-12 w-14 shrink-0 place-items-center rounded-lg bg-bb-downbeat-amber text-2xl text-bb-stage-black"
                 >
                   {playing ? "❚❚" : "▶"}
                 </button>
@@ -504,7 +494,7 @@ export default function StageView({
           </div>
           {scrollable && (
             <div className="flex items-center gap-2">
-              <label htmlFor="stage-speed" className="text-sm text-muted">
+              <label htmlFor="stage-speed" className="text-sm text-bb-cue-gray">
                 Speed
               </label>
               <input
@@ -518,7 +508,7 @@ export default function StageView({
                 className="h-10 min-w-0 flex-1 accent-amber-400"
               />
               {suggested && suggested !== speed && (
-                <button onClick={() => setSpeed(suggested)} className="h-10 shrink-0 rounded-lg px-2 text-sm text-muted underline">
+                <button onClick={() => setSpeed(suggested)} className="h-10 shrink-0 rounded-lg px-2 text-sm text-bb-cue-gray underline">
                   Suggested {suggested}
                 </button>
               )}

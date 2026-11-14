@@ -63,7 +63,7 @@ function VerifiedBadge({ at }: { at?: string | null }) {
         <span className="rounded bg-emerald-400/15 px-1.5 py-0.5 text-xs font-semibold uppercase text-emerald-200">✓ Verified</span>
       </button>
       {open && (
-        <span role="status" className="block text-base text-muted">
+        <span role="status" className="block text-base text-bb-cue-gray">
           Checked against the original{at ? ` on ${checkedDate(at)}` : ""}.
         </span>
       )}
@@ -106,7 +106,7 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
         <h1 className="mb-3 text-3xl font-bold">{title}</h1>
         <div className="rounded-xl border border-red-500 p-4">
           <p className="font-semibold">This chart has a format error.</p>
-          <p className="text-muted">{s.error}</p>
+          <p className="text-bb-cue-gray">{s.error}</p>
           <pre className="mt-3 whitespace-pre-wrap font-mono text-lg">{pick.text}</pre>
         </div>
         <PersonalBar slug={slug} songId={songId} pick={pick} publicText={chartText} />
@@ -119,7 +119,7 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
   return (
     <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-2">
       <div className="mb-1 flex items-center justify-between gap-2">
-        <Link href="/" className="inline-flex h-12 items-center text-lg text-muted active:text-foreground">
+        <Link href="/" className="inline-flex h-12 items-center text-lg text-bb-cue-gray active:text-bb-chart-white">
           ← All songs
         </Link>
         <div className="flex items-center gap-2">
@@ -127,7 +127,7 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
         <Link
           href={`/songs/${slug}/stage`}
           onClick={enterFullscreen}
-          className="inline-flex h-12 items-center gap-2 rounded-lg bg-accent px-5 text-lg font-bold text-black active:opacity-80"
+          className="inline-flex h-12 items-center gap-2 rounded-lg bg-bb-downbeat-amber px-5 text-lg font-bold text-bb-stage-black active:opacity-80"
         >
           Stage ▸
         </Link>
@@ -135,10 +135,10 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
       </div>
       <header className="mb-1">
         <h1 className="text-3xl font-bold leading-tight">{title}</h1>
-        <p className="text-lg text-muted">
+        <p className="text-lg text-bb-cue-gray">
           {artist}
           {isExample && (
-            <span className="ml-2 rounded bg-accent/20 px-1.5 py-0.5 text-xs font-semibold uppercase text-accent">
+            <span className="ml-2 rounded bg-bb-downbeat-amber/20 px-1.5 py-0.5 text-xs font-semibold uppercase text-bb-downbeat-amber">
               Example
             </span>
           )}
@@ -147,9 +147,9 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
           <OpenBadge slug={slug} count={openCount} />
         </p>
         {!isExample && unverified && (
-          <p className="mt-1 text-base text-muted" data-unverified-note>
+          <p className="mt-1 text-base text-bb-cue-gray" data-unverified-note>
             Not yet checked against the original. Play it by ear and{" "}
-            <a href="#suggest" className="text-accent underline">
+            <a href="#suggest" className="text-bb-downbeat-amber underline">
               suggest a fix
             </a>{" "}
             if something is off.
@@ -165,7 +165,7 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
         {meta.feel && <span>{meta.feel}</span>}
       </KeyInfo>
 
-      <div className="sticky top-0 z-10 -mx-4 mb-4 flex flex-wrap items-center gap-2 border-b border-line bg-background/95 px-4 py-2 backdrop-blur">
+      <div className="sticky top-0 z-10 -mx-4 mb-4 flex flex-wrap items-center gap-2 border-b border-bb-rule-gray bg-bb-house-black/95 px-4 py-2 backdrop-blur">
         <DisplayControls s={s} />
       </div>
 
@@ -187,8 +187,8 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
 
       <nav className="mt-10 grid grid-cols-2 gap-3" aria-label="Other songs">
         {nav.prev ? (
-          <Link href={`/songs/${nav.prev.slug}`} className="flex min-h-14 flex-col justify-center rounded-xl border border-line bg-panel px-4 py-2">
-            <span className="text-sm text-muted">‹ Previous</span>
+          <Link href={`/songs/${nav.prev.slug}`} className="flex min-h-14 flex-col justify-center rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 py-2">
+            <span className="text-sm text-bb-cue-gray">‹ Previous</span>
             <span className="truncate text-lg font-semibold">{nav.prev.title}</span>
           </Link>
         ) : (
@@ -197,14 +197,14 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
         {nav.next && (
           <Link
             href={`/songs/${nav.next.slug}`}
-            className="flex min-h-14 flex-col justify-center rounded-xl border border-line bg-panel px-4 py-2 text-right"
+            className="flex min-h-14 flex-col justify-center rounded-xl border border-bb-rule-gray bg-bb-case-charcoal px-4 py-2 text-right"
           >
-            <span className="text-sm text-muted">Next ›</span>
+            <span className="text-sm text-bb-cue-gray">Next ›</span>
             <span className="truncate text-lg font-semibold">{nav.next.title}</span>
           </Link>
         )}
       </nav>
-      <p className="mt-3 text-center text-sm text-muted">Swipe, ← → or a page-turner pedal also changes song.</p>
+      <p className="mt-3 text-center text-sm text-bb-cue-gray">Swipe, ← → or a page-turner pedal also changes song.</p>
       <AdminPdfLink />
     </main>
   );
