@@ -23,7 +23,9 @@ export default function MineView({ chart, offline = false }: { chart: MineChart;
     <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-2">
       <h1 className="text-3xl font-bold tracking-tight">{chart.title}</h1>
       {chart.artist && <p className="text-lg text-bb-cue-gray">{chart.artist}</p>}
-      <p className="mb-3 mt-1 text-base text-bb-cue-gray">Your private chart (draft from an upload: check it by ear).</p>
+      <p className="mb-3 mt-1 text-base text-bb-cue-gray">
+        {chart.mine === false ? `Uploaded by ${chart.by ?? "another admin"}. Admins only` : "Your private chart"} (draft from an upload: check it by ear).
+      </p>
       <div className="mb-3 flex flex-wrap gap-2">
         <Link href={`/mine/${chart.id}/stage`} onClick={enterFullscreen} className="bb-btn bb-btn-primary h-12 px-5 text-lg font-bold">
           Stage mode
@@ -33,9 +35,11 @@ export default function MineView({ chart, offline = false }: { chart: MineChart;
         </button>
         {!offline && (
           <>
-            <Link href={`/upload/${chart.id}`} className={act}>
-              Edit
-            </Link>
+            {chart.mine !== false && (
+              <Link href={`/upload/${chart.id}`} className={act}>
+                Edit
+              </Link>
+            )}
             <AddToSetlist slug={chart.slug} title={chart.title} variant="button" />
           </>
         )}

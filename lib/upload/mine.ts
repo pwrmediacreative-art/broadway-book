@@ -1,6 +1,6 @@
-// Your own private charts, kept on this phone for offline use (same rule as account
-// setlists: only while signed in, under your user id, removed when you sign out).
-// Never audio: only the chart text and its title.
+// Uploaded charts you can open (your own, plus every admin's if you're an admin), kept on
+// this phone for offline use (same rule as account setlists: only while signed in, under
+// your user id, removed when you sign out). Never audio: only the chart text and its title.
 import { browserClient } from "@/lib/supabase/browser";
 import { dbKeys, KV, kvDel, kvGet, kvSet } from "@/lib/offline/db";
 import { knownUserId } from "@/lib/offline/user";
@@ -12,6 +12,8 @@ export interface MineChart {
   artist: string | null;
   key: string | null;
   chart_text: string;
+  mine?: boolean; // false: another admin uploaded it (read only)
+  by?: string | null; // who uploaded it, when it isn't yours
 }
 
 const key = (uid: string) => `mine:${uid}`;
@@ -23,9 +25,9 @@ export async function syncMine(): Promise<void> {
   const old = (await dbKeys(KV)).filter((k) => k.startsWith("mine:") && k !== (uid ? key(uid) : ""));
   await kvDel(old);
   if (!uid) return;
-  const { data, error } = await db.rpc("my_private_charts");
+  const { data, error } = await db.rpc("upload_charts_visible");
   if (error) throw error;
-  const list = ((data as MineChart[] | null) ?? []).filter((c) => c.chart_text).map(({ id, slug, title, artist, key, chart_text }) => ({ id, slug, title, artist, key, chart_text }));
+  const list = ((data as MineChart[] | null) ?? []).filter((c) => c.chart_text);
   await kvSet(key(uid), list);
 }
 

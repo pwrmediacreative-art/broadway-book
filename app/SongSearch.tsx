@@ -426,7 +426,7 @@ export default function SongSearch() {
         </div>
       )}
 
-      {searching && <MineResults q={q} />}
+      {searching ? <MineResults q={q} /> : view === "az" && !st.artist ? <MineResults q="" all /> : null}
       {!docs ? (
         <p className="bb-panel px-4 py-6 text-center text-bb-cue-gray">
           {index.offline

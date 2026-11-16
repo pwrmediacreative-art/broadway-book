@@ -3,7 +3,9 @@
 //   * only people the "Audio upload" setting lets in can create charts or upload audio
 //     (Admins only / Admins + Pro / Off), enforced by the database, not the UI
 //   * a private chart, its revisions, its upload row and its audio are readable by the owner
-//     only: not visitors, not other players, not other admins
+//     only: not visitors, not other players. Other admins can read an admin's chart and its
+//     current version (read, stage, setlists, offline) but never the upload row or audio,
+//     and can't edit or share it. A Pro's upload stays private even from admins.
 //   * private charts are never in offline_sync() (the offline copy for everyone) or the
 //     published song list, and can't get suggestions
 //   * nobody can make themselves Pro or change the setting except admins
@@ -109,7 +111,18 @@ try {
   check(own.data?.status === "private", "owner reads their private chart");
   const ownRev = await admin.db.from("revisions").select("id").eq("song_id", song);
   check(ownRev.data?.length === 1, "owner reads its revision");
-  for (const [who, db] of [["visitor", anon], ["player", player.db], ["another admin", admin2.db]]) {
+  // other admins: read the chart, nothing else
+  check((await admin2.db.from("songs").select("id").eq("id", song).maybeSingle()).data?.id === song, "another admin reads an admin's uploaded chart");
+  const rev2 = await admin2.db.from("songs").select("current:revisions!songs_current_revision_fk(chart_text)").eq("id", song).maybeSingle();
+  check(!!rev2.data?.current?.chart_text, "another admin reads its current version");
+  check(!(await admin2.db.from("uploads").select("song_id").eq("song_id", song)).data?.length, "another admin can't read its upload row");
+  const dl2 = await admin2.db.storage.from("audio").download(path);
+  check(!!dl2.error || !dl2.data, "another admin can't download the audio");
+  const su2 = await admin2.db.storage.from("audio").createSignedUrl(path, 60);
+  check(!!su2.error || !su2.data?.signedUrl, "another admin can't make a link to the audio");
+  const vis2 = await admin2.db.rpc("upload_charts_visible");
+  check((vis2.data ?? []).some((c) => c.id === song && c.mine === false && c.by), "another admin's upload list shows it as someone else's");
+  for (const [who, db] of [["visitor", anon], ["player", player.db]]) {
     check(!(await db.from("songs").select("id").eq("id", song).maybeSingle()).data, `${who} can't read the private chart`);
     check(!(await db.from("revisions").select("id").eq("song_id", song)).data?.length, `${who} can't read its revisions`);
     check(!(await db.from("uploads").select("song_id").eq("song_id", song)).data?.length, `${who} can't read its upload row`);
@@ -133,7 +146,8 @@ try {
   expectErr(prop, "can't suggest an edit on a private chart");
   const mine = await admin.db.rpc("my_private_charts");
   check((mine.data ?? []).some((c) => c.id === song && c.has_audio && !("audio_path" in c)), "owner's list has it, without the audio path");
-  check(((await admin2.db.rpc("my_private_charts")).data ?? []).every((c) => c.id !== song), "another admin's list doesn't");
+  check(((await admin2.db.rpc("my_private_charts")).data ?? []).every((c) => c.id !== song), "another admin's own My uploads list doesn't");
+  check(((await player.db.rpc("upload_charts_visible")).data ?? []).every((c) => c.id !== song), "a player's upload list doesn't");
 
   // ── edits ───────────────────────────────────────────────────────────────────
   const save = await admin.db.rpc("private_save", { p_song: song, p_chart: CHART.replace("1 4 5 1", "1 4 5 5"), p_meta: META, p_title: "zz uploads check edited" });
@@ -151,6 +165,7 @@ try {
   const proMade = await create(pro.db);
   check(!proMade.error, `Pro creates a chart ${proMade.error?.message ?? ""}`);
   if (proMade.data?.id) songs.push(proMade.data.id);
+  check(!(await admin.db.from("songs").select("id").eq("id", proMade.data?.id).maybeSingle()).data, "a Pro's upload stays private from admins");
   await admin.db.rpc("set_upload_access", { p_value: 0 });
   check((await admin.db.rpc("upload_access")).data === false, "Off: admins can't upload either");
   expectErr(await create(admin.db), "Off: create refused");
@@ -163,6 +178,8 @@ try {
   const shared = await anon.rpc("upload_shared", { p_code: code });
   check(shared.data?.chart_text?.includes("[V]") && Object.keys(shared.data).sort().join() === "artist,chart_text,title", "share link: title, artist and chart only, no audio");
   expectErr(await player.db.rpc("upload_share", { p_song: song, p_on: true }), "only the owner can share");
+  expectErr(await admin2.db.rpc("upload_share", { p_song: song, p_on: true }), "another admin can't share it");
+  expectErr(await admin2.db.rpc("upload_delete", { p_song: song }), "another admin can't delete it");
   await admin.db.rpc("upload_share", { p_song: song, p_on: false });
   check(!(await anon.rpc("upload_shared", { p_code: code })).data, "turning sharing off kills the link");
 
@@ -173,6 +190,11 @@ try {
   check(!add.error, `owner adds their private chart to a setlist ${add.error?.message ?? ""}`);
   const ownBundle = await admin.db.rpc("setlist_bundle", { p_id: setlistId });
   check(ownBundle.data?.items?.[0]?.song?.chart_text?.includes("[V]"), "owner's setlist plays the chart");
+  const sl2 = await admin2.db.from("setlists").insert({ name: `zz uploads check a2 ${stamp}` }).select("id").single();
+  check(!(await admin2.db.rpc("setlist_add", { p_id: sl2.data?.id, p_slug: slug })).error, "another admin adds it to his setlist");
+  const b2 = await admin2.db.rpc("setlist_bundle", { p_id: sl2.data?.id });
+  check(b2.data?.items?.[0]?.song?.chart_text?.includes("[V]"), "and his setlist plays it");
+  await admin2.db.from("setlists").delete().eq("id", sl2.data?.id);
   const pl = await player.db.from("setlists").insert({ name: `zz uploads check p ${stamp}` }).select("id").single();
   expectErr(await player.db.rpc("setlist_add", { p_id: pl.data?.id, p_slug: slug }), "player can't add someone's private chart");
   await player.db.from("setlists").delete().eq("id", pl.data?.id);
