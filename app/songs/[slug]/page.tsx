@@ -1,11 +1,9 @@
 import { notFound } from "next/navigation";
-import { listSongs } from "@/lib/supabase/server";
-import { songPageData } from "./data";
+import { buildParams, songPageData } from "./data";
 import SongView from "./SongView";
 
 export async function generateStaticParams() {
-  const songs = await listSongs();
-  return songs.map((s) => ({ slug: s.slug }));
+  return buildParams();
 }
 
 export async function generateMetadata({ params }: PageProps<"/songs/[slug]">) {

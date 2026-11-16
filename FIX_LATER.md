@@ -113,3 +113,4 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Auto-approve: charts can go live with up to `auto_approve_max_unclear` unclear spots, but the song page hides `# UNCLEAR` notes, so players see a guessed bar with no warning; show an "uncertain bar" mark (its own step).
 - `check:verify` "a bulk card shows the live chart text" assumes its test song is among the 20 oldest Unverified cards; fails now that hundreds are live (test needs its own offset/filter).
 - Saved offline song page doesn't show the "NN% sure" line or the confirm count (not in `offline_sync()`); button is disabled offline as it should be.
+- Song and stage pages now render on first visit (only `BUILD_AHEAD` = 20 built ahead, `app/songs/[slug]/data.ts`): the first player to open a song waits ~0.25s once; consider warming popular songs after deploys.
