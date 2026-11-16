@@ -67,6 +67,7 @@ export default function PlayView({ set, id, exitHref, onExit }: { set: PlaySet; 
         title={song.title}
         chartText={song.chart_text}
         neighbors={NO_NEIGHBORS}
+        mine={song.private_id ? { id: null } : undefined}
         set={{
           count: label.count,
           next: label.next,

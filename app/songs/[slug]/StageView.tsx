@@ -10,6 +10,7 @@ import { usePickedChart } from "@/lib/personal/versions";
 import { useGo, useLocalNav } from "@/lib/offline/nav";
 import { FONTS, useChartState, useGesture, useSongKeys, useSongNav, type FontId, type KeyControl, type Neighbors } from "./hooks";
 import { recordRecent } from "@/lib/search/recent";
+import CheatSheet from "@/app/upload/CheatSheet";
 import { HoldSheet, useHold, useHoldMarks, withHold, type Spot } from "./Hold";
 
 const FIT_MIN = 30; // px: smallest size we shrink to so the whole chart fits without scrolling
@@ -62,18 +63,23 @@ export default function StageView({
   chartText,
   neighbors,
   set,
+  mine,
 }: {
   slug: string;
   title: string;
   chartText: string;
   neighbors: Neighbors;
   set?: StageSet;
+  /** One of the player's own uploaded charts: exits to /mine/<id>, adds the cheat sheet. */
+  mine?: { id: string | null };
 }) {
   // The player's own version, if they have one (one tap on the chip flips to public).
   const pick = usePickedChart(slug, chartText);
   const s = useChartState(slug, pick.text, set?.keyCtl);
   const nav = useSongNav(slug, neighbors);
-  useEffect(() => recordRecent(slug), [slug]);
+  useEffect(() => {
+    if (!mine) recordRecent(slug);
+  }, [slug, mine]);
   const router = useRouter();
   const goTo = useGo();
   const local = useLocalNav();
@@ -242,6 +248,7 @@ export default function StageView({
     return () => window.clearTimeout(t);
   }, [toast]);
   const [spot, setSpot] = useState<Spot | null>(null); // press-and-hold sheet
+  const [sheet, setSheet] = useState(false); // uploaded charts: one-screen cheat sheet
   const go = (d: -1 | 1) => {
     setSpot(null);
     if (set) {
@@ -255,7 +262,7 @@ export default function StageView({
   const exit = () => {
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     if (set) set.onExit();
-    else goTo(`/songs/${slug}`);
+    else goTo(mine?.id ? `/mine/${mine.id}` : `/songs/${slug}`);
   };
   useEffect(() => {
     if (!set && nav.next && !local) router.prefetch(`/songs/${nav.next.slug}/stage`);
@@ -339,6 +346,11 @@ export default function StageView({
           </button>
         )}
         <BpmToggle s={s} className="shrink-0 text-sm text-bb-cue-gray" />
+        {mine && (
+          <button onClick={() => setSheet(true)} className="h-11 shrink-0 rounded-bb-control px-2 text-sm font-bold text-bb-downbeat-amber active:bg-bb-case-charcoal">
+            Cheat sheet
+          </button>
+        )}
         {set ? (
           <>
             <button onClick={set.onJump} aria-label="Jump to a song in the set" className="grid size-11 shrink-0 place-items-center rounded-bb-control text-bb-cue-gray active:bg-bb-case-charcoal">
@@ -516,6 +528,27 @@ export default function StageView({
           )}
         </div>
       </div>
+      {mine && sheet && (
+        <div role="dialog" aria-label="Cheat sheet" className="fixed inset-0 z-[60] flex flex-col bg-bb-house-black text-bb-chart-white">
+          <header className="flex h-12 shrink-0 items-center gap-2 border-b border-bb-rule-gray/60 pl-1 pr-2">
+            <button onClick={() => setSheet(false)} aria-label="Close cheat sheet" className="grid size-11 shrink-0 place-items-center rounded-bb-control text-2xl text-bb-cue-gray active:bg-bb-case-charcoal">
+              ✕
+            </button>
+            <b className="truncate text-lg">{title}</b>
+          </header>
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+            <CheatSheet
+              big
+              text={pick.text}
+              header={
+                <p className="text-2xl text-bb-cue-gray">
+                  {[view.keyShort && pretty(view.keyShort), view.meta.bpm && `${view.meta.bpm} bpm`, view.meta.time].filter(Boolean).join(" · ")}
+                </p>
+              }
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

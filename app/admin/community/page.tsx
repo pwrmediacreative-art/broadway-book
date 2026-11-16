@@ -60,7 +60,7 @@ async function Body({ searchParams }: { searchParams: SearchParams }) {
   const like = `%${rq.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
   const [settings, reports, blocked, reviewers, found] = await Promise.all([
     // Auto-approve settings are edited on /admin/import (they allow 0; this form doesn't).
-    db.from("settings").select("key, value, label").not("key", "like", "auto_approve_%").order("key"),
+    db.from("settings").select("key, value, label").not("key", "like", "auto_approve_%").not("key", "like", "audio_%").order("key"),
     db
       .from("reports")
       .select(

@@ -29,7 +29,7 @@ export function SetSongList({ items, current, onPick }: { items: SetItem[]; curr
           <>
             <span className="w-8 shrink-0 text-right font-bb-data text-lg tabular-nums text-bb-cue-gray">{ok ? n : "–"}</span>
             <span className="min-w-0 flex-1">
-              <span className={`block truncate text-xl font-semibold ${ok ? "" : "text-bb-cue-gray line-through"}`}>{it.song?.title ?? "Not available"}</span>
+              <span className={`block truncate text-xl font-semibold ${ok ? "" : "text-bb-cue-gray line-through"}`}>{it.song?.title ?? (it.hidden ? "Private chart" : "Not available")}</span>
               {it.note && <span className="block truncate text-base text-bb-cue-gray">{it.note}</span>}
             </span>
             {ok && k && <span className="shrink-0 font-bb-data text-2xl font-bold text-bb-chart-white">{pretty(k)}</span>}

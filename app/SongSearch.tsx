@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { flushSync } from "react-dom";
+import MineResults from "./MineResults";
 import {
   countFilters,
   EMPTY_STATE,
@@ -425,6 +426,7 @@ export default function SongSearch() {
         </div>
       )}
 
+      {searching && <MineResults q={q} />}
       {!docs ? (
         <p className="bb-panel px-4 py-6 text-center text-bb-cue-gray">
           {index.offline

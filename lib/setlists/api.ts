@@ -99,7 +99,10 @@ const toSet = (b: BundleRow): AccountSet => ({
   updated_at: b.updated_at,
   share_code: b.share_code,
   mine: b.mine,
-  items: b.items.map((i): SetItem => ({ song_id: i.song_id, slug: i.song?.slug ?? null, key: i.key_override, note: i.note, song: i.song })),
+  items: b.items.map((i): SetItem => {
+    const hidden = !!(i.song as { hidden?: boolean } | null)?.hidden;
+    return { song_id: i.song_id, slug: hidden ? null : (i.song?.slug ?? null), key: i.key_override, note: i.note, song: hidden ? null : i.song, hidden };
+  }),
 });
 
 export async function fetchSetlist(id: string): Promise<AccountSet | null> {

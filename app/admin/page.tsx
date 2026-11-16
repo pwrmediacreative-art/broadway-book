@@ -1,7 +1,8 @@
 import { Suspense } from "react";
+import UploadAccess from "./UploadAccess";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getCurrentUser, sessionClient, syncRole } from "@/lib/supabase/session";
+import { getCurrentUser, sessionClient, syncPro, syncRole } from "@/lib/supabase/session";
 
 export const metadata = { title: "Admin · Broadway Book", robots: { index: false } };
 
@@ -31,18 +32,22 @@ const SECTIONS = [
   { title: "Import", path: "/admin/import", text: "Read Dropbox PDFs into charts and review the AI's work.", ready: true },
   { title: "Suggestions", path: "/community", text: "Open suggestions. Admins can approve now or close from each one.", ready: true },
   { title: "Community", path: "/admin/community", text: "Vote rules, reports and blocked players.", ready: true },
+  { title: "Upload", path: "/upload", text: "Turn a Moises chord chart (.musicxml), with optional audio, into a private draft chart.", ready: true },
 ];
 
 async function Dashboard() {
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/admin");
   await syncRole(user.id, user.email, user.role);
+  await syncPro(user.id, user.email);
 
   // The database decides: admin_dashboard() raises for anyone who isn't an admin.
   const db = await sessionClient();
   const { data, error } = await db.rpc("admin_dashboard");
   if (error || !data) notFound();
   const s = data as Stats;
+  const { data: access } = await db.from("settings").select("value").eq("key", "audio_upload_access").maybeSingle();
+  const uploadAccess = (access?.value === 0 || access?.value === 2 ? access.value : 1) as 0 | 1 | 2;
 
   return (
     <>
@@ -64,6 +69,8 @@ async function Dashboard() {
           </div>
         ))}
       </dl>
+
+      <UploadAccess initial={uploadAccess} />
 
       <ul className="divide-y divide-bb-rule-gray border-y border-bb-rule-gray">
         {SECTIONS.map((sec) => (

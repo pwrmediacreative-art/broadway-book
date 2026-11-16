@@ -148,16 +148,22 @@ function Wedge({ h }: { h: Hairpin }) {
 }
 
 /** Where each bar sits: "section.bar", counting bars only (matches lib/flags/ref). */
-type BarIds = { ids: Map<BarCell, string>; hold: HoldMarks } | null;
+type BarIds = { ids: Map<BarCell, string>; hold?: HoldMarks; play?: PlayMarks } | null;
 
-function barIds(view: ChartView, hold: HoldMarks | undefined): BarIds {
-  if (!hold) return null;
+/** Upload player: highlight the bar being played ("section.bar") and jump on tap. */
+export interface PlayMarks {
+  current: string | null;
+  onTap: (id: string) => void;
+}
+
+function barIds(view: ChartView, hold: HoldMarks | undefined, play?: PlayMarks): BarIds {
+  if (!hold && !play) return null;
   const ids = new Map<BarCell, string>();
   view.sections.forEach((s, i) => {
     let n = 0;
     for (const row of s.rows) for (const c of row) if (c.kind === "bar") ids.set(c, `${i}.${n++}`);
   });
-  return { ids, hold };
+  return { ids, hold, play };
 }
 
 function Line({ line, chords, bars }: { line: GridLine; chords: boolean; bars?: BarIds }) {
@@ -180,11 +186,33 @@ function Line({ line, chords, bars }: { line: GridLine; chords: boolean; bars?: 
           {g.notes.map((n, j) => <NoteChip key={j} n={n} />)}
         </div>
       ))}
-      {line.bars.map((x) => (
-        <div key={x.col} data-bar className="min-w-0 self-end overflow-hidden" style={{ gridColumn: x.col + 1, gridRow: 2 }}>
-          <Bar cell={x.cell} chords={chords} marks={marks} spot={bars && { id: bars.ids.get(x.cell)!, hold: bars.hold }} />
-        </div>
-      ))}
+      {line.bars.map((x) => {
+        const id = bars?.ids.get(x.cell);
+        const bar = <Bar cell={x.cell} chords={chords} marks={marks} spot={bars?.hold && id ? { id, hold: bars.hold } : null} />;
+        if (bars?.play && id) {
+          const on = bars.play.current === id;
+          return (
+            <button
+              key={x.col}
+              type="button"
+              data-bar
+              data-play-bar={id}
+              aria-current={on ? "true" : undefined}
+              aria-label="Play from this bar"
+              onClick={() => bars.play!.onTap(id)}
+              className={`min-w-0 self-end overflow-hidden rounded-[0.12em] text-left outline-offset-[0.06em] ${on ? "bg-bb-downbeat-amber/25 outline outline-[0.08em] outline-bb-downbeat-amber" : ""}`}
+              style={{ gridColumn: x.col + 1, gridRow: 2 }}
+            >
+              {bar}
+            </button>
+          );
+        }
+        return (
+          <div key={x.col} data-bar className="min-w-0 self-end overflow-hidden" style={{ gridColumn: x.col + 1, gridRow: 2 }}>
+            {bar}
+          </div>
+        );
+      })}
       {line.after && (
         <div
           className={`flex min-w-0 flex-wrap items-center gap-[0.2em] ${line.afterBelow ? "justify-end" : "self-center"}`}
@@ -209,6 +237,7 @@ export default function Chart({
   rootRef,
   marks,
   hold,
+  play,
 }: {
   view: ChartView;
   chords: boolean;
@@ -220,8 +249,10 @@ export default function Chart({
   marks?: { rows: Set<string>; active: string | null; onTap: (row: string) => void };
   /** Song page and stage mode: tag beats for press-and-hold and draw personal flag markers. */
   hold?: HoldMarks;
+  /** Upload player: bar marker + tap a bar to jump the audio there. */
+  play?: PlayMarks;
 }) {
-  const bars = barIds(view, hold);
+  const bars = barIds(view, hold, play);
   return (
     <div
       ref={rootRef}

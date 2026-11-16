@@ -9,6 +9,7 @@ import { useSyncExternalStore } from "react";
 import { browserClient } from "@/lib/supabase/browser";
 import { fetchSetlist, fetchSharedSetlist, fetchSummaries } from "@/lib/setlists/api";
 import { dbAll, dbWriteSongs, kvGet, kvSet, SONGS } from "./db";
+import { syncMine } from "@/lib/upload/mine";
 import { dropSets, META, rawSavedSet, savedSetKeys, saveSet, saveSummaries, setKey, type SyncMeta } from "./charts";
 import { nextSince, planSync, songSig, type SavedSong } from "./plan";
 import { isNetworkError, isOffline, reportOffline } from "./status";
@@ -138,7 +139,7 @@ export function runSync(): Promise<void> {
   lastTry = Date.now();
   running = (async () => {
     if (isOffline()) return;
-    for (const job of [syncCharts, syncSetlists]) {
+    for (const job of [syncCharts, syncSetlists, syncMine]) {
       try {
         await job();
       } catch (e) {

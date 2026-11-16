@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { sessionClient, syncRole, type Role } from "@/lib/supabase/session";
+import { sessionClient, syncPro, syncRole, type Role } from "@/lib/supabase/session";
 import { safeNext } from "@/lib/auth/roles";
 
 // Called by /auth/confirm with the tokens from the magic link. Supabase verifies them in
@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
 
   const { data: profile } = await db.from("profiles").select("display_name, role").eq("id", user.id).maybeSingle();
   await syncRole(user.id, user.email, (profile?.role as Role) ?? "contributor");
+  await syncPro(user.id, user.email);
 
   const next = safeNext(typeof body.next === "string" ? body.next : "/");
   const dest = profile?.display_name ? next : `/profile?next=${encodeURIComponent(next)}`;

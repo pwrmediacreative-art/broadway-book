@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
-import { sessionClient, syncRole, type Role } from "@/lib/supabase/session";
+import { sessionClient, syncPro, syncRole, type Role } from "@/lib/supabase/session";
 import { safeNext } from "@/lib/auth/roles";
 
 // Magic-link landing. Handles the token_hash link (our email template, works in any browser)
@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
 
   const { data: profile } = await db.from("profiles").select("display_name, role").eq("id", user.id).maybeSingle();
   await syncRole(user.id, user.email, (profile?.role as Role) ?? "contributor");
+  await syncPro(user.id, user.email);
 
   let next = "/";
   try {

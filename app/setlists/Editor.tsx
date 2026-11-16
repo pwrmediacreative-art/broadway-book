@@ -324,7 +324,7 @@ function SongEditRow({
         </button>
         <span className="w-7 shrink-0 text-right font-bb-data text-lg tabular-nums text-bb-cue-gray">{n}</span>
         <span className="min-w-0 flex-1">
-          <span className={`block truncate text-xl font-semibold ${r.song ? "" : "text-bb-cue-gray line-through"}`}>{r.song?.title ?? "Not available"}</span>
+          <span className={`block truncate text-xl font-semibold ${r.song ? "" : "text-bb-cue-gray line-through"}`}>{r.song?.title ?? (r.hidden ? "Private chart" : "Not available")}</span>
           {r.song?.artist && <span className="block truncate text-sm text-bb-cue-gray">{r.song.artist}</span>}
         </span>
         {opts.length > 0 && (

@@ -70,3 +70,20 @@ export async function syncRole(userId: string, email: string | undefined, curren
   if (error) throw new Error(`role sync failed: ${error.message}`);
   return want;
 }
+
+/**
+ * Make profiles.is_pro match PRO_EMAILS (comma-separated, like ADMIN_EMAILS). Leaves it
+ * alone when PRO_EMAILS is unset or the service-role key is missing. Pro only matters for
+ * uploads when /admin opens them to "Admins + Pro".
+ */
+export async function syncPro(userId: string, email: string | undefined): Promise<void> {
+  const pros = parseAdminEmails(process.env.PRO_EMAILS);
+  if (!pros) return;
+  const want = !!email && pros.has(email.trim().toLowerCase());
+  const svc = serviceClient();
+  if (!svc) return;
+  const { data } = await svc.from("profiles").select("is_pro").eq("id", userId).maybeSingle();
+  if (!data || data.is_pro === want) return;
+  const { error } = await svc.from("profiles").update({ is_pro: want }).eq("id", userId);
+  if (error) throw new Error(`pro sync failed: ${error.message}`);
+}

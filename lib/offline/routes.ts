@@ -11,6 +11,7 @@ export const SHELLS = [
   "/offline",
   "/offline/song",
   "/offline/setlist",
+  "/offline/mine",
 ];
 
 export type OfflineTarget = { serve: string } | { redirect: string };
@@ -28,6 +29,8 @@ export function offlineTarget(pathname: string): OfflineTarget {
   if (m) return { redirect: `/offline/song?s=${enc(decodeURIComponent(m[1]))}${m[2] ? "&stage=1" : ""}` };
   m = /^\/setlists\/([^/]+)(\/play)?$/.exec(path);
   if (m) return { redirect: `/offline/setlist?id=${enc(decodeURIComponent(m[1]))}${m[2] ? "&play=1" : ""}` };
+  m = /^\/mine\/([0-9a-f-]{36})(\/stage)?$/.exec(path);
+  if (m) return { redirect: `/offline/mine?id=${m[1]}${m[2] ? "&stage=1" : ""}` };
   m = /^\/s\/([^/]+)(\/play)?$/.exec(path);
   if (m) return { redirect: `/offline/setlist?code=${enc(decodeURIComponent(m[1]))}${m[2] ? "&play=1" : ""}` };
   return { redirect: `/offline?from=${enc(path)}` };

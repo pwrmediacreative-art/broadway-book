@@ -22,6 +22,7 @@
     "check:offline": "node --env-file=.env.local scripts/check-offline.mjs",
     "check:auto": "node --env-file=.env.local scripts/check-auto.mjs",
     "check:unverified": "node --env-file=.env.local scripts/check-unverified.mjs",
+    "check:uploads": "node --env-file=.env.local scripts/check-uploads.mjs",
     "publish:unverified": "node --env-file=.env.local --import tsx scripts/publish-unverified.ts",
     "icons": "node scripts/gen-icons.mjs",
     "dropbox:token": "node --env-file=.env.local scripts/dropbox-token.mjs"

@@ -114,3 +114,11 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - `check:verify` "a bulk card shows the live chart text" assumes its test song is among the 20 oldest Unverified cards; fails now that hundreds are live (test needs its own offset/filter).
 - Saved offline song page doesn't show the "NN% sure" line or the confirm count (not in `offline_sync()`); button is disabled offline as it should be.
 - Song and stage pages now render on first visit (only `BUILD_AHEAD` = 20 built ahead, `app/songs/[slug]/data.ts`): the first player to open a song waits ~0.25s once; consider warming popular songs after deploys.
+- Uploads: section labels proposed from repeat patterns are rough when chord timing jitters (Moises exports); tune build.ts with more real files.
+- Uploads: press-and-hold "Suggest an edit" on a private chart's stage view links to the library editor, which can't open private charts.
+- Uploads: the audio link lasts 1 hour; after that the player asks for a page reload instead of renewing the link itself.
+- Uploads: admin_dashboard() "Songs" count includes private charts.
+- Uploads: "Check the ending from the audio" decodes the whole file in the browser; long WAVs can be heavy on old phones.
+- Uploads: your own charts show in home search only while typing (not in A–Z or Recent).
+- check:offline compares against a songs query capped at 1,000 rows, so it fails now that 2,368 songs are published; page that query.
+- check:verify looks for its test song in the first 20 bulk cards, which are now the oldest of ~1,000 Unverified songs; make it page or filter.

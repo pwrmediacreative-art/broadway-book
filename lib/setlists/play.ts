@@ -11,6 +11,7 @@ export interface SetSong {
   artist: string | null;
   key: string | null;
   chart_text: string;
+  private_id?: string | null; // one of your own uploaded charts
 }
 
 export interface SetItem {
@@ -19,6 +20,7 @@ export interface SetItem {
   key: string | null; // setlist key override (in the song's own mode), null = chart's key
   note: string | null;
   song: SetSong | null;
+  hidden?: boolean; // someone else's private chart: shown as "Private chart", never the chart
 }
 
 export interface PlaySet {
