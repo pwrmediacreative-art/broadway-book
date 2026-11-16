@@ -174,6 +174,13 @@ export async function saveSetlist(id: string, s: { name: string; gig_date: strin
   fail(error);
 }
 
+/** The song slugs of one of your setlists, in order (null for a song that's gone or someone else's private chart). */
+export async function setlistSlugs(id: string): Promise<(string | null)[]> {
+  const { data, error } = await db().from("setlist_items").select("position, songs(slug)").eq("setlist_id", id).order("position");
+  fail(error);
+  return (data ?? []).map((r) => (r.songs as unknown as { slug: string } | null)?.slug ?? null);
+}
+
 export async function addToSetlist(id: string, slug: string): Promise<void> {
   const { error } = await db().rpc("setlist_add", { p_id: id, p_slug: slug });
   fail(error);

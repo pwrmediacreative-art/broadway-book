@@ -7,8 +7,8 @@ import { pretty } from "@/lib/chart";
 import { createEngine } from "@/lib/search/engine";
 import { useSongIndex } from "@/lib/search/useIndex";
 import { loadSongs } from "@/lib/setlists/api";
-import { keyOptions, MAX_NOTE, MAX_SONGS, noteCheck, type PlaySet, type SetItem } from "@/lib/setlists/play";
-import { btn, enterFullscreen, plain, primary } from "./ui";
+import { keyOptions, MAX_NOTE, MAX_SONGS, noteCheck, placeOf, type PlaySet, type SetItem } from "@/lib/setlists/play";
+import { btn, DupConfirm, enterFullscreen, plain, primary } from "./ui";
 
 type Row = SetItem & { uid: string };
 let uidN = 0;
@@ -149,10 +149,14 @@ export default function Editor({
   const [q, setQ] = useState("");
   const [adding, setAdding] = useState<string | null>(null);
   const [added, setAdded] = useState<string | null>(null);
+  const [dup, setDup] = useState<{ slug: string; title: string; n: number } | null>(null);
+  const cancelDup = () => setDup(null);
   const results = useMemo(() => (engine?.search(q) ?? []).slice(0, 8).map((s) => bySlug.get(s)!).filter(Boolean), [engine, q, bySlug]);
   const full = rows.length >= MAX_SONGS;
-  const add = async (slug: string, title: string) => {
+  const add = async (slug: string, title: string, again = false) => {
     if (full) return;
+    const n = again ? null : placeOf(rows.map((r) => r.slug), slug);
+    if (n !== null) return setDup({ slug, title, n });
     setAdding(slug);
     try {
       const song = (await loadSongs([slug])).get(slug) ?? null;
@@ -279,6 +283,25 @@ export default function Editor({
           </ul>
         )}
       </section>
+
+      {dup && (
+        <div className="fixed inset-0 z-[70] flex items-end bg-bb-stage-black/80 sm:items-center sm:justify-center" onClick={cancelDup}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full rounded-bb-none border-t border-bb-rule-gray bg-bb-house-black p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:max-w-md sm:border"
+          >
+            <DupConfirm
+              title={dup.title}
+              n={dup.n}
+              onCancel={cancelDup}
+              onAdd={() => {
+                setDup(null);
+                void add(dup.slug, dup.title, true);
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {typeof share === "function" ? share({ name, gig_date: date || null, items: strip(rows) }) : share}
       {danger}

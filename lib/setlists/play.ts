@@ -29,6 +29,15 @@ export interface PlaySet {
   items: SetItem[];
 }
 
+/** 1-based place of `slug` among a setlist's songs (as numbered in the editor), or null when it isn't there. */
+export function placeOf(slugs: (string | null)[], slug: string): number | null {
+  const i = slugs.indexOf(slug);
+  return i < 0 ? null : i + 1;
+}
+
+/** The question asked before a song goes into a setlist that already has it. */
+export const dupQuestion = (title: string, n: number) => `“${title}” is already in this setlist (#${n}). Add it again?`;
+
 /** Indexes of the items play mode visits, in order (songs that are no longer published are skipped). */
 export function playOrder(items: SetItem[]): number[] {
   return items.flatMap((it, i) => (it.song ? [i] : []));

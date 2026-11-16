@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { addToSetlist, createSetlist, currentUserId, listMySetlists, type SetlistSummary } from "@/lib/setlists/api";
+import { addToSetlist, createSetlist, currentUserId, listMySetlists, setlistSlugs, type SetlistSummary } from "@/lib/setlists/api";
 import { addToDeviceSetlist, useDeviceSetlist } from "@/lib/setlists/device";
-import { MAX_SONGS } from "@/lib/setlists/play";
-import { btn, gigDate, plain, primary } from "./ui";
+import { MAX_SONGS, placeOf } from "@/lib/setlists/play";
+import { btn, DupConfirm, gigDate, plain, primary } from "./ui";
 import { OfflineNote } from "@/app/OfflineRoot";
 import { useOffline } from "@/lib/offline/status";
 
@@ -33,13 +33,16 @@ export default function AddToSetlist({ slug, title, variant }: { slug: string; t
   );
 }
 
+type Done = { name: string; href: string };
 type Who = { state: "loading" } | { state: "out" } | { state: "in"; lists: SetlistSummary[] } | { state: "error"; message: string };
 
 function Picker({ slug, title, onClose }: { slug: string; title: string; onClose: () => void }) {
   const device = useDeviceSetlist();
   const [who, setWho] = useState<Who>({ state: "loading" });
   const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState<{ name: string; href: string } | null>(null);
+  const [done, setDone] = useState<Done | null>(null);
+  // The song is already in the picked list: ask first. `add` is the add that runs on "Add again".
+  const [dup, setDup] = useState<{ n: number; add: () => Promise<Done> } | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [newName, setNewName] = useState<string | null>(null);
   const offline = useOffline();
@@ -63,11 +66,13 @@ function Picker({ slug, title, onClose }: { slug: string; title: string; onClose
     };
   }, [onClose]);
 
-  const run = async (fn: () => Promise<{ name: string; href: string }>) => {
+  // fn returns null when it stopped to ask about a duplicate.
+  const run = async (fn: () => Promise<Done | null>) => {
     setBusy(true);
     setErr(null);
     try {
-      setDone(await fn());
+      const r = await fn();
+      if (r) setDone(r);
     } catch (e) {
       setErr((e as Error).message);
     } finally {
@@ -77,8 +82,14 @@ function Picker({ slug, title, onClose }: { slug: string; title: string; onClose
   const toList = (l: SetlistSummary) =>
     run(async () => {
       if (l.count >= MAX_SONGS) throw new Error(`${l.name} is full (${MAX_SONGS} songs).`);
-      await addToSetlist(l.id, slug);
-      return { name: l.name, href: `/setlists/${l.id}` };
+      const add = async () => {
+        await addToSetlist(l.id, slug);
+        return { name: l.name, href: `/setlists/${l.id}` };
+      };
+      const n = l.count ? placeOf(await setlistSlugs(l.id), slug) : null;
+      if (n === null) return add();
+      setDup({ n, add });
+      return null;
     });
   const toNew = (name: string) =>
     run(async () => {
@@ -88,8 +99,17 @@ function Picker({ slug, title, onClose }: { slug: string; title: string; onClose
     });
   const toDevice = () =>
     run(async () => {
-      if (!addToDeviceSetlist(slug)) throw new Error(`Your setlist is full (${MAX_SONGS} songs).`);
-      return { name: device?.name || "My setlist", href: "/setlists/device" };
+      const full = new Error(`Your setlist is full (${MAX_SONGS} songs).`);
+      const items = device?.items ?? [];
+      if (items.length >= MAX_SONGS) throw full;
+      const add = async () => {
+        if (!addToDeviceSetlist(slug)) throw full;
+        return { name: device?.name || "My setlist", href: "/setlists/device" };
+      };
+      const n = placeOf(items.map((i) => i.slug), slug);
+      if (n === null) return add();
+      setDup({ n, add });
+      return null;
     });
 
   const row = "flex min-h-14 w-full items-center justify-between gap-3 bg-bb-case-charcoal px-4 py-2 text-left active:bg-bb-rule-gray";
@@ -123,6 +143,16 @@ function Picker({ slug, title, onClose }: { slug: string; title: string; onClose
               </button>
             </div>
           </>
+        ) : dup ? (
+          <DupConfirm
+            title={title}
+            n={dup.n}
+            onCancel={() => setDup(null)}
+            onAdd={() => {
+              setDup(null);
+              void run(dup.add);
+            }}
+          />
         ) : (
           <>
             {err && <p className="bb-error mb-3 border border-bb-stop-red p-3 text-lg">{err}</p>}

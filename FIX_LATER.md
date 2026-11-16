@@ -122,3 +122,5 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Uploads: your own charts show in home search only while typing (not in A–Z or Recent).
 - check:offline compares against a songs query capped at 1,000 rows, so it fails now that 2,368 songs are published; page that query.
 - check:verify looks for its test song in the first 20 bulk cards, which are now the oldest of ~1,000 Unverified songs; make it page or filter.
+- Setlist duplicate question: after Cancel, focus falls to the page body; send it back to the button or search box that started the add (AddToSetlist picker, Editor).
+- Setlist editor duplicate question overlay has no focus trap (Tab can leave it); make the page behind it inert while it's open.

@@ -1,11 +1,41 @@
 "use client";
 
+import { useEffect } from "react";
 import { pretty } from "@/lib/chart";
-import { shownKey, type SetItem } from "@/lib/setlists/play";
+import { dupQuestion, shownKey, type SetItem } from "@/lib/setlists/play";
 
 export const btn = "bb-btn h-12 min-w-12 px-4 text-lg";
 export const primary = "bb-btn-primary";
 export const plain = "bb-btn-secondary";
+
+/** In-app "already in this setlist" question. Cancel is the default: focused first, primary, and Escape. */
+export function DupConfirm({ title, n, onAdd, onCancel }: { title: string; n: number; onAdd: () => void; onCancel: () => void }) {
+  useEffect(() => {
+    // Capture phase, so Escape only cancels this question instead of also closing the sheet around it.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.stopImmediatePropagation();
+      onCancel();
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [onCancel]);
+  return (
+    <div role="alertdialog" aria-modal="true" aria-labelledby="bb-dup-q">
+      <p id="bb-dup-q" className="mb-4 text-xl text-bb-chart-white">
+        {dupQuestion(title, n)}
+      </p>
+      <div className="flex gap-2">
+        <button autoFocus onClick={onCancel} className={`${btn} ${primary} h-14 flex-1`}>
+          Cancel
+        </button>
+        <button onClick={onAdd} className={`${btn} ${plain} h-14 flex-1`}>
+          Add again
+        </button>
+      </div>
+    </div>
+  );
+}
 
 /** "Fri, Nov 20" from a YYYY-MM-DD date, without timezone shifts. */
 export function gigDate(d: string | null): string | null {

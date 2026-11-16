@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { EXAMPLE_CHARTS } from "../chart/examples";
-import { itemView, keyOptions, noteCheck, playLabel, playOrder, shownKey, startPos, step, type SetItem } from "./play";
+import { dupQuestion, itemView, keyOptions, noteCheck, placeOf, playLabel, playOrder, shownKey, startPos, step, type SetItem } from "./play";
 import { decodeSnapshot, encodeSnapshot } from "./snapshot";
 
 const CHART = "{title: Test}\n{key: G}\n\n[V] 1 4 5 1\n";
@@ -139,5 +139,20 @@ describe("snapshot links", () => {
     const d = decodeSnapshot(bad.replace(/=+$/, ""))!;
     expect(d.gig_date).toBeNull();
     expect(d.items).toEqual([{ slug: "ok-song", key: null, note: "x".repeat(60) }]);
+  });
+});
+
+describe("duplicate check before adding to a setlist", () => {
+  it("finds the song's number as the editor shows it", () => {
+    expect(placeOf(["a", "b", "c", "d"], "d")).toBe(4);
+    expect(placeOf(["a", null, "b"], "b")).toBe(3); // gone/private songs still take a number
+    expect(placeOf(["a", "b", "a"], "a")).toBe(1); // first copy
+  });
+  it("returns null for a new song, so no question is asked", () => {
+    expect(placeOf([], "a")).toBeNull();
+    expect(placeOf(["a", null], "b")).toBeNull();
+  });
+  it("asks in plain words with the song's place", () => {
+    expect(dupQuestion("Wagon Wheel", 4)).toBe("“Wagon Wheel” is already in this setlist (#4). Add it again?");
   });
 });
