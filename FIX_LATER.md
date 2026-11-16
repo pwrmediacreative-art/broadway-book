@@ -111,3 +111,5 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Fresh worktrees need `npm install` and `next typegen` before `tsc` passes (missing pdfjs-dist/minisearch, `PageProps`).
 - check:claims: "progress counts each person's publishes and can't-reads" fails since the Verified step made review_progress() count only verifications; the check needs updating.
 - Auto-approve: charts can go live with up to `auto_approve_max_unclear` unclear spots, but the song page hides `# UNCLEAR` notes, so players see a guessed bar with no warning; show an "uncertain bar" mark (its own step).
+- `check:verify` "a bulk card shows the live chart text" assumes its test song is among the 20 oldest Unverified cards; fails now that hundreds are live (test needs its own offset/filter).
+- Saved offline song page doesn't show the "NN% sure" line or the confirm count (not in `offline_sync()`); button is disabled offline as it should be.

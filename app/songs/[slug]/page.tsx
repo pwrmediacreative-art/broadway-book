@@ -28,6 +28,7 @@ export default async function SongPage({ params }: PageProps<"/songs/[slug]">) {
       isExample={song.is_example}
       unverified={song.unverified}
       verifiedAt={song.verified_at}
+      confidence={song.confidence}
       chartText={song.chart_text}
       neighbors={neighbors}
     />

@@ -51,6 +51,8 @@ export interface ReviewSong {
   /** Live as Unverified with no human check (see 20261114100000_auto_approve.sql). */
   auto_approved: boolean;
   auto_cutoff: number | null;
+  /** Players who tapped "Played it, it's right" on the live chart. */
+  confirmations: number | null;
   draft: { chart_text: string; base_revision_id: string | null; updated_at: string; by: string } | null;
   flags: { reason: keyof typeof FLAG_REASONS; details: string | null; created_at: string; by: string | null }[];
   duplicates: { id: string; title: string; artist: string | null; status: string; file_name: string | null }[];
@@ -341,6 +343,7 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
             ? "Can't read: type it in"
             : "Not live yet"}
         {song.confidence != null && ` · reader confidence ${Number(song.confidence).toFixed(2)}`}
+        {!!song.confirmations && ` · confirmed by ${song.confirmations} player${song.confirmations === 1 ? "" : "s"}`}
         {song.review_hold && " · on hold"}
         {song.notes && ` · “${song.notes}”`}
       </p>

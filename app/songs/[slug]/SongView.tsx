@@ -14,6 +14,8 @@ import { checkedDate } from "@/lib/review/queue";
 import { useGo, useLocalNav } from "@/lib/offline/nav";
 import { OpenBadge, PersonalBar, SongActions, useOpenCount } from "./Community";
 import { HoldSheet, MoveFlagsBanner, MyFlags, useHold, useHoldMarks, withHold, type Spot } from "./Hold";
+import { ConfirmButton, useConfirm } from "./Confirm";
+import { confirmedLine, sureLabel } from "@/lib/confirm";
 
 export interface SongProps {
   slug: string;
@@ -24,6 +26,8 @@ export interface SongProps {
   unverified?: boolean;
   /** When an admin checked this exact chart against the original (null: not verified). */
   verifiedAt?: string | null;
+  /** How sure the reading of this chart is (0–1). Shown only while Unverified. */
+  confidence?: number | null;
   chartText: string;
   neighbors: Neighbors;
 }
@@ -71,10 +75,14 @@ function VerifiedBadge({ at }: { at?: string | null }) {
   );
 }
 
-export default function SongView({ slug, songId, title, artist, isExample, unverified, verifiedAt, chartText, neighbors }: SongProps) {
+export default function SongView({ slug, songId, title, artist, isExample, unverified, verifiedAt, confidence, chartText, neighbors }: SongProps) {
   // The signed-in player's own version replaces the public chart (they can flip back).
   const pick = usePickedChart(slug, chartText);
   const openCount = useOpenCount(songId);
+  const showUnverified = !isExample && !!unverified;
+  const confirm = useConfirm(songId, showUnverified);
+  const sure = showUnverified ? sureLabel(confidence) : null;
+  const confirmed = showUnverified ? confirmedLine(confirm.state?.count) : null;
   const s = useChartState(slug, pick.text);
   const nav = useSongNav(slug, neighbors);
   useEffect(() => recordRecent(slug), [slug]);
@@ -144,8 +152,18 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
           )}
           {/* Examples sit outside verification: they only carry the Example badge. */}
           {!isExample && (unverified ? <UnverifiedBadge className="ml-2" /> : <VerifiedBadge at={verifiedAt} />)}
+          {sure && (
+            <span className="ml-2 align-middle text-base text-bb-cue-gray" data-sure>
+              {sure}
+            </span>
+          )}
           <OpenBadge slug={slug} count={openCount} />
         </p>
+        {confirmed && (
+          <p className="mt-1 text-base text-bb-chart-white" data-confirmed-line>
+            ✓ {confirmed}
+          </p>
+        )}
         {!isExample && unverified && (
           <p className="mt-1 text-base text-bb-cue-gray" data-unverified-note>
             Not yet checked against the original. Play it by ear and{" "}
@@ -183,6 +201,7 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
       )}
       <MyFlags slug={slug} view={s.view} />
 
+      {showUnverified && <ConfirmButton slug={slug} songId={songId} c={confirm} />}
       <SongActions slug={slug} songId={songId} pick={pick} />
 
       <nav className="mt-10 grid grid-cols-2 gap-3" aria-label="Other songs">

@@ -38,6 +38,7 @@ interface Row {
   claim_expires: string | null;
   claimed_by_me: boolean | null;
   auto_approved: boolean;
+  confirmations: number;
 }
 interface ListData {
   counts: {
@@ -172,6 +173,7 @@ async function Queue({ searchParams }: { searchParams: SearchParams }) {
                     {s.unclear} unclear
                   </span>
                   {s.confidence != null && <span className="bb-chip bb-chip-muted font-bb-data">{Number(s.confidence).toFixed(2)}</span>}
+                  {s.confirmations > 0 && <span className="bb-chip">✓ {s.confirmations} confirmed</span>}
                 </span>
               </Link>
               {admin && s.auto_approved && (

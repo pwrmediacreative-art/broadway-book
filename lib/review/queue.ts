@@ -1,6 +1,7 @@
 // Review queue order + filter: labels, parsing from the URL / the device cookie. Pure.
 
 export const ORDERS = {
+  confirmed: "Most confirmed first",
   conf_desc: "Highest confidence first",
   conf_asc: "Lowest confidence first",
   title: "A–Z by title",
@@ -31,10 +32,14 @@ export interface Prefs {
   order: Order;
 }
 /** Opens on the live charts nobody has verified yet (see `pickedFilter` for the fall-through). */
-export const DEFAULT_PREFS: Prefs = { filter: "unverified", order: "conf_desc" };
+export const DEFAULT_PREFS: Prefs = { filter: "unverified", order: "confirmed" };
 
-/** Remembered on this device (read by the server to pick the next song). */
-export const PREFS_COOKIE = "bb_review";
+/** Each filter's starting order: Unverified puts crowd-confirmed charts first. */
+export const defaultOrder = (f: Filter): Order => (f === "unverified" ? "confirmed" : "conf_desc");
+
+/** Remembered on this device (read by the server to pick the next song). "2": the new
+ *  "Most confirmed first" default replaces orders remembered before it existed. */
+export const PREFS_COOKIE = "bb_review2";
 
 const isOrder = (v: unknown): v is Order => typeof v === "string" && Object.hasOwn(ORDERS, v);
 const isFilter = (v: unknown): v is Filter => typeof v === "string" && Object.hasOwn(FILTERS, v);
@@ -45,10 +50,8 @@ export function readPrefs(sp: { f?: string | string[]; o?: string | string[] }, 
   const [cf, co] = (cookie ?? "").split(".");
   const f = one(sp.f);
   const o = one(sp.o);
-  return {
-    filter: isFilter(f) ? f : isFilter(cf) ? cf : DEFAULT_PREFS.filter,
-    order: isOrder(o) ? o : isOrder(co) ? co : DEFAULT_PREFS.order,
-  };
+  const filter = isFilter(f) ? f : isFilter(cf) ? cf : DEFAULT_PREFS.filter;
+  return { filter, order: isOrder(o) ? o : isOrder(co) ? co : defaultOrder(filter) };
 }
 
 /** Did the reviewer choose a filter (URL or this device's cookie), or are we on the default? */

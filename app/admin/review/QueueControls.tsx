@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FILTERS, ORDERS, PREFS_COOKIE, prefsCookie, prefsQuery, type Filter, type Order, type Prefs } from "@/lib/review/queue";
+import { defaultOrder, FILTERS, ORDERS, PREFS_COOKIE, prefsCookie, prefsQuery, type Filter, type Order, type Prefs } from "@/lib/review/queue";
 
 const sel = "bb-input px-2 text-lg";
 
@@ -15,7 +15,7 @@ export default function QueueControls({ prefs, to }: { prefs: Prefs; to: "next" 
   return (
     <div className="flex flex-wrap gap-2">
       <label className="sr-only" htmlFor="rv-filter">Show</label>
-      <select id="rv-filter" className={sel} value={prefs.filter} onChange={(e) => go({ ...prefs, filter: e.target.value as Filter })}>
+      <select id="rv-filter" className={sel} value={prefs.filter} onChange={(e) => go({ filter: e.target.value as Filter, order: defaultOrder(e.target.value as Filter) })}>
         {Object.entries(FILTERS).map(([k, v]) => (
           <option key={k} value={k}>{v}</option>
         ))}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildView, parseChart } from "../chart";
 import { lineRows, unclearMarks } from "./unclear";
-import { checkedDate, cleanSkip, FILTERS, pickedFilter, readPrefs, UNVERIFY_REASONS } from "./queue";
+import { checkedDate, cleanSkip, defaultOrder, FILTERS, ORDERS, pickedFilter, readPrefs, UNVERIFY_REASONS } from "./queue";
 import { reviewKey } from "./keys";
 
 const CHART = [
@@ -64,11 +64,18 @@ describe("unclearMarks", () => {
 
 describe("readPrefs", () => {
   it("URL beats cookie beats defaults, junk ignored", () => {
-    expect(readPrefs({}, null)).toEqual({ filter: "unverified", order: "conf_desc" });
+    expect(readPrefs({}, null)).toEqual({ filter: "unverified", order: "confirmed" });
     expect(readPrefs({}, "duplicates.artist")).toEqual({ filter: "duplicates", order: "artist" });
     expect(readPrefs({ o: "title" }, "duplicates.artist")).toEqual({ filter: "duplicates", order: "title" });
     expect(readPrefs({ f: "nope", o: ["conf_asc"] }, "x.y")).toEqual({ filter: "unverified", order: "conf_asc" });
-    expect(readPrefs({ f: "toString" }, "constructor.__proto__")).toEqual({ filter: "unverified", order: "conf_desc" });
+    expect(readPrefs({ f: "toString" }, "constructor.__proto__")).toEqual({ filter: "unverified", order: "confirmed" });
+  });
+  it("Unverified starts on Most confirmed first; other filters on highest confidence", () => {
+    expect(ORDERS.confirmed).toBe("Most confirmed first");
+    expect(defaultOrder("unverified")).toBe("confirmed");
+    expect(defaultOrder("needs_review")).toBe("conf_desc");
+    expect(readPrefs({ f: "verified" }, null).order).toBe("conf_desc");
+    expect(readPrefs({ f: "unverified", o: "title" }, null).order).toBe("title"); // a chosen order still wins
   });
   it("opens on Unverified, with Verified as a filter too", () => {
     expect(Object.keys(FILTERS).slice(0, 2)).toEqual(["unverified", "verified"]);
