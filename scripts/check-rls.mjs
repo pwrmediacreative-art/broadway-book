@@ -14,14 +14,24 @@ const pass = (m) => console.log("PASS", m);
 const fail = (m) => { failed++; console.log("FAIL", m); };
 
 // Reads
-const songs = await db.from("songs").select("id, status, current_revision_id");
+// The API returns at most 1,000 rows per request: read everything in pages.
+async function all(q) {
+  const data = [];
+  for (let from = 0; ; from += 1000) {
+    const r = await q().range(from, from + 999);
+    if (r.error) return r;
+    data.push(...r.data);
+    if (r.data.length < 1000) return { data, error: null };
+  }
+}
+const songs = await all(() => db.from("songs").select("id, status, current_revision_id").order("id"));
 if (songs.error) fail(`read songs: ${songs.error.message}`);
 else if (songs.data.length && songs.data.every((s) => s.status === "published")) pass(`anon reads ${songs.data.length} published songs only`);
 else fail(`anon songs read: ${JSON.stringify(songs.data)}`);
 
 // Revision history and suggestions are public, but only for published songs.
 const published = new Set((songs.data ?? []).map((s) => s.id));
-const revs = await db.from("revisions").select("id, song_id");
+const revs = await all(() => db.from("revisions").select("id, song_id").order("id"));
 if (!revs.error && revs.data.every((r) => published.has(r.song_id))) pass(`anon reads revisions of published songs only (${revs.data.length})`);
 else fail(`revisions read: ${revs.error?.message ?? "revision of an unpublished song visible"}`);
 const props = await db.from("proposals").select("id, song_id");

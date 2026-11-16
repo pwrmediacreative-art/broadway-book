@@ -13,6 +13,18 @@ export function publicClient() {
   return createClient(url, key, { auth: { persistSession: false } });
 }
 
+/** The API returns at most 1,000 rows per request: read every published song in pages. */
+export const PAGE_ROWS = 1000;
+export async function allPages<T>(page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>): Promise<T[]> {
+  const out: T[] = [];
+  for (let from = 0; ; from += PAGE_ROWS) {
+    const { data, error } = await page(from, from + PAGE_ROWS - 1);
+    if (error) throw error;
+    out.push(...(data ?? []));
+    if (!data || data.length < PAGE_ROWS) return out;
+  }
+}
+
 export interface SongListItem {
   slug: string;
   title: string;
@@ -26,13 +38,10 @@ export async function listSongs(): Promise<SongListItem[]> {
   "use cache";
   cacheLife("minutes");
   cacheTag(SONGS_TAG);
-  const { data, error } = await publicClient()
-    .from("songs")
-    .select("slug, title, artist, key, is_example, unverified")
-    .eq("status", "published")
-    .order("title");
-  if (error) throw error;
-  return data ?? [];
+  const db = publicClient();
+  return allPages<SongListItem>((from, to) =>
+    db.from("songs").select("slug, title, artist, key, is_example, unverified").eq("status", "published").order("title").order("slug").range(from, to),
+  );
 }
 
 export async function getSong(slug: string) {
@@ -56,11 +65,14 @@ export async function listSongIndex(): Promise<IndexRow[]> {
   "use cache";
   cacheLife("minutes");
   cacheTag(SONGS_TAG);
-  const { data, error } = await publicClient()
-    .from("songs")
-    .select("slug, title, artist, key, bpm, time_sig, feel, tags, is_example, unverified")
-    .eq("status", "published")
-    .order("title");
-  if (error) throw error;
-  return data ?? [];
+  const db = publicClient();
+  return allPages<IndexRow>((from, to) =>
+    db
+      .from("songs")
+      .select("slug, title, artist, key, bpm, time_sig, feel, tags, is_example, unverified")
+      .eq("status", "published")
+      .order("title")
+      .order("slug")
+      .range(from, to),
+  );
 }
