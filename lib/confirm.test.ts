@@ -1,24 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CONFIRMED_LINE_MIN, confirmedLine, readConfirmState, sureLabel } from "./confirm";
-
-describe("sureLabel", () => {
-  it("rounds the stored score to a whole percent", () => {
-    expect(sureLabel(0.75)).toBe("75% sure");
-    expect(sureLabel("0.25")).toBe("25% sure");
-    expect(sureLabel(0.905)).toBe("91% sure");
-  });
-  it("clamps and never mentions AI", () => {
-    expect(sureLabel(1.4)).toBe("100% sure");
-    expect(sureLabel(-1)).toBe("0% sure");
-    expect(sureLabel(0.5)).not.toMatch(/ai/i);
-  });
-  it("shows nothing without a score", () => {
-    expect(sureLabel(null)).toBeNull();
-    expect(sureLabel(undefined)).toBeNull();
-    expect(sureLabel("")).toBeNull();
-    expect(sureLabel("x")).toBeNull();
-  });
-});
+import { CONFIRMED_LINE_MIN, confirmedLine, readConfirmState } from "./confirm";
 
 describe("confirmedLine", () => {
   it(`starts at ${CONFIRMED_LINE_MIN} players`, () => {

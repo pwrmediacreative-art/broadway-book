@@ -112,7 +112,7 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - check:claims: "progress counts each person's publishes and can't-reads" fails since the Verified step made review_progress() count only verifications; the check needs updating.
 - Auto-approve: charts can go live with up to `auto_approve_max_unclear` unclear spots, but the song page hides `# UNCLEAR` notes, so players see a guessed bar with no warning; show an "uncertain bar" mark (its own step).
 - `check:verify` "a bulk card shows the live chart text" assumes its test song is among the 20 oldest Unverified cards; fails now that hundreds are live (test needs its own offset/filter).
-- Saved offline song page doesn't show the "NN% sure" line or the confirm count (not in `offline_sync()`); button is disabled offline as it should be.
+- Saved offline song page doesn't show the confirm count (not in `offline_sync()`); button is disabled offline as it should be.
 - Song and stage pages now render on first visit (only `BUILD_AHEAD` = 20 built ahead, `app/songs/[slug]/data.ts`): the first player to open a song waits ~0.25s once; consider warming popular songs after deploys.
 - Uploads: section labels proposed from repeat patterns are rough when chord timing jitters (Moises exports); tune build.ts with more real files.
 - Uploads: press-and-hold "Suggest an edit" on a private chart's stage view links to the library editor, which can't open private charts.
@@ -127,7 +127,6 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Renames: name suggestions don't send notifications (chart suggestions do); notify the author on approve/close.
 - Renames: a phone's offline copy keeps the song under its old slug too until the offline store is cleared; drop entries whose slug moved on sync.
 - Renames: old song links redirect inside the streamed page (HTTP 200 + client redirect), not with a 308 status; fine in browsers, link previews see the old page shell.
-- check:review still expects players can't read revisions.ai_confidence, but fdf09af made that column public on purpose (song page "NN% sure"); update the check.
 - First-visit / Settings sheets: no focus trap and no focus return to the gear on close; make the page behind inert while open.
 - Numbers/Chords sync on a shared phone: the previous player's newer device choice is copied into the next player's account at sign-in.
 - /api/lyrics has no per-visitor rate limit (fine while lyrics are admins-only); add one before opening lyrics to signed-in players or everyone.

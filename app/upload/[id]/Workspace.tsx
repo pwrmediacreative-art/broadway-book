@@ -28,8 +28,6 @@ import StructureCard from "./StructureCard";
 export interface UploadInfo {
   source: "musicxml" | "audio";
   hasAnalysis: boolean;
-  confidence: number | null;
-  estimated: boolean;
   edited: boolean;
   shareCode: string | null;
   sync: { start: number; bars: number } | null;
@@ -168,7 +166,6 @@ export default function Workspace({
       <div className="bb-notice px-4 py-3 text-lg">
         <b>From a chord file.</b>
         <span className="block text-base text-bb-cue-gray">
-          {info.confidence !== null && `${Math.round(info.confidence * 100)}% sure${info.estimated ? " (estimated from the timing)" : ""} · `}
           {unclear === 0 ? "Nothing left to fill in" : `${unclear} spot${unclear === 1 ? "" : "s"} to fill in (the # notes in the chart text)`}
         </span>
       </div>

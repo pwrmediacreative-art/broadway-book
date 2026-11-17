@@ -50,14 +50,14 @@ export async function getSong(slug: string) {
   cacheTag(SONGS_TAG);
   const { data, error } = await publicClient()
     .from("songs")
-    .select("id, slug, title, artist, key, is_example, unverified, verified_at, current_revision_id, current:revisions!songs_current_revision_fk(chart_text, ai_confidence)")
+    .select("id, slug, title, artist, key, is_example, unverified, verified_at, current_revision_id, current:revisions!songs_current_revision_fk(chart_text)")
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
-  const current = data.current as unknown as { chart_text: string; ai_confidence: number | null } | null;
-  return { ...data, chart_text: current?.chart_text ?? null, confidence: current?.ai_confidence ?? null };
+  const current = data.current as unknown as { chart_text: string } | null;
+  return { ...data, chart_text: current?.chart_text ?? null };
 }
 
 /** Every published song with the fields the search index needs (see lib/search/pack.ts). */

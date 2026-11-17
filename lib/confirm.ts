@@ -1,17 +1,8 @@
-// "Played it, it's right" and the confidence line on Unverified song pages. Pure.
+// "Played it, it's right" on Unverified song pages. Pure. Players never see a confidence score (Q15).
 // Database side: chart_confirmations + chart_confirm_state/toggle (20261116100000).
 
 /** The "Confirmed by N players" line shows from this many confirmations. */
 export const CONFIRMED_LINE_MIN = 3;
-
-/** "75% sure" from a stored 0–1 score; null when there's no score. */
-export function sureLabel(confidence: number | string | null | undefined): string | null {
-  if (confidence === null || confidence === undefined || confidence === "") return null;
-  const n = Number(confidence);
-  if (!Number.isFinite(n)) return null;
-  const pct = Math.round(Math.min(Math.max(n, 0), 1) * 100);
-  return `${pct}% sure`;
-}
 
 /** "Confirmed by 3 players", or null below CONFIRMED_LINE_MIN. */
 export function confirmedLine(count: number | null | undefined): string | null {

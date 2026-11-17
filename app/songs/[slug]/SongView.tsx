@@ -16,7 +16,7 @@ import { OpenBadge, PersonalBar, SongActions, useOpenCount } from "./Community";
 import Rename from "./Rename";
 import { HoldSheet, MoveFlagsBanner, MyFlags, useHold, useHoldMarks, withHold, type Spot } from "./Hold";
 import { ConfirmButton, useConfirm } from "./Confirm";
-import { confirmedLine, sureLabel } from "@/lib/confirm";
+import { confirmedLine } from "@/lib/confirm";
 import ReadChoice from "@/app/ReadChoice";
 import Lyrics from "./Lyrics";
 import RoadMap from "./RoadMap";
@@ -31,8 +31,6 @@ export interface SongProps {
   unverified?: boolean;
   /** When an admin checked this exact chart against the original (null: not verified). */
   verifiedAt?: string | null;
-  /** How sure the reading of this chart is (0–1). Shown only while Unverified. */
-  confidence?: number | null;
   chartText: string;
   neighbors: Neighbors;
 }
@@ -79,13 +77,12 @@ function VerifiedBadge({ at }: { at?: string | null }) {
   );
 }
 
-export default function SongView({ slug, songId, title, artist, isExample, unverified, verifiedAt, confidence, chartText, neighbors }: SongProps) {
+export default function SongView({ slug, songId, title, artist, isExample, unverified, verifiedAt, chartText, neighbors }: SongProps) {
   // The signed-in player's own version replaces the public chart (they can flip back).
   const pick = usePickedChart(slug, chartText);
   const openCount = useOpenCount(songId);
   const showUnverified = !isExample && !!unverified;
   const confirm = useConfirm(songId, showUnverified);
-  const sure = showUnverified ? sureLabel(confidence) : null;
   const confirmed = showUnverified ? confirmedLine(confirm.state?.count) : null;
   const s = useChartState(slug, pick.text);
   const nav = useSongNav(slug, neighbors);
@@ -184,11 +181,6 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
           )}
           {/* Examples sit outside verification: they only carry the Example badge. */}
           {!isExample && (unverified ? <UnverifiedBadge className="ml-2" /> : <VerifiedBadge at={verifiedAt} />)}
-          {sure && (
-            <span className="ml-2 align-middle text-base text-bb-cue-gray" data-sure>
-              {sure}
-            </span>
-          )}
           <OpenBadge slug={slug} count={openCount} />
         </p>
         {confirmed && (

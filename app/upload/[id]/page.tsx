@@ -33,7 +33,7 @@ async function Result({ params }: { params: PageProps<"/upload/[id]">["params"] 
     .maybeSingle();
   const { data: up } = await db
     .from("uploads")
-    .select("source, audio_path, analysis, confidence, confidence_estimated, edited, share_code, sync")
+    .select("source, audio_path, analysis, edited, share_code, sync")
     .eq("song_id", id)
     .maybeSingle();
   const rev = song?.revisions as unknown as { chart_text: string } | null;
@@ -49,8 +49,6 @@ async function Result({ params }: { params: PageProps<"/upload/[id]">["params"] 
   const info: UploadInfo = {
     source: up.source as UploadInfo["source"],
     hasAnalysis: !!up.analysis,
-    confidence: up.confidence,
-    estimated: up.confidence_estimated,
     edited: up.edited,
     shareCode: up.share_code,
     sync,
