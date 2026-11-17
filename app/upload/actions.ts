@@ -101,7 +101,8 @@ async function liveText(db: Awaited<ReturnType<typeof sessionClient>>, songId: s
 
 /**
  * Save the owner's edits (chart text is the one source of truth, card edits included).
- * Details the owner filled in get an "added by a player" note and go into their count.
+ * Details the owner filled in get an "added by a player" note. Only "+ Add…" saves
+ * (addSongDetail) count on the profile, never plain editor saves.
  */
 export async function savePrivateChart(songId: string, chartText: string): Promise<Result<{ text: string }>> {
   const { db, user } = await signedIn();
@@ -121,11 +122,6 @@ export async function savePrivateChart(songId: string, chartText: string): Promi
     p_note: "Edited",
   });
   if (error) return { ok: false, error: plain(error.message) };
-  if (added.fields.length) {
-    // the chart is saved either way; the count is a thank-you, not a blocker
-    const { error: e2 } = await db.rpc("song_details_log", { p_song: songId, p_fields: added.fields });
-    if (e2) console.error("song_details_log", e2.message);
-  }
   return { ok: true, text: m.text };
 }
 
@@ -146,6 +142,8 @@ export async function addSongDetail(songId: string, detail: DetailInput): Promis
   } catch (e) {
     return { ok: false, error: (e as Error).message };
   }
+  // already there (a repeat or stale save): nothing to save, nothing to count
+  if (added.text === live) return { ok: true, text: live };
   const m = metaOf(added.text);
   if ("error" in m) return { ok: false, error: m.error! };
   const { error } = await db.rpc("song_details_save", { p_song: songId, p_chart: m.text, p_meta: m.meta, p_fields: added.fields });

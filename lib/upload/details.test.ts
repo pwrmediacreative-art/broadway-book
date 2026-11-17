@@ -114,8 +114,29 @@ describe("added by a player", () => {
     const once = markAdded(chart, applyDetail(chart, { field: "ending", pick: "tag", other: "" })).text;
     expect(markAdded(once, once)).toEqual({ text: once, fields: [] });
     const changed = markAdded(once, applyDetail(once, { field: "ending", pick: "ritard", other: "" }));
-    expect(changed.fields).toEqual(["ending"]);
+    expect(changed.fields).toEqual([]); // changed, not newly filled: marked, not counted
     expect(changed.text.match(/ADDED BY A PLAYER: ending/g)).toHaveLength(1);
+  });
+
+  it("a repeat or stale save writes nothing twice", () => {
+    const stop = { field: "stop" as const, parts: [1], pick: "band out", other: "" };
+    const once = applyDetail(chart, stop);
+    expect(applyDetail(once, stop)).toBe(once);
+    expect(applyDetail(once, { ...stop, pick: null, other: "Band Out" })).toBe(once);
+    const key = { field: "key" as const, part: 1, pick: "+1", other: "" };
+    const up = applyDetail(chart, key);
+    expect(applyDetail(up, key)).toBe(up);
+    expect(up.match(/\{mod:/g)).toHaveLength(1);
+    const solo = { field: "solo" as const, parts: [2], who: "" };
+    const s1 = applyDetail(chart, solo);
+    expect(applyDetail(s1, solo)).toBe(s1);
+    const start = { field: "start" as const, pick: "count off", other: "" };
+    const st = markAdded(chart, applyDetail(chart, start)).text;
+    expect(markAdded(st, applyDetail(st, start))).toEqual({ text: st, fields: [] });
+  });
+
+  it("free words for a stop are 5 or fewer", () => {
+    expect(() => applyDetail(chart, { field: "stop", parts: [0], pick: null, other: "one two three four five six" })).toThrow(/5 words/);
   });
 
   it("a chart straight from the file has no player marks", () => {

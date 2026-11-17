@@ -1,9 +1,12 @@
-// Blocker check for Song details "+ Add…" (20261118220000_song_detail_adds.sql), against the
-// real database. Creates throwaway admins and a player and checks:
+// Blocker check for Song details "+ Add…" (20261118220000_song_detail_adds.sql +
+// 20261118220100_song_detail_adds_tighten.sql), against the real database. Creates
+// throwaway admins and a player and checks:
 //   * the owner saves a detail instantly (song_details_save) and it's logged once per detail
+//   * a save that changes nothing makes no revision and counts nothing
+//   * section fields beyond the chart's sections, unknown fields and too many fields are refused
+//   * there is no log-only path (song_details_log is gone)
 //   * another admin can add a detail to an admin's upload (new revision, title unchanged)
-//   * other players and visitors can't save, log or read anything
-//   * song_details_log only counts right after the caller's own save
+//   * other players and visitors can't save or read anything
 //   * each player reads only their own count; rows can't be written directly
 // It restores the upload setting it found and deletes everything it made.
 // Run: npm run check:details   (needs the Supabase keys incl. SUPABASE_SERVICE_ROLE_KEY)
@@ -87,14 +90,23 @@ try {
   check(!r1.error, `owner saves a detail${r1.error ? `: ${r1.error.message}` : ""}`);
   check((await live(song))?.current?.chart_text === STARTED, "the saved chart is live");
   check((await count(owner)) === 1, "owner's count is 1");
-  await owner.db.rpc("song_details_save", { p_song: song, p_chart: STARTED, p_meta: META, p_fields: ["start"] });
-  check((await count(owner)) === 1, "the same detail never counts twice");
-  check((await owner.db.rpc("song_details_save", { p_song: song, p_chart: STARTED, p_meta: META, p_fields: ["bogus"] })).error == null && (await count(owner)) === 1, "unknown field names are ignored");
+  const revs = async () => (await svc.from("revisions").select("id", { count: "exact", head: true }).eq("song_id", song)).count;
+  const n = await revs();
+  const again = await owner.db.rpc("song_details_save", { p_song: song, p_chart: STARTED, p_meta: META, p_fields: ["solo:0"] });
+  check(!again.error && (await revs()) === n && (await count(owner)) === 1, "a save that changes nothing adds no revision and counts nothing");
 
-  // song_details_log only right after your own save
-  expectErr(await admin2.db.rpc("song_details_log", { p_song: song, p_fields: ["ending"] }), "log refused when the live revision isn't yours");
-  const own = await owner.db.rpc("song_details_log", { p_song: song, p_fields: ["solo:0"] });
-  check(!own.error && own.data === 1, "owner logs right after their save");
+  // fields must fit the chart (CHART has 1 section)
+  const MORE = STARTED.replace("[V]", "[V] {feel: half time}");
+  expectErr(await owner.db.rpc("song_details_save", { p_song: song, p_chart: MORE, p_meta: META, p_fields: ["solo:1"] }), "a section field beyond the chart's sections is refused");
+  expectErr(await owner.db.rpc("song_details_save", { p_song: song, p_chart: MORE, p_meta: META, p_fields: ["bogus"] }), "an unknown field is refused");
+  expectErr(
+    await owner.db.rpc("song_details_save", { p_song: song, p_chart: MORE, p_meta: META, p_fields: ["start", "ending", "solo:0", "stop:0", "key:0", "solo:00"] }),
+    "more fields than the chart can have are refused",
+  );
+  check((await live(song))?.current?.chart_text === STARTED && (await count(owner)) === 1, "refused saves change nothing");
+
+  // no log-only path
+  expectErr(await owner.db.rpc("song_details_log", { p_song: song, p_fields: ["ending"] }), "song_details_log no longer exists");
 
   // another admin on an admin's upload
   const r2 = await admin2.db.rpc("song_details_save", { p_song: song, p_chart: ENDED, p_meta: META, p_fields: ["ending"] });
@@ -102,11 +114,10 @@ try {
   const after = await live(song);
   check(after?.current?.chart_text === ENDED && after?.current?.author_id === admin2.id, "their revision is live, by them");
   check(after?.title === TITLE, "title unchanged on the admin path");
-  check((await count(admin2)) === 1 && (await count(owner)) === 2, "each player counts their own");
+  check((await count(admin2)) === 1 && (await count(owner)) === 1, "each player counts their own");
 
   // nobody else
   expectErr(await player.db.rpc("song_details_save", { p_song: song, p_chart: CHART, p_meta: META, p_fields: ["start"] }), "a player can't add to someone's private chart");
-  expectErr(await player.db.rpc("song_details_log", { p_song: song, p_fields: ["start"] }), "a player can't log on it");
   expectErr(await anon.rpc("song_details_save", { p_song: song, p_chart: CHART, p_meta: META, p_fields: [] }), "a visitor can't save");
   check((await live(song))?.current?.chart_text === ENDED, "the chart is unchanged");
   const peek = await player.db.from("song_detail_adds").select("field").eq("song_id", song);

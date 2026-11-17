@@ -83,14 +83,23 @@ export function applyDetail(text: string, d: DetailInput): string {
       return lines.sort((a, b) => b - a).reduce((t, line) => addCue(t, line, cue), text);
     }
     case "stop": {
-      const cue = known(STOP_PICKS, d.pick) ?? cleanCue(str(d.other));
+      const cue = known(STOP_PICKS, d.pick) ?? cleanCue(str(d.other), OTHER_WORDS);
+      // a repeat (or stale) save never writes the same cue twice in a section
+      const has = (line: number) => {
+        const i = s.parts.findIndex((p) => p.line === line);
+        return s.watch.some((w) => w.part === i && w.kind === "cue" && w.text.toLowerCase().startsWith(`“${cue.toLowerCase()}”`));
+      };
       return partList(s, d.parts)
+        .filter((line) => !has(line))
         .sort((a, b) => b - a)
         .reduce((t, line) => addCue(t, line, cue), text);
     }
     case "key": {
       const pick = known(KEY_PICKS, d.pick);
-      return setKeyChange(text, partLine(s, d.part), pick ?? str(d.other));
+      const line = partLine(s, d.part);
+      // already answered (a repeat or stale save): change nothing, never modulate twice
+      if (!openDetails(s).key.includes(d.part)) return text;
+      return setKeyChange(text, line, pick ?? str(d.other));
     }
     default:
       throw new Error("Unknown detail.");
@@ -104,8 +113,9 @@ const isSolo = (s: Structure, i: number) => s.solos.some((x) => x.part === i);
 
 /**
  * Compare the saved chart with the one being saved. Details a player filled in or changed
- * get an ADDED_MARK note; `fields` lists them for the count ("start", "ending",
- * "solo:2", "stop:0", "key:3"; a key question answered "No key change" counts too).
+ * get an ADDED_MARK note. `fields` lists only details that were open before and are filled
+ * now ("start", "ending", "solo:2", "stop:0", "key:3"; a key question answered "No key
+ * change" counts too); only "+ Add…" saves (addSongDetail) send them to the count.
  * Section details are compared section by section only while the number of sections
  * stays the same.
  */
@@ -121,11 +131,11 @@ export function markAdded(before: string | null, after: string): { text: string;
   const marks: { part: number; field: MarkField }[] = [];
   const last = a.parts.length - 1;
   if (a.start.cue && a.start.cue !== b?.start.cue) {
-    fields.push("start");
+    if (b && !b.start.cue) fields.push("start");
     marks.push({ part: 0, field: "start" });
   }
   if (a.ending.cue && a.ending.cue !== b?.ending.cue) {
-    fields.push("ending");
+    if (b && !b.ending.cue) fields.push("ending");
     marks.push({ part: last, field: "ending" });
   }
   if (b && b.parts.length === a.parts.length) {
@@ -135,7 +145,7 @@ export function markAdded(before: string | null, after: string): { text: string;
         marks.push({ part: i, field: "solo" });
       }
       if (stopCount(a, i) > stopCount(b, i)) {
-        fields.push(`stop:${i}`);
+        if (!b.hasStops) fields.push(`stop:${i}`);
         marks.push({ part: i, field: "stop" });
       }
       if (keyCount(a, i) > keyCount(b, i)) {

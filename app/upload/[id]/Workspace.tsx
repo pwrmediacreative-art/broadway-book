@@ -13,6 +13,7 @@ import { checkAudio, uploadAudio } from "@/lib/upload/audio";
 import { endingFromLoudness, rmsWindows } from "@/lib/upload/loudness";
 import { CUE_LABEL, setEnding } from "@/lib/upload/structure";
 import {
+  addSongDetail,
   attachAudio,
   deleteAudio,
   deletePrivateChart,
@@ -179,6 +180,18 @@ export default function Workspace({
         onLoop={audioUrl && sync ? (i) => starts[i] && setLoop(starts[i]) : null}
         onCheckEnding={audioUrl ? checkEnding : null}
         checking={busy === "ending"}
+        onAdd={
+          dirty || offline
+            ? undefined
+            : async (d) => {
+                const r = await addSongDetail(id, d);
+                if (!r.ok) return r.error;
+                setText(r.text);
+                setSaved(r.text);
+                setEdited(true);
+                return null;
+              }
+        }
       />
       {ending && (
         <div className="bb-panel flex flex-col gap-2 px-3 py-3 text-lg">

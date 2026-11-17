@@ -7,7 +7,7 @@ import { useState } from "react";
 import { SECTION_NAMES, type SectionName } from "@/lib/chart/types";
 import { addCue, CUE_LABEL, cueLabel, END_CUES, removeCue, renamePart, setEnding, setRepeat, setStart, songMap, START_CUES } from "@/lib/upload/structure";
 import { applyDetail } from "@/lib/upload/details";
-import { chipText, DetailRows, useStructure } from "../CheatSheet";
+import { chipText, DetailRows, useStructure, type OnAdd } from "../CheatSheet";
 
 const SECTION_LABEL: Record<SectionName, string> = {
   Intro: "Intro",
@@ -28,6 +28,7 @@ export default function StructureCard({
   onLoop,
   onCheckEnding,
   checking,
+  onAdd,
 }: {
   text: string;
   onChange: (t: string) => void;
@@ -35,6 +36,8 @@ export default function StructureCard({
   onLoop: ((part: number) => void) | null;
   onCheckEnding: (() => void) | null;
   checking: boolean;
+  /** "+ Add…" saved right away; without it the answer only edits the text (Save stores it). */
+  onAdd?: OnAdd;
 }) {
   const s = useStructure(text);
   const [editing, setEditing] = useState(false);
@@ -88,14 +91,14 @@ export default function StructureCard({
       <DetailRows
         s={s}
         onWatchTap={onJump}
-        onAdd={(d) => {
+        onAdd={onAdd ?? ((d) => {
           try {
             onChange(applyDetail(text, d));
             return null;
           } catch (e) {
             return (e as Error).message;
           }
-        }}
+        })}
       />
 
       {editing && (
