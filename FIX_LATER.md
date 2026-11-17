@@ -138,3 +138,4 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Q12: check the tab bar on a home-screen iPhone (safe area under the home indicator); if it sits too low, add viewportFit "cover" plus side insets.
 - Q12: the demo songs are still in the database until `npm run remove:demos -- --apply` runs (dry run saved in docs/autopilot/q12-demo-dry-run.txt); afterwards the "Example" chip and `is_example` code can go.
 - Q12: the old "← All songs" links at the top of Setlists, Community, Notifications and setlist pages are now redundant with the Home tab.
+- Home tab: tapping Home while on Home scrolls to the top but keeps an active search or filter; consider clearing it.
