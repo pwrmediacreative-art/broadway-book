@@ -1,8 +1,11 @@
 "use client";
 
+// The Settings tab's pieces. DisplayPicker is also the first-visit "How do you read charts?" card.
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { clampStageSize } from "@/lib/chart";
 import { setDisplay, type Display } from "@/lib/display";
+import { useNavMe } from "@/lib/nav/me";
+import { OFFLINE_MSG, useOffline } from "@/lib/offline/status";
 import { PREF, setPref, usePref } from "@/lib/prefs";
 import { useLyricsAllowed } from "./songs/[slug]/Lyrics";
 
@@ -33,58 +36,106 @@ export function DisplayPicker({ onPick, autoFocus = false }: { onPick?: (v: Disp
   );
 }
 
-/** Gear in the top bar: app settings (works signed in or out, and offline). */
-export default function SettingsButton() {
-  const [open, setOpen] = useState(false);
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
+/** The Settings tab (/settings): reading, display, account, and links for admins. Works signed in or out, and offline. */
+export default function SettingsView() {
+  const me = useNavMe();
+  const offline = useOffline();
+  return (
+    <main className="mx-auto w-full max-w-xl px-4 pb-16 pt-2">
+      <h1 className="mb-6 text-bb-display">Settings</h1>
+
+      <h2 className="mb-2 text-xl font-bold">How do you read charts?</h2>
+      <DisplayPicker />
+      <p className="mt-2 text-base text-bb-cue-gray">The default on every chart, stage mode and setlists. The 123 / ABC switch on a song still flips it.</p>
+      <LayoutSetting />
+      <StageSize />
+      <LyricsToggle />
+
+      <h2 className="mb-2 mt-10 text-xl font-bold">Account</h2>
+      {me === undefined ? (
+        <p className="text-lg text-bb-cue-gray">Loading…</p>
+      ) : me === null ? (
+        <>
+          <p className="mb-3 text-lg text-bb-cue-gray">Sign in to suggest fixes, vote, and keep setlists on your account. Viewing never needs it.</p>
+          {offline ? (
+            <p className="text-lg text-bb-cue-gray">{OFFLINE_MSG}</p>
+          ) : (
+            <Link href="/login?next=%2Fsettings" className="bb-btn bb-btn-secondary h-12 px-6 text-lg">
+              Sign in
+            </Link>
+          )}
+        </>
+      ) : (
+        <>
+          <Rows>
+            <Row href="/profile" label={me.name} hint={me.instrument ?? "Name and instrument"} />
+            <Row href="/notifications" label="Notifications" hint={me.unread ? `${me.unread} new` : undefined} />
+          </Rows>
+          <form action="/auth/signout" method="post" className="mt-4">
+            <button type="submit" disabled={offline} title={offline ? OFFLINE_MSG : undefined} className="bb-btn bb-btn-secondary h-12 px-6 text-lg">
+              Sign out
+            </button>
+          </form>
+        </>
+      )}
+
+      <h2 className="mb-2 mt-10 text-xl font-bold">Your charts</h2>
+      <Rows>
+        <Row href="/notes" label="My notes" hint="Flags and my versions" />
+        {me && <Row href="/profile/versions" label="My versions" hint="Songs you changed for yourself" />}
+        {me?.upload && <Row href="/upload" label="Upload a chart" hint="Moises chord chart to a private chart" />}
+      </Rows>
+
+      {me && (me.admin || me.reviewer) && (
+        <>
+          <h2 className="mb-2 mt-10 text-xl font-bold">{me.admin ? "Admin" : "Reviewer"}</h2>
+          <Rows>
+            {me.admin && <Row href="/admin" label="Admin" hint="Dashboard" />}
+            <Row href="/admin/review" label="Review charts" />
+            {me.admin && <Row href="/admin/import" label="Import" />}
+            {me.admin && <Row href="/admin/community" label="Community rules" />}
+          </Rows>
+        </>
+      )}
+    </main>
+  );
+}
+
+function Rows({ children }: { children: React.ReactNode }) {
+  return <ul className="divide-y divide-bb-rule-gray border-y border-bb-rule-gray">{children}</ul>;
+}
+
+function Row({ href, label, hint }: { href: string; label: string; hint?: string }) {
+  return (
+    <li>
+      <Link href={href} className="flex min-h-14 items-center gap-3 px-1 py-2 active:bg-bb-case-charcoal">
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-lg font-semibold">{label}</span>
+          {hint && <span className="block truncate text-base text-bb-cue-gray">{hint}</span>}
+        </span>
+        <span aria-hidden className="text-2xl text-bb-cue-gray">
+          ›
+        </span>
+      </Link>
+    </li>
+  );
+}
+
+/** Stage mode fits the text to the screen unless the player set a size there. */
+function StageSize() {
+  const size = clampStageSize(Number(usePref(PREF.size)) || null);
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label="Settings"
-        title="Settings"
-        className="inline-flex size-11 items-center justify-center text-bb-cue-gray active:text-bb-chart-white"
-      >
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-          <circle cx="12" cy="12" r="3" />
-          <path
-            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </button>
-      {open && (
-        <div className="fixed inset-0 z-[70] flex items-end bg-bb-stage-black/80 sm:items-center sm:justify-center" onClick={() => setOpen(false)}>
-          <div
-            role="dialog"
-            aria-label="Settings"
-            onClick={(e) => e.stopPropagation()}
-            className="max-h-[85dvh] w-full overflow-y-auto border-t border-bb-rule-gray bg-bb-house-black p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:max-w-md sm:border"
-          >
-            <div className="mb-4 flex items-center gap-2">
-              <h2 className="flex-1 text-xl font-bold">Settings</h2>
-              <button onClick={() => setOpen(false)} aria-label="Close" className="bb-btn bb-btn-quiet size-11 p-0 text-2xl text-bb-cue-gray">
-                ✕
-              </button>
-            </div>
-            <h3 className="mb-2 text-lg font-semibold">How do you read charts?</h3>
-            <DisplayPicker />
-            <p className="mt-2 text-base text-bb-cue-gray">The default on every chart, stage mode and setlists. The 123 / ABC switch on a song still flips it.</p>
-            <LayoutSetting />
-            <LyricsToggle />
-            <Link href="/notes" onClick={() => setOpen(false)} className="bb-btn bb-btn-secondary mt-5 flex h-12 w-full items-center justify-center text-lg">
-              My notes (flags and my versions)
-            </Link>
-          </div>
-        </div>
-      )}
+      <h3 className="mb-2 mt-6 text-lg font-semibold">Stage text size</h3>
+      <div className="flex items-center gap-3">
+        <p className="flex-1 text-lg">{size ? `${size}px, set in stage mode` : "Auto: fits the screen"}</p>
+        {size && (
+          <button type="button" onClick={() => setPref(PREF.size, null)} className="bb-btn bb-btn-secondary h-12 px-4 text-lg">
+            Back to auto
+          </button>
+        )}
+      </div>
+      <p className="mt-2 text-base text-bb-cue-gray">Change it with the Text size slider in stage mode.</p>
     </>
   );
 }

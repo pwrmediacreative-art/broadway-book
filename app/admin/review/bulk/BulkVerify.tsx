@@ -97,7 +97,7 @@ export default function BulkVerify({ cards }: { cards: Card[] }) {
         })}
       </ul>
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-bb-rule-gray bg-bb-house-black p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+      <div className="fixed bottom-[var(--bb-tabs-bottom,0px)] left-[var(--bb-rail,0px)] right-0 z-20 border-t border-bb-rule-gray bg-bb-house-black p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         <div className="mx-auto flex max-w-2xl flex-col gap-1">
           {msg && (
             <p role="status" aria-live="polite" className={`text-base ${msg.ok ? "text-bb-cue-gray" : "bb-error"}`}>

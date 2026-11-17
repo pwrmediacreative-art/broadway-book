@@ -270,7 +270,7 @@ export default function Editor({
         ))}
       </ol>
       {undo && (
-        <div className="fixed inset-x-0 bottom-0 z-[60] flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))]" aria-live="polite">
+        <div className="fixed inset-x-0 bottom-[var(--bb-tabs-bottom,0px)] z-[60] flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))]" aria-live="polite">
           <div className="bb-panel flex w-full max-w-md items-center gap-3 border border-bb-rule-gray px-4 py-2">
             <span className="min-w-0 flex-1 truncate text-lg">Removed {undo.row.song?.title ?? "song"}</span>
             <button onClick={undoRemove} className={`${btn} ${primary} shrink-0`}>

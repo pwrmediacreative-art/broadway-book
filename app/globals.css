@@ -333,3 +333,60 @@ textarea:disabled,
     right: 24rem;
   }
 }
+
+/* App navigation (app/AuthBar.tsx): a bottom tab bar on phones and tablets, a 6rem side rail
+   on desktop (lg). The page makes room for it, and anything pinned to the bottom of the screen
+   sits above it via --bb-tabs-bottom. Full-screen pages (stage mode, setlist play) set
+   html[data-full] and get the whole screen. */
+html:has(#bb-tabs):not([data-full]) {
+  --bb-tabs-bottom: calc(4rem + 1px + env(safe-area-inset-bottom));
+}
+@media (min-width: 1024px) {
+  html:has(#bb-tabs):not([data-full]) {
+    --bb-tabs-bottom: 0px;
+    --bb-rail: 6rem;
+  }
+}
+html[data-full] #bb-tabs {
+  display: none;
+}
+body {
+  padding-bottom: var(--bb-tabs-bottom, 0px);
+  padding-left: var(--bb-rail, 0px);
+}
+@media print {
+  body {
+    padding: 0;
+  }
+}
+
+/* Tab switches: a short, gentle cross-fade of the page (150ms, like every state change).
+   Only tab taps get it (Link transitionTypes "bb-tab"); song changes on stage stay instant.
+   The bar itself never moves. Off with reduced motion. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+::view-transition-old(.bb-tab-fade) {
+  animation: var(--bb-motion-duration) var(--bb-motion-ease) both bb-fade-out;
+}
+::view-transition-new(.bb-tab-fade) {
+  animation: var(--bb-motion-duration) var(--bb-motion-ease) both bb-fade-in;
+}
+@keyframes bb-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes bb-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

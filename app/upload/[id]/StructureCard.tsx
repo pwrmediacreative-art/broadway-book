@@ -1,11 +1,11 @@
 "use client";
 
-// The "Structure" card above the chart. Every edit here rewrites the chart text (one
+// The "Song details" card above the chart. Every edit here rewrites the chart text (one
 // source of truth); the Save button stores it.
 import { useState } from "react";
 import { SECTION_NAMES, type SectionName } from "@/lib/chart/types";
-import { addCue, CUE_LABEL, END_CUES, removeCue, renamePart, setEnding, setRepeat, setStart, START_CUES } from "@/lib/upload/structure";
-import { endLine, startLine, useStructure } from "../CheatSheet";
+import { addCue, CUE_LABEL, END_CUES, removeCue, renamePart, setEnding, setRepeat, setStart, songMap, START_CUES } from "@/lib/upload/structure";
+import { chipText, endLine, named, startLine, useStructure } from "../CheatSheet";
 
 const SECTION_LABEL: Record<SectionName, string> = {
   Intro: "Intro",
@@ -50,33 +50,38 @@ export default function StructureCard({
   };
   const chip = "bb-btn h-12 px-3 text-lg font-bold";
   return (
-    <section className="bb-panel flex flex-col gap-3 px-3 py-3" aria-label="Structure">
+    <section className="bb-panel flex flex-col gap-3 px-3 py-3" aria-label="Song details">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-2xl font-bold">Structure</h2>
+        <h2 className="text-2xl font-bold">Song details</h2>
         <button type="button" className={`bb-btn h-12 px-4 text-lg font-semibold ${editing ? "bb-on" : "bb-btn-secondary"}`} onClick={() => setEditing(!editing)}>
           {editing ? "Done" : "Edit"}
         </button>
       </div>
 
-      <div className="flex flex-wrap gap-2" role="list" aria-label="Song form">
-        {s.parts.map((p, i) => (
-          <button
-            key={p.line}
-            role="listitem"
-            type="button"
-            className={`${chip} ${p.guessed ? "bb-btn-secondary border-bb-downbeat-amber" : "bb-btn-secondary"}`}
-            onClick={() => onJump(i)}
-            aria-label={`${p.label}, ${p.bars} bars${p.repeat ? `, ${p.repeat} times` : ""}${p.guessed ? ", label guessed" : ""}. Go there`}
-          >
-            {p.label} {p.bars}
-            {p.repeat ? ` ×${p.repeat}` : ""}
-            {p.guessed && <span className="ml-1 text-bb-downbeat-amber">?</span>}
-          </button>
-        ))}
-      </div>
-      {s.parts.some((p) => p.guessed) && (
-        <p className="text-base text-bb-downbeat-amber">? = label guessed from the repeat pattern. Edit to set it or confirm it.</p>
-      )}
+      <ul className="flex flex-wrap gap-2" aria-label="Song map">
+        {songMap(s).map((c) =>
+          c.name ? (
+            <li key={c.part}>
+              <button type="button" className={`${chip} bb-btn-secondary`} onClick={() => onJump(c.part)} aria-label={`${chipText(c, c.name)}. Go there`}>
+                {chipText(c, c.name)}
+              </button>
+            </li>
+          ) : (
+            <li key={c.part}>
+              <button
+                type="button"
+                className={`${chip} bb-btn-quiet border border-dashed border-bb-rule-gray font-semibold text-bb-cue-gray`}
+                onClick={() => {
+                  setEditing(true);
+                  onJump(c.part);
+                }}
+              >
+                + Name this section <span className="font-bb-data">·{c.bars}</span>
+              </button>
+            </li>
+          ),
+        )}
+      </ul>
 
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-lg">
         {s.start.cue && (
@@ -94,7 +99,7 @@ export default function StructureCard({
         {s.hasSolo && (
           <>
             <dt className="text-bb-cue-gray">Solos</dt>
-            <dd className="font-semibold">{s.parts.filter((p) => p.name === "Solo").map((p) => p.label).join(", ")}</dd>
+            <dd className="font-semibold">{songMap(s).filter((c) => s.parts[c.part].name === "Solo").map((c) => c.name).join(", ")}</dd>
           </>
         )}
       </dl>
@@ -103,7 +108,7 @@ export default function StructureCard({
           {s.watch.map((w, i) => (
             <li key={i}>
               <button type="button" className={`min-h-11 text-left ${w.unclear ? "text-bb-downbeat-amber" : ""}`} onClick={() => onJump(w.part)}>
-                • {w.text}
+                • {named(s, w.part, w.text)}
                 {w.unclear ? " (unclear)" : ""}
               </button>
             </li>

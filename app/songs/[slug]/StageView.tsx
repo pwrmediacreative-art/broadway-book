@@ -16,6 +16,7 @@ import ReadChoice from "@/app/ReadChoice";
 import Lyrics from "./Lyrics";
 import RoadMap from "./RoadMap";
 import WholeChart, { WHOLE_MIN_DEFAULT, type Pager } from "./WholeChart";
+import { useFullScreenPage } from "@/lib/nav/full";
 
 const FIT_MIN = 30; // px: smallest size we shrink to so the whole chart fits without scrolling
 const SCROLL_SIZE = 40; // px: size used when it can't fit and has to scroll (if the width allows)
@@ -74,7 +75,7 @@ export default function StageView({
   chartText: string;
   neighbors: Neighbors;
   set?: StageSet;
-  /** One of the player's own uploaded charts: exits to /mine/<id>, adds the cheat sheet. */
+  /** One of the player's own uploaded charts: exits to /mine/<id>, adds Song details. */
   mine?: { id: string | null };
 }) {
   // The player's own version, if they have one (one tap on the chip flips to public).
@@ -95,6 +96,7 @@ export default function StageView({
   const pager = useRef<Pager | null>(null);
   const chartEl = useRef<HTMLDivElement>(null);
   useWakeLock();
+  useFullScreenPage(); // no tab bar / side rail on stage
   const theme = usePref(PREF.stageTheme);
 
   // --- text size: auto-fit unless the player set one -------------------------------------
@@ -259,7 +261,7 @@ export default function StageView({
     return () => window.clearTimeout(t);
   }, [toast]);
   const [spot, setSpot] = useState<Spot | null>(null); // press-and-hold sheet
-  const [sheet, setSheet] = useState(false); // uploaded charts: one-screen cheat sheet
+  const [sheet, setSheet] = useState(false); // uploaded charts: one-screen Song details
   const go = (d: -1 | 1) => {
     setSpot(null);
     if (set) {
@@ -385,7 +387,7 @@ export default function StageView({
         <BpmToggle s={s} className="shrink-0 text-sm text-bb-cue-gray" />
         {mine && (
           <button onClick={() => setSheet(true)} className="h-11 shrink-0 rounded-bb-control px-2 text-sm font-bold text-bb-downbeat-amber active:bg-bb-case-charcoal">
-            Cheat sheet
+            Song details
           </button>
         )}
         {set ? (
@@ -588,9 +590,9 @@ export default function StageView({
         </div>
       </div>
       {mine && sheet && (
-        <div role="dialog" aria-label="Cheat sheet" className="fixed inset-0 z-[60] flex flex-col bg-bb-house-black text-bb-chart-white">
+        <div role="dialog" aria-label="Song details" className="fixed inset-0 z-[60] flex flex-col bg-bb-house-black text-bb-chart-white">
           <header className="flex h-12 shrink-0 items-center gap-2 border-b border-bb-rule-gray/60 pl-1 pr-2">
-            <button onClick={() => setSheet(false)} aria-label="Close cheat sheet" className="grid size-11 shrink-0 place-items-center rounded-bb-control text-2xl text-bb-cue-gray active:bg-bb-case-charcoal">
+            <button onClick={() => setSheet(false)} aria-label="Close song details" className="grid size-11 shrink-0 place-items-center rounded-bb-control text-2xl text-bb-cue-gray active:bg-bb-case-charcoal">
               ✕
             </button>
             <b className="truncate text-lg">{title}</b>
@@ -599,6 +601,10 @@ export default function StageView({
             <CheatSheet
               big
               text={pick.text}
+              onJump={whole ? undefined : (part) => {
+                setSheet(false);
+                requestAnimationFrame(() => scroller.current?.querySelectorAll("[data-section]")[part]?.scrollIntoView({ block: "start" }));
+              }}
               header={
                 <p className="text-2xl text-bb-cue-gray">
                   {[view.keyShort && pretty(view.keyShort), view.meta.bpm && `${view.meta.bpm} bpm`, view.meta.time].filter(Boolean).join(" · ")}

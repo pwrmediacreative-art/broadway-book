@@ -135,3 +135,6 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - My notes (/notes) isn't saved for offline use (not in SHELLS); flags links open fine online.
 - Whole song: the road map strip has a `current` slot but nothing lights it yet (auto-scroll is off in Whole song; audio sync lives on the upload page).
 - Setlist Edit sheet: move focus into the sheet on open and back to the ⋯ button on close; Undo keeps only the last removal (a second remove within 8s replaces it).
+- Q12: check the tab bar on a home-screen iPhone (safe area under the home indicator); if it sits too low, add viewportFit "cover" plus side insets.
+- Q12: the demo songs are still in the database until `npm run remove:demos -- --apply` runs (dry run saved in docs/autopilot/q12-demo-dry-run.txt); afterwards the "Example" chip and `is_example` code can go.
+- Q12: the old "← All songs" links at the top of Setlists, Community, Notifications and setlist pages are now redundant with the Home tab.

@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Atkinson_Hyperlegible, Geist, Geist_Mono, Inter, JetBrains_Mono } from "next/font/google";
-import { Suspense } from "react";
+import { Suspense, ViewTransition } from "react";
 import "./globals.css";
 import { HEX } from "@/lib/design/tokens";
 import AuthBar from "./AuthBar";
@@ -61,7 +61,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <AuthBar />
         </Suspense>
         <OfflineRoot />
-        {children}
+        {/* Tab taps cross-fade the page (globals.css .bb-tab-fade); every other navigation is instant. */}
+        <ViewTransition default="none" update={{ "bb-tab": "bb-tab-fade", default: "none" }}>
+          {children}
+        </ViewTransition>
       </body>
     </html>
   );

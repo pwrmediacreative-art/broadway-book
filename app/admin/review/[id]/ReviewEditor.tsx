@@ -557,7 +557,7 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
 
           {/* Actions: pinned to the bottom on phones */}
           {mine && (
-            <div className="fixed inset-x-0 bottom-0 z-20 border-t border-bb-rule-gray bg-bb-house-black p-2 lg:static lg:mt-4 lg:border-0 lg:bg-transparent lg:p-0">
+            <div className="fixed inset-x-0 bottom-[var(--bb-tabs-bottom,0px)] z-20 border-t border-bb-rule-gray bg-bb-house-black p-2 lg:static lg:mt-4 lg:border-0 lg:bg-transparent lg:p-0">
               <div className="mx-auto grid max-w-2xl grid-cols-3 gap-2 lg:flex lg:max-w-none lg:flex-wrap">
                 {canVerify && live && !verified && (
                   <button

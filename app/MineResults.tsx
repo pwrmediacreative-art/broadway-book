@@ -1,12 +1,13 @@
 "use client";
 
-// Home page: uploaded charts you can open (yours; every admin's if you're an admin), above
-// search results and as an "Uploads" row in A–Z. They come from your account (or this
-// phone's copy of it), never from the public search index.
+// Home page: uploaded charts you can open (yours; every admin's if you're an admin): the
+// "My uploads" row, the "Uploaded" filter, and matches above search results. They come from
+// your account (or this phone's copy of it), never from the public search index.
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { isOffline } from "@/lib/offline/status";
-import { savedMineList, syncMine, type MineChart } from "@/lib/upload/mine";
+import type { SongDoc } from "@/lib/search/pack";
+import { newestFirst, savedMineList, syncMine, type MineChart } from "@/lib/upload/mine";
 
 const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
@@ -19,38 +20,38 @@ export function matchMine(list: MineChart[], q: string): MineChart[] {
   });
 }
 
-function Row({ c }: { c: MineChart }) {
-  return (
-    <li>
-      <Link href={`/mine/${c.id}`} className="flex min-h-14 items-center gap-3 bg-bb-case-charcoal px-4 py-3 active:bg-bb-rule-gray">
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-xl font-semibold">{c.title}</span>
-          <span className="block truncate text-base text-bb-cue-gray">
-            {[c.artist, c.mine === false ? `uploaded by ${c.by ?? "another admin"}` : null].filter(Boolean).join(" · ")}
-          </span>
-        </span>
-        <span className="bb-chip shrink-0">{c.mine === false ? "Uploaded" : "Yours"}</span>
-        {c.key && <span className="shrink-0 font-bb-data text-xl font-bold">{c.key}</span>}
-      </Link>
-    </li>
-  );
+const header = (text: string, name: string) => text.match(new RegExp(`\\{${name}:\\s*([^}]+)\\}`))?.[1]?.trim() ?? null;
+
+/** An upload as a search document, so the same filters and sorts apply to it. */
+export function mineDoc(c: MineChart): SongDoc {
+  const bpm = Number(header(c.chart_text, "bpm"));
+  return {
+    slug: c.slug,
+    title: c.title,
+    artist: c.artist,
+    key: c.key,
+    bpm: Number.isFinite(bpm) && bpm > 0 ? bpm : null,
+    time: header(c.chart_text, "time"),
+    feel: header(c.chart_text, "feel"),
+    tags: [],
+    ex: false,
+    uv: false,
+  };
 }
 
-/**
- * q set: uploads matching the search, above the results.
- * all: an "Uploads" row at the top of the A–Z list that opens every upload you can see.
- */
-export default function MineResults({ q, all = false }: { q: string; all?: boolean }) {
+/** Uploads you can open, newest first: this phone's copy first, then fresh from your account. */
+export function useMineCharts(): MineChart[] {
   const [list, setList] = useState<MineChart[]>([]);
-  const [open, setOpen] = useState(false);
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
-        setList(await savedMineList());
+        const saved = await savedMineList();
+        if (alive) setList(newestFirst(saved));
         if (!isOffline()) {
           await syncMine();
-          if (alive) setList(await savedMineList());
+          const fresh = await savedMineList();
+          if (alive) setList(newestFirst(fresh));
         }
       } catch {
         // signed out, storage blocked or offline: nothing to add
@@ -60,38 +61,34 @@ export default function MineResults({ q, all = false }: { q: string; all?: boole
       alive = false;
     };
   }, []);
-  const hits = useMemo(() => matchMine(list, q).slice(0, 10), [list, q]);
-  const sorted = useMemo(() => [...list].sort((a, b) => a.title.localeCompare(b.title, "en", { sensitivity: "base" })), [list]);
-  if (all) {
-    if (!list.length) return null;
-    return (
-      <div className="mb-3 border-y border-bb-rule-gray">
-        <button
-          type="button"
-          onClick={() => setOpen(!open)}
-          aria-expanded={open}
-          className="flex min-h-14 w-full items-center justify-between gap-3 bg-bb-case-charcoal px-4 py-3 text-left active:bg-bb-rule-gray"
-        >
-          <span className="text-xl font-semibold">Uploads</span>
-          <span className="text-lg text-bb-cue-gray">
-            {list.length} {open ? "▴" : "▾"}
+  return list;
+}
+
+export function MineRow({ c, id }: { c: MineChart; id?: string }) {
+  return (
+    <li id={id} className="scroll-mt-20">
+      <Link href={`/mine/${c.id}`} className="flex min-h-16 items-center gap-3 bg-bb-case-charcoal px-4 py-3 active:bg-bb-rule-gray">
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-xl font-semibold">{c.title}</span>
+          <span className="block truncate text-base text-bb-cue-gray">
+            {[c.artist, c.mine === false ? `uploaded by ${c.by ?? "another admin"}` : null].filter(Boolean).join(" · ")}
           </span>
-        </button>
-        {open && (
-          <ul className="divide-y divide-bb-rule-gray border-t border-bb-rule-gray" aria-label="Uploads">
-            {sorted.map((c) => (
-              <Row key={c.id} c={c} />
-            ))}
-          </ul>
-        )}
-      </div>
-    );
-  }
+        </span>
+        <span className="bb-chip shrink-0">{c.mine === false ? "Uploaded" : "Yours"}</span>
+        {c.key && <span className="shrink-0 font-bb-data text-2xl font-bold">{c.key}</span>}
+      </Link>
+    </li>
+  );
+}
+
+/** Uploads matching the search, above the results. */
+export default function MineResults({ list, q }: { list: MineChart[]; q: string }) {
+  const hits = useMemo(() => matchMine(list, q).slice(0, 10), [list, q]);
   if (!hits.length) return null;
   return (
     <ul className="mb-3 divide-y divide-bb-rule-gray border-y border-bb-rule-gray" aria-label="Uploads">
       {hits.map((c) => (
-        <Row key={c.id} c={c} />
+        <MineRow key={c.id} c={c} />
       ))}
     </ul>
   );

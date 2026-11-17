@@ -266,7 +266,7 @@ export default function Workspace({
         </div>
       </div>
 
-      <div className="sticky bottom-0 z-10 -mx-4 flex flex-wrap items-center gap-2 border-t border-bb-rule-gray bg-bb-house-black px-4 py-3">
+      <div className="sticky bottom-[var(--bb-tabs-bottom,0px)] z-10 -mx-4 flex flex-wrap items-center gap-2 border-t border-bb-rule-gray bg-bb-house-black px-4 py-3">
         <button type="button" className="bb-btn bb-btn-primary h-12 px-5 text-lg font-bold" disabled={!dirty || !check.ok || !!busy || offline} onClick={save}>
           {busy === "save" ? "Saving…" : dirty ? "Save" : "Saved"}
         </button>
@@ -292,7 +292,7 @@ export default function Workspace({
           View chart
         </Link>
         <Link href={`/upload/${id}/print`} className={act}>
-          Print cheat sheet
+          Print song details
         </Link>
         <Link href={`/upload/${id}/history`} className={act}>
           History

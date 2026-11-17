@@ -1,4 +1,4 @@
-// The "Structure" cheat sheet for a fill-in player, read from (and written back to) the
+// "Song details" for a fill-in player (app/upload/CheatSheet.tsx), read from (and written back to) the
 // chart text, so the chart stays the one source of truth. Form = the sections in order with
 // bar counts and repeats; start / ending / watch-outs come from cue words and symbols.
 import { parseChart } from "../chart/parse";
@@ -261,5 +261,45 @@ export function sectionStartBars(text: string): { line: number; label: string; b
     const out = { line: s.line, label: `${l.section.name}${l.section.number ?? ""}`, bar, bars };
     bar += bars;
     return out;
+  });
+}
+
+// ── the song map: section chips for players ("Verse ·16", tap to jump) ────────
+
+export const SECTION_FULL: Record<SectionName, string> = {
+  Intro: "Intro",
+  V: "Verse",
+  Pre: "Pre-chorus",
+  C: "Chorus",
+  B: "Bridge",
+  Solo: "Solo",
+  Turn: "Turnaround",
+  Tag: "Tag",
+  Outro: "Outro",
+};
+
+export interface MapChip {
+  part: number; // index into Structure.parts (and the chart's sections, in order)
+  name: string | null; // "Verse 2"; null = nobody knows what this part is yet
+  bars: number;
+  repeat: number | null;
+}
+
+/**
+ * Real section names for the map. Parts a person named keep their name. Parts the audio
+ * analysis labelled from the repeat pattern keep that name when the pattern says what they
+ * are (Verse, Chorus, Pre-chorus, Turnaround, Intro, Outro). Its catch-all "B" (a part that
+ * plays once) is a Bridge only when there is exactly one, after a chorus and leading back
+ * into one; any other "B" is unknown (name null: "+ Name this section").
+ */
+export function songMap(s: Structure): MapChip[] {
+  const loose = s.parts.map((p, i) => (p.guessed && p.name === "B" ? i : -1)).filter((i) => i >= 0);
+  const isChorus = (i: number) => s.parts[i]?.name === "C";
+  const bridge =
+    loose.length === 1 && s.parts.slice(0, loose[0]).some((p) => p.name === "C") && isChorus(loose[0] + 1) ? loose[0] : -1;
+  return s.parts.map((p, i) => {
+    let name: string | null = `${SECTION_FULL[p.name]}${p.number ? ` ${p.number}` : ""}`;
+    if (p.guessed && p.name === "B") name = i === bridge ? "Bridge" : null;
+    return { part: i, name, bars: p.bars, repeat: p.repeat };
   });
 }

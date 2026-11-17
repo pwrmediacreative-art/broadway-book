@@ -1,7 +1,7 @@
 "use client";
 
 // One of your own uploaded charts: the chart in any key, numbers or chord names, the
-// cheat sheet, stage mode and setlists. Private: only you can open it.
+// song details, stage mode and setlists. Private: only you can open it.
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import AddToSetlist from "@/app/setlists/AddToSetlist";
@@ -31,7 +31,7 @@ export default function MineView({ chart, offline = false }: { chart: MineChart;
           Stage mode
         </Link>
         <button type="button" className={`${act} ${sheet ? "bb-on" : ""}`} onClick={() => setSheet(!sheet)} aria-expanded={sheet}>
-          Cheat sheet
+          Song details
         </button>
         {!offline && (
           <>
@@ -46,7 +46,11 @@ export default function MineView({ chart, offline = false }: { chart: MineChart;
       </div>
       {sheet && (
         <div className="bb-panel mb-4 px-4 py-4">
-          <CheatSheet text={chart.chart_text} />
+          <CheatSheet
+            text={chart.chart_text}
+            onJump={(part) => document.querySelectorAll("[data-section]")[part]?.scrollIntoView({ block: "start" })}
+            nameHref={chart.mine !== false && !offline ? `/upload/${chart.id}` : undefined}
+          />
         </div>
       )}
       {s.view ? (

@@ -4,7 +4,7 @@ import { loadMine } from "@/app/mine/[id]/data";
 import { getCurrentUser } from "@/lib/supabase/session";
 import PrintView from "./PrintView";
 
-export const metadata = { title: "Cheat sheet · Broadway Book", robots: { index: false } };
+export const metadata = { title: "Song details · Broadway Book", robots: { index: false } };
 
 /** One page to print or screenshot: key, BPM and form on top, then watch-outs and the chart. */
 export default function PrintPage({ params }: PageProps<"/upload/[id]/print">) {

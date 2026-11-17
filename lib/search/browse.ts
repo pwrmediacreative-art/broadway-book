@@ -42,16 +42,30 @@ export interface Filters {
   feels: string[];
   tags: string[];
   verified: boolean; // only charts an admin has checked (hides unverified charts and examples)
+  uploaded: boolean; // only charts from uploads this player may open (never in the public index)
 }
-export const NO_FILTERS: Filters = { keys: [], tempos: [], bpmMin: null, bpmMax: null, times: [], feels: [], tags: [], verified: false };
+export const NO_FILTERS: Filters = {
+  keys: [],
+  tempos: [],
+  bpmMin: null,
+  bpmMax: null,
+  times: [],
+  feels: [],
+  tags: [],
+  verified: false,
+  uploaded: false,
+};
 
 export const countFilters = (f: Filters) =>
-  f.keys.length + f.tempos.length + (f.bpmMin !== null || f.bpmMax !== null ? 1 : 0) + f.times.length + f.feels.length + f.tags.length + (f.verified ? 1 : 0);
+  f.keys.length + f.tempos.length + (f.bpmMin !== null || f.bpmMax !== null ? 1 : 0) + f.times.length + f.feels.length + f.tags.length + (f.verified ? 1 : 0) + (f.uploaded ? 1 : 0);
 
 /** Verified = an admin checked it. Unverified charts carry `uv`; examples sit outside verification. */
 export const isVerified = (d: SongDoc) => !d.uv && !d.ex;
 
-/** Any value within a group matches (G or A); every active group must match. Unset groups ignore missing data. */
+/**
+ * Any value within a group matches (G or A); every active group must match. Unset groups ignore
+ * missing data. `uploaded` picks the list (uploads instead of the index), so it isn't checked here.
+ */
 export function matches(d: SongDoc, f: Filters): boolean {
   if (f.verified && !isVerified(d)) return false;
   if (f.keys.length) {
@@ -118,6 +132,9 @@ export interface Facets {
   tags: { value: string; count: number }[];
 }
 
+/** Setup tags that never become filter chips (the demo songs carried them). */
+const HIDDEN_TAGS = new Set(["demo", "example"]);
+
 function counted(values: (string | null)[]) {
   const m = new Map<string, number>();
   for (const v of values) if (v) m.set(v, (m.get(v) ?? 0) + 1);
@@ -134,15 +151,15 @@ export function facets(docs: SongDoc[]): Facets {
     ),
     times: counted(docs.map((d) => d.time)).sort(byCount),
     feels: counted(docs.map((d) => d.feel?.toLowerCase() ?? null)).sort(byCount),
-    tags: counted(docs.flatMap((d) => d.tags.map((t) => t.toLowerCase()))).sort(byCount),
+    tags: counted(docs.flatMap((d) => d.tags.map((t) => t.toLowerCase()).filter((t) => !HIDDEN_TAGS.has(t)))).sort(byCount),
   };
 }
 
 // ── URL / saved state ───────────────────────────────────────────────────────
-export type View = "recent" | "az" | "artists";
+export type View = "az" | "artists";
 export interface BrowseState {
   q: string;
-  view: View | null; // null = pick (recent if any, else A–Z)
+  view: View | null; // null = all songs A–Z (Home). Old ?view=recent links land there too.
   artist: string | null;
   sort: Sort;
   f: Filters;
@@ -160,7 +177,7 @@ export function parseState(qs: string): BrowseState {
   const sort = p.get("sort");
   return {
     q: p.get("q") ?? "",
-    view: view === "recent" || view === "az" || view === "artists" ? view : null,
+    view: view === "az" || view === "artists" ? view : null,
     artist: p.get("artist") || null,
     sort: SORTS.some((s) => s.id === sort) ? (sort as Sort) : "best",
     f: {
@@ -172,6 +189,7 @@ export function parseState(qs: string): BrowseState {
       feels: all("feel").map((v) => v.toLowerCase()),
       tags: all("tag").map((v) => v.toLowerCase()),
       verified: p.get("verified") === "1",
+      uploaded: p.get("uploaded") === "1",
     },
   };
 }
@@ -186,6 +204,7 @@ export function prefsQuery(s: Pick<BrowseState, "sort" | "f">): URLSearchParams 
   s.f.feels.forEach((v) => p.append("feel", v));
   s.f.tags.forEach((v) => p.append("tag", v));
   if (s.f.verified) p.set("verified", "1");
+  if (s.f.uploaded) p.set("uploaded", "1");
   if (s.sort !== "best") p.set("sort", s.sort);
   return p;
 }

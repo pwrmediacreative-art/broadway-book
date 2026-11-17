@@ -12,6 +12,7 @@ export const SHELLS = [
   "/offline/song",
   "/offline/setlist",
   "/offline/mine",
+  "/settings",
 ];
 
 export type OfflineTarget = { serve: string } | { redirect: string };

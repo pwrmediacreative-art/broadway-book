@@ -9,7 +9,8 @@ import {
   useState,
 } from "react";
 import { flushSync } from "react-dom";
-import MineResults from "./MineResults";
+import MineResults, { matchMine, MineRow, mineDoc, useMineCharts } from "./MineResults";
+import HomeShelves from "./HomeShelves";
 import {
   countFilters,
   EMPTY_STATE,
@@ -34,21 +35,23 @@ import type { SongDoc } from "@/lib/search/pack";
 import { useRecent } from "@/lib/search/recent";
 import { useSongIndex } from "@/lib/search/useIndex";
 import { PREF, readPref, setPref } from "@/lib/prefs";
+import type { MineChart } from "@/lib/upload/mine";
 import FilterSheet, { cap, Chip } from "./FilterSheet";
 import SongRow from "./SongRow";
 
 const SAVED = "bb.browse"; // filters + sort this device used last
-const RECENT_SHOWN = 20;
 const PAGE = 60;
 
 type Row =
   | { kind: "song"; d: SongDoc }
+  | { kind: "mine"; d: SongDoc; c: MineChart }
   | { kind: "artist"; name: string; count: number };
 
 export default function SongSearch() {
   const index = useSongIndex();
   const docs = index.docs;
   const recent = useRecent();
+  const mine = useMineCharts();
   const [st, setSt] = useState<BrowseState>(EMPTY_STATE);
   const [ready, setReady] = useState(false);
   const [sheet, setSheet] = useState(false);
@@ -100,27 +103,33 @@ export default function SongSearch() {
 
   const q = useDeferredValue(st.q);
   const searching = q.trim().length > 0;
-  const view: View = st.view ?? (recent.size ? "recent" : "az");
+  const view: View = st.view ?? "az"; // Home = all songs
   const mode = searching ? "results" : view;
 
   const { rows, songs, hidden } = useMemo(() => {
+    // "Uploaded": the uploads this player may open, instead of the public index.
+    if (st.f.uploaded) {
+      const words = q.trim();
+      const pool = words ? matchMine(mine, words) : mine;
+      const docs = pool.map((c) => ({ d: mineDoc(c), c }));
+      const f = { ...st.f, uploaded: false };
+      const kept = docs.filter((x) => matches(x.d, f));
+      const order = sortDocs(kept.map((x) => x.d), st.sort, false, recent);
+      const byDoc = new Map(kept.map((x) => [x.d, x.c]));
+      const rows: Row[] = order.map((d) => ({ kind: "mine", d, c: byDoc.get(d)! }));
+      return { rows, songs: [] as SongDoc[], hidden: docs.length - kept.length };
+    }
     let base: SongDoc[];
     if (searching)
       base = (engine?.search(q) ?? [])
         .map((s) => bySlug.get(s)!)
         .filter(Boolean);
-    else if (view === "recent")
-      base = [...recent.keys()]
-        .map((s) => bySlug.get(s))
-        .filter((d): d is SongDoc => !!d)
-        .slice(0, RECENT_SHOWN);
     else if (view === "artists" && st.artist)
       base = (docs ?? []).filter((d) => d.artist === st.artist);
     else base = docs ?? [];
 
     const filtered = base.filter((d) => matches(d, st.f));
-    const keepOrder = searching || view === "recent";
-    const songs = sortDocs(filtered, st.sort, keepOrder, recent);
+    const songs = sortDocs(filtered, st.sort, searching, recent);
     let rows: Row[];
     if (!searching && view === "artists" && !st.artist) {
       const counts = new Map<string, number>();
@@ -139,6 +148,7 @@ export default function SongSearch() {
     view,
     recent,
     docs,
+    mine,
     st.artist,
     st.f,
     st.sort,
@@ -208,6 +218,7 @@ export default function SongSearch() {
 
   // Chips: active filters first (tap to remove), then suggestions from the data.
   const active: { label: string; off: Filters }[] = [
+    ...(st.f.uploaded ? [{ label: "Uploaded", off: { ...st.f, uploaded: false } }] : []),
     ...(st.f.verified ? [{ label: "Verified only", off: { ...st.f, verified: false } }] : []),
     ...st.f.keys.map((v) => ({
       label: `Key ${v}`,
@@ -240,6 +251,8 @@ export default function SongSearch() {
   ];
   const custom = st.f.bpmMin !== null || st.f.bpmMax !== null;
   const suggestions: { label: string; on: Filters }[] = [
+    // Uploads never sit in the public index; the chip shows them (only when there are some).
+    ...(mine.length && !st.f.uploaded ? [{ label: "Uploaded", on: { ...st.f, uploaded: true } }] : []),
     ...(custom
       ? []
       : fx.tempos.filter((t) => !st.f.tempos.includes(t.value))
@@ -264,8 +277,11 @@ export default function SongSearch() {
   ];
 
   const count = rows.length;
-  const noun =
-    mode === "artists" && !st.artist
+  const noun = st.f.uploaded
+    ? count === 1
+      ? "uploaded song"
+      : "uploaded songs"
+    : mode === "artists" && !st.artist
       ? count === 1
         ? "artist"
         : "artists"
@@ -312,16 +328,19 @@ export default function SongSearch() {
         </div>
       </div>
 
-      {!searching && (
+      {!searching && !st.f.uploaded && !st.artist && (
+        <HomeShelves recent={recent} bySlug={bySlug} mine={mine} />
+      )}
+
+      {!searching && !st.f.uploaded && (
         <div
           role="tablist"
           aria-label="Browse"
-          className="mb-3 grid grid-cols-3 gap-1 rounded-bb-control border border-bb-rule-gray p-1"
+          className="mb-3 grid grid-cols-2 gap-1 rounded-bb-control border border-bb-rule-gray p-1"
         >
           {(
             [
-              ["recent", "Recent"],
-              ["az", "A–Z"],
+              ["az", "All songs"],
               ["artists", "Artists"],
             ] as const
           ).map(([id, label]) => (
@@ -429,7 +448,7 @@ export default function SongSearch() {
         </div>
       )}
 
-      {searching ? <MineResults q={q} /> : view === "az" && !st.artist ? <MineResults q="" all /> : null}
+      {searching && !st.f.uploaded && <MineResults list={mine} q={q} />}
       {!docs ? (
         <p className="bb-panel px-4 py-6 text-center text-bb-cue-gray">
           {index.offline
@@ -441,9 +460,8 @@ export default function SongSearch() {
           hidden={hidden}
           searching={searching}
           q={q}
-          view={view}
+          uploaded={st.f.uploaded}
           clear={() => setF(NO_FILTERS)}
-          browse={() => update({ view: "az" })}
         />
       ) : (
         <div className="flex items-start gap-1">
@@ -451,6 +469,8 @@ export default function SongSearch() {
             {rows.slice(0, limit).map((r, i) =>
               r.kind === "song" ? (
                 <SongRow key={r.d.slug} d={r.d} index={i} onOpen={onOpen} />
+              ) : r.kind === "mine" ? (
+                <MineRow key={r.c.id} c={r.c} id={`r${i}`} />
               ) : (
                 <li key={r.name} id={`r${i}`} className="scroll-mt-20">
                   <button
@@ -494,16 +514,14 @@ function Empty({
   hidden,
   searching,
   q,
-  view,
+  uploaded,
   clear,
-  browse,
 }: {
   hidden: number;
   searching: boolean;
   q: string;
-  view: View;
+  uploaded: boolean;
   clear: () => void;
-  browse: () => void;
 }) {
   const box = "bb-panel px-4 py-6 text-center";
   if (hidden > 0)
@@ -524,16 +542,12 @@ function Empty({
     );
   if (searching)
     return <p className={`${box} text-bb-cue-gray`}>No songs match “{q.trim()}”.</p>;
-  if (view === "recent")
+  if (uploaded)
     return (
       <div className={box}>
-        <p className="mb-3 text-bb-cue-gray">Songs you open show up here.</p>
-        <button
-          type="button"
-          onClick={browse}
-          className="bb-btn bb-btn-secondary h-12 px-6 text-lg"
-        >
-          Browse A–Z
+        <p className="mb-3 text-bb-cue-gray">No uploaded songs to show.</p>
+        <button type="button" onClick={clear} className="bb-btn bb-btn-secondary h-12 px-6 text-lg">
+          Show all songs
         </button>
       </div>
     );
@@ -560,7 +574,7 @@ function LetterStrip({
   return (
     <nav
       aria-label="Jump to letter"
-      className="sticky top-[4.75rem] flex h-[calc(100dvh-6rem)] max-h-[48rem] w-8 shrink-0 touch-none select-none flex-col items-center justify-around border border-bb-rule-gray py-1"
+      className="sticky top-[4.75rem] flex h-[calc(100dvh-6rem-var(--bb-tabs-bottom,0px))] max-h-[48rem] w-8 shrink-0 touch-none select-none flex-col items-center justify-around border border-bb-rule-gray py-1"
       onPointerDown={(e) => {
         last.current = "";
         (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);

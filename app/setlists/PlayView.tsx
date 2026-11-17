@@ -7,6 +7,7 @@ import type { Neighbors } from "@/app/songs/[slug]/hooks";
 import { readPref, setPref } from "@/lib/prefs";
 import { playLabel, playOrder, startPos, step, type PlaySet } from "@/lib/setlists/play";
 import { SetSongList } from "./ui";
+import { useFullScreenPage } from "@/lib/nav/full";
 
 const NO_NEIGHBORS: Neighbors = { prev: null, next: null };
 
@@ -17,6 +18,7 @@ const NO_NEIGHBORS: Neighbors = { prev: null, next: null };
 export default function PlayView({ set, id, exitHref, onExit }: { set: PlaySet; id: string; exitHref?: string; onExit?: () => void }) {
   const router = useRouter();
   const exit = () => (onExit ? onExit() : router.push(exitHref ?? "/setlists"));
+  useFullScreenPage(); // no tab bar / side rail in play mode
   const order = useMemo(() => playOrder(set.items), [set.items]);
   const posKey = `bb.play.${id}`;
   // Reopening (or reloading) the same set mid-gig comes back to the same song.

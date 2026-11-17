@@ -194,8 +194,20 @@ describe("URL state", () => {
       feels: ["shuffle"],
       tags: ["90s"],
       verified: false,
+      uploaded: false,
     });
     expect(parseState(stateQuery(s))).toEqual(s);
+  });
+  it("round-trips the Uploaded filter; old ?view=recent links open all songs", () => {
+    const s = parseState("uploaded=1&view=recent");
+    expect(s.f.uploaded).toBe(true);
+    expect(s.view).toBeNull();
+    expect(countFilters(s.f)).toBe(1);
+    expect(parseState(stateQuery(s))).toEqual(s);
+  });
+  it("demo and example tags never become filter chips", () => {
+    const d = { slug: "x", title: "X", artist: null, key: null, bpm: null, time: null, feel: null, tags: ["demo", "example", "90s"], ex: true, uv: false };
+    expect(facets([d]).tags.map((t) => t.value)).toEqual(["90s"]);
   });
   it("ignores junk", () => {
     expect(parseState("sort=nope&tempo=lightning&key=H&bpm=abc").f).toEqual(NO_FILTERS);

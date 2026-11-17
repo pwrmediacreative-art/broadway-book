@@ -43,9 +43,12 @@ function Body({ code, data }: { code: string; data: Shared }) {
       <h1 className="text-3xl font-bold tracking-tight">{data.title}</h1>
       {data.artist && <p className="text-lg text-bb-cue-gray">{data.artist}</p>}
       <p className="mb-4 mt-1 text-base text-bb-cue-gray">Shared with you to read.</p>
-      <section className="bb-panel mb-4 px-4 py-4" aria-label="Structure">
-        <h2 className="mb-2 text-2xl font-bold">Structure</h2>
-        <CheatSheet text={data.chart_text} />
+      <section className="bb-panel mb-4 px-4 py-4" aria-label="Song details">
+        <h2 className="mb-2 text-2xl font-bold">Song details</h2>
+        <CheatSheet
+          text={data.chart_text}
+          onJump={(part) => document.querySelectorAll("[data-section]")[part]?.scrollIntoView({ block: "start" })}
+        />
       </section>
       {s.view ? (
         <>

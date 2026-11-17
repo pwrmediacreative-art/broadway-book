@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { OfflineNote } from "@/app/OfflineRoot";
 import { useOffline } from "@/lib/offline/status";
+import { VOTES_EVENT } from "@/lib/nav/tabs";
 import { useState, useTransition } from "react";
 import { adminDecide, report, setBlocked, vote, withdrawProposal, type Result } from "../actions";
 import { btn, when, ReviewerBadge } from "../ui";
@@ -66,6 +67,7 @@ export default function VotePanel(p: Props) {
     start(async () => {
       const r = await vote({ id: p.proposalId, approve, comment });
       if (!r.ok) return setMsg({ ok: false, text: r.error });
+      window.dispatchEvent(new Event(VOTES_EVENT)); // the Community tab badge counts down
       setComment("");
       setMsg({
         ok: true,

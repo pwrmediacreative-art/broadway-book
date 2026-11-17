@@ -146,7 +146,7 @@ export default function Lyrics({ slug, stage = false }: { slug: string; stage?: 
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={`bb-btn bb-btn-secondary fixed z-[52] h-12 px-4 text-lg ${stage ? "right-2 top-14" : "bottom-4 right-4"}`}
+        className={`bb-btn bb-btn-secondary fixed z-[52] h-12 px-4 text-lg ${stage ? "right-2 top-14" : "bottom-[calc(var(--bb-tabs-bottom,0px)+1rem)] right-4"}`}
       >
         Lyrics
       </button>

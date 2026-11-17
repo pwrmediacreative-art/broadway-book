@@ -202,7 +202,7 @@ export default function Editor({ song, publicText, publicRevisionId, proposal, i
           />
           <Status check={check} />
           <details className="text-base text-bb-cue-gray">
-            <summary className="min-h-11 cursor-pointer">Chart format cheat sheet</summary>
+            <summary className="min-h-11 cursor-pointer">Chart format help</summary>
             <ul className="mt-1 list-inside list-disc leading-relaxed">
               <li>
                 <code>[V]</code> <code>[C x2]</code> sections · <code>|</code> starts a new line

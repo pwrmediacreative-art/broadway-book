@@ -14,6 +14,14 @@ export interface MineChart {
   chart_text: string;
   mine?: boolean; // false: another admin uploaded it (read only)
   by?: string | null; // who uploaded it, when it isn't yours
+  created_at?: string | null; // when it was uploaded (newest first on Home)
+}
+
+/** Newest upload first; ones without a date (older phone copies) last, by title. */
+export function newestFirst(list: MineChart[]): MineChart[] {
+  return [...list].sort(
+    (a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? "") || a.title.localeCompare(b.title, "en", { sensitivity: "base" }),
+  );
 }
 
 const key = (uid: string) => `mine:${uid}`;
@@ -28,7 +36,13 @@ export async function syncMine(): Promise<void> {
   const { data, error } = await db.rpc("upload_charts_visible");
   if (error) throw error;
   const list = ((data as MineChart[] | null) ?? []).filter((c) => c.chart_text);
-  await kvSet(key(uid), list);
+  // Upload dates (the same rows the list came from; RLS lets you read exactly these).
+  if (list.length) {
+    const { data: dates } = await db.from("songs").select("id, created_at").in("id", list.map((c) => c.id));
+    const at = new Map(((dates ?? []) as { id: string; created_at: string }[]).map((d) => [d.id, d.created_at]));
+    for (const c of list) c.created_at = at.get(c.id) ?? null;
+  }
+  await kvSet(key(uid), newestFirst(list));
 }
 
 /** Save (or refresh) one chart right away, e.g. when its page opens. */
