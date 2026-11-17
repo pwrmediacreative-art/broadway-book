@@ -1,11 +1,13 @@
 "use client";
 
 // The "Song details" card above the chart. Every edit here rewrites the chart text (one
-// source of truth); the Save button stores it.
+// source of truth), "+ Add…" answers included; the Save button stores it (and the server
+// notes what was filled in: "added by a player", the owner's count).
 import { useState } from "react";
 import { SECTION_NAMES, type SectionName } from "@/lib/chart/types";
-import { addCue, CUE_LABEL, END_CUES, removeCue, renamePart, setEnding, setRepeat, setStart, songMap, START_CUES } from "@/lib/upload/structure";
-import { chipText, endLine, named, startLine, useStructure } from "../CheatSheet";
+import { addCue, CUE_LABEL, cueLabel, END_CUES, removeCue, renamePart, setEnding, setRepeat, setStart, songMap, START_CUES } from "@/lib/upload/structure";
+import { applyDetail } from "@/lib/upload/details";
+import { chipText, DetailRows, useStructure } from "../CheatSheet";
 
 const SECTION_LABEL: Record<SectionName, string> = {
   Intro: "Intro",
@@ -83,38 +85,18 @@ export default function StructureCard({
         )}
       </ul>
 
-      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-lg">
-        {s.start.cue && (
-          <>
-            <dt className="text-bb-cue-gray">Starts</dt>
-            <dd className="font-semibold">{startLine(s)}</dd>
-          </>
-        )}
-        {s.ending.cue && (
-          <>
-            <dt className="text-bb-cue-gray">Ends</dt>
-            <dd className="font-semibold">{endLine(s)}</dd>
-          </>
-        )}
-        {s.hasSolo && (
-          <>
-            <dt className="text-bb-cue-gray">Solos</dt>
-            <dd className="font-semibold">{songMap(s).filter((c) => s.parts[c.part].name === "Solo").map((c) => c.name).join(", ")}</dd>
-          </>
-        )}
-      </dl>
-      {s.watch.length > 0 && (
-        <ul className="flex flex-col gap-1 text-lg">
-          {s.watch.map((w, i) => (
-            <li key={i}>
-              <button type="button" className={`min-h-11 text-left ${w.unclear ? "text-bb-downbeat-amber" : ""}`} onClick={() => onJump(w.part)}>
-                • {named(s, w.part, w.text)}
-                {w.unclear ? " (unclear)" : ""}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      <DetailRows
+        s={s}
+        onWatchTap={onJump}
+        onAdd={(d) => {
+          try {
+            onChange(applyDetail(text, d));
+            return null;
+          } catch (e) {
+            return (e as Error).message;
+          }
+        }}
+      />
 
       {editing && (
         <div className="flex flex-col gap-4 border-t border-bb-rule-gray pt-3">
@@ -123,9 +105,10 @@ export default function StructureCard({
             <select
               className="bb-input h-12 px-2 text-lg"
               value={s.start.cue ?? ""}
-              onChange={(e) => apply(() => setStart(text, (e.target.value || null) as (typeof START_CUES)[number] | null))}
+              onChange={(e) => apply(() => setStart(text, e.target.value || null))}
             >
               <option value="">Not set</option>
+              {s.start.cue && !(START_CUES as readonly string[]).includes(s.start.cue) && <option value={s.start.cue}>{cueLabel(s.start.cue)}</option>}
               {START_CUES.map((c) => (
                 <option key={c} value={c}>
                   {CUE_LABEL[c]}
@@ -138,9 +121,10 @@ export default function StructureCard({
             <select
               className="bb-input h-12 px-2 text-lg"
               value={s.ending.cue ?? ""}
-              onChange={(e) => apply(() => setEnding(text, (e.target.value || null) as (typeof END_CUES)[number] | null))}
+              onChange={(e) => apply(() => setEnding(text, e.target.value || null))}
             >
               <option value="">Not set</option>
+              {s.ending.cue && !(END_CUES as readonly string[]).includes(s.ending.cue) && <option value={s.ending.cue}>{cueLabel(s.ending.cue)}</option>}
               {END_CUES.map((c) => (
                 <option key={c} value={c}>
                   {CUE_LABEL[c]}

@@ -168,7 +168,7 @@ export default function Workspace({
         <b>From a chord file.</b>
         <span className="block text-base text-bb-cue-gray">
           {info.confidence !== null && `${Math.round(info.confidence * 100)}% sure${info.estimated ? " (estimated from the timing)" : ""} · `}
-          {unclear} unclear spot{unclear === 1 ? "" : "s"} marked # UNCLEAR in the chart text
+          {unclear === 0 ? "Nothing left to fill in" : `${unclear} spot${unclear === 1 ? "" : "s"} to fill in (the # notes in the chart text)`}
         </span>
       </div>
 

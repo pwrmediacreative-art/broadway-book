@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/supabase/session";
+import { getCurrentUser, sessionClient } from "@/lib/supabase/session";
 import { safeNext } from "@/lib/auth/roles";
 import ProfileForm from "./ProfileForm";
 
@@ -22,6 +22,8 @@ async function Profile({ searchParams }: { searchParams: PageProps<"/profile">["
   if (!user) redirect("/login?next=/profile");
   const { next } = await searchParams;
   const first = !user.display_name;
+  // Song details this player filled in ("+ Add…"), one per song and detail
+  const { count: details } = await (await sessionClient()).from("song_detail_adds").select("song_id", { count: "exact", head: true });
   return (
     <>
       <h1 className="text-3xl font-bold tracking-tight">{first ? "Welcome!" : "Your profile"}</h1>
@@ -41,6 +43,11 @@ async function Profile({ searchParams }: { searchParams: PageProps<"/profile">["
         >
           My versions <span className="text-bb-cue-gray">Songs you changed for yourself ›</span>
         </Link>
+      )}
+      {!!details && (
+        <p className="mt-6 text-lg">
+          You&apos;ve added {details} song detail{details === 1 ? "" : "s"}. Thank you.
+        </p>
       )}
     </>
   );

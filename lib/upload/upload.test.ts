@@ -119,8 +119,8 @@ describe("structure card", () => {
     t = addCue(t, readStructure(t).parts[1].line, "band out");
     expect(serializeChart(parseChart(t).doc)).toBe(t);
     const after = readStructure(t);
-    expect(after.start).toEqual({ cue: "count off", unclear: null });
-    expect(after.ending).toEqual({ cue: "cold stop", unclear: null });
+    expect(after.start).toEqual({ cue: "count off", unclear: null, byPlayer: false });
+    expect(after.ending).toEqual({ cue: "cold stop", unclear: null, byPlayer: false });
     expect(after.parts[0].guessed).toBe(false);
     expect(after.formLine).toBe("V 8 x2 · C 8 x3 cold stop");
     expect(after.watch.map((w) => w.text)).toContain("“band out” in C");

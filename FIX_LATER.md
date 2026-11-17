@@ -139,3 +139,7 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Q12: the demo songs are still in the database until `npm run remove:demos -- --apply` runs (dry run saved in docs/autopilot/q12-demo-dry-run.txt); afterwards the "Example" chip and `is_example` code can go.
 - Q12: the old "← All songs" links at the top of Setlists, Community, Notifications and setlist pages are now redundant with the Home tab.
 - Home tab: tapping Home while on Home scrolls to the top but keeps an active search or filter; consider clearing it.
+- Q11: "+ Add solo spots" / "+ Add stops and breaks" stay until filled; there's no "None" answer yet (would need its own note in the chart text).
+- Q11: no "+ Add the tempo" for charts with no {bpm:} (Song details doesn't show tempo except in the stage sheet header).
+- Q11: stage mode's Song details sheet is read-only; adding there would need the owner check in StageView.
+- Q11: accepting the audio "Check the ending" guess on /upload/[id] is marked "added by a player" on save.

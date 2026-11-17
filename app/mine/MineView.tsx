@@ -1,19 +1,28 @@
 "use client";
 
 // One of your own uploaded charts: the chart in any key, numbers or chord names, the
-// song details, stage mode and setlists. Private: only you can open it.
+// song details, stage mode and setlists. Private: only you can open it (and admins, for an
+// admin's upload). Both can fill in missing song details ("+ Add…"), saved right away.
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import AddToSetlist from "@/app/setlists/AddToSetlist";
 import Chart from "@/app/songs/[slug]/Chart";
 import { DisplayControls, KeyInfo } from "@/app/songs/[slug]/controls";
 import { FONTS, useChartState } from "@/app/songs/[slug]/hooks";
 import { enterFullscreen } from "@/app/songs/[slug]/SongView";
+import { addSongDetail } from "@/app/upload/actions";
 import CheatSheet from "@/app/upload/CheatSheet";
+import { OFFLINE_MSG, useOffline } from "@/lib/offline/status";
 import { rememberMine, type MineChart } from "@/lib/upload/mine";
 
 export default function MineView({ chart, offline = false }: { chart: MineChart; offline?: boolean }) {
-  const s = useChartState(chart.slug, chart.chart_text);
+  const router = useRouter();
+  const lostSignal = useOffline();
+  // a detail just saved shows at once; the page's own copy catches up on refresh
+  const [saved, setSaved] = useState<{ from: string; text: string } | null>(null);
+  const text = saved && saved.from === chart.chart_text ? saved.text : chart.chart_text;
+  const s = useChartState(chart.slug, text);
   const [sheet, setSheet] = useState(false);
   useEffect(() => {
     if (!offline) void rememberMine(chart);
@@ -47,9 +56,21 @@ export default function MineView({ chart, offline = false }: { chart: MineChart;
       {sheet && (
         <div className="bb-panel mb-4 px-4 py-4">
           <CheatSheet
-            text={chart.chart_text}
+            text={text}
             onJump={(part) => document.querySelectorAll("[data-section]")[part]?.scrollIntoView({ block: "start" })}
             nameHref={chart.mine !== false && !offline ? `/upload/${chart.id}` : undefined}
+            onAdd={
+              offline
+                ? undefined
+                : async (d) => {
+                    if (lostSignal) return OFFLINE_MSG;
+                    const r = await addSongDetail(chart.id, d);
+                    if (!r.ok) return r.error;
+                    setSaved({ from: chart.chart_text, text: r.text });
+                    router.refresh();
+                    return null;
+                  }
+            }
           />
         </div>
       )}

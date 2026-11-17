@@ -3,6 +3,7 @@
 // bar counts and repeats; start / ending / watch-outs come from cue words and symbols.
 import { parseChart } from "../chart/parse";
 import { serializeChart } from "../chart/serialize";
+import { parseKey } from "../chart/transpose";
 import { MAX_CUE_WORDS } from "../chart/validate";
 import { SECTION_NAMES, type ChartDoc, type Line, type Row, type RowItem, type SectionName } from "../chart/types";
 
@@ -20,6 +21,35 @@ export const CUE_LABEL: Record<string, string> = {
 };
 const LABEL_GUESS = "label from repeat pattern";
 
+/**
+ * A detail written in "Other" words: a cue "start: piano alone" at the top of the first
+ * section, "end: big hold" at the end of the last (docs/CHART_FORMAT.md, Song details).
+ */
+const START_OTHER = /^start:\s*(\S.*)$/i;
+const END_OTHER = /^end:\s*(\S.*)$/i;
+/** A cue naming a solo spot ("solo", "guitar solo"). */
+const SOLO_CUE = /\bsolos?\b/i;
+/** Cue words that are stops and breaks. */
+const STOP_CUE = /\b(?:stops?|breaks?|band out|drums only|hits?|hold)\b/i;
+/**
+ * "# ADDED BY A PLAYER: start" directly above a section: that detail of the section was
+ * filled in by a player, not by the original chart or the file. Fields: start, ending, solo,
+ * stop, key. Written by the server on save (lib/upload/details.ts markAdded).
+ */
+export const ADDED_MARK = "ADDED BY A PLAYER:";
+export type MarkField = "start" | "ending" | "solo" | "stop" | "key";
+const markOf = (l: Line) =>
+  l.kind === "comment" && l.text.startsWith(ADDED_MARK) ? (l.text.slice(ADDED_MARK.length).trim() as MarkField) : null;
+
+const isStartCue = (c: string) => (START_CUES as readonly string[]).includes(c.toLowerCase()) || START_OTHER.test(c);
+const isEndCue = (c: string) => (END_CUES as readonly string[]).includes(c.toLowerCase()) || END_OTHER.test(c);
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+/** What the Starts / Ends line reads for a start or end cue. */
+export function cueLabel(cue: string): string {
+  const other = START_OTHER.exec(cue) ?? END_OTHER.exec(cue);
+  return other ? cap(other[1]) : (CUE_LABEL[cue.toLowerCase()] ?? cap(cue));
+}
+
 export interface FormPart {
   line: number; // index of the section line in the doc
   label: string; // "V2"
@@ -33,16 +63,32 @@ export interface FormPart {
 export interface WatchOut {
   part: number; // index into parts
   text: string;
-  unclear: boolean;
+  unclear: boolean; // only "Possible key change" (kind "keyq"): a question for the owner
+  kind: "cue" | "stop" | "key" | "tempo" | "feel" | "solo" | "keyq";
+  byPlayer: boolean; // a player added it (ADDED_MARK above the section)
+}
+
+export interface StartEnd {
+  cue: string | null; // the cue as written ("count off", "start: piano alone")
+  unclear: string | null; // the # UNCLEAR note's words, for the owner's screens
+  byPlayer: boolean;
+}
+
+export interface SoloSpot {
+  part: number;
+  who: string | null; // "guitar solo" when the cue says more than "solo"
+  byPlayer: boolean;
 }
 
 export interface Structure {
   parts: FormPart[];
   formLine: string; // "Intro 4 · V 16 · C 8 x2 · Outro 4 cold stop"
-  start: { cue: string | null; unclear: string | null };
-  ending: { cue: string | null; unclear: string | null };
+  start: StartEnd;
+  ending: StartEnd;
   watch: WatchOut[];
   hasSolo: boolean;
+  solos: SoloSpot[];
+  hasStops: boolean; // any stop, hold, no-chord bar or stop/break cue
 }
 
 const isBar = (i: RowItem) => i.kind === "chord" || i.kind === "nc" || i.kind === "repeat" || i.kind === "split";
@@ -73,9 +119,12 @@ export function readStructure(text: string): Structure {
   const secs = sectionsOf(doc);
   const parts: FormPart[] = [];
   const watch: WatchOut[] = [];
+  const solos: SoloSpot[] = [];
   const allUnclear = doc.lines.map(unclearText);
-  let start: Structure["start"] = { cue: null, unclear: null };
-  let ending: Structure["ending"] = { cue: null, unclear: null };
+  const marks = secs.map((s) => new Set(commentsAbove(doc, s.line).map((i) => markOf(doc.lines[i])).filter(Boolean)));
+  const last = secs.length - 1;
+  let start: StartEnd = { cue: null, unclear: null, byPlayer: false };
+  let ending: StartEnd = { cue: null, unclear: null, byPlayer: false };
   for (const u of allUnclear) {
     if (!u) continue;
     if (/^start:/i.test(u)) start.unclear = u.replace(/^start:\s*/i, "");
@@ -88,6 +137,11 @@ export function readStructure(text: string): Structure {
     const label = `${name}${number ?? ""}`;
     const above = commentsAbove(doc, s.line).map((i) => allUnclear[i]).filter(Boolean) as string[];
     const items = s.rows.flat();
+    const mark = marks[pi];
+    const add = (kind: WatchOut["kind"], text: string) => {
+      const field: MarkField | null = kind === "cue" || kind === "stop" ? "stop" : kind === "key" || kind === "solo" ? kind : null;
+      watch.push({ part: pi, text, unclear: kind === "keyq", kind, byPlayer: !!field && mark.has(field) });
+    };
     parts.push({
       line: s.line,
       label,
@@ -97,43 +151,49 @@ export function readStructure(text: string): Structure {
       bars: items.filter(isBar).length,
       guessed: above.some((u) => u.includes(LABEL_GUESS)),
     });
-    if (above.some((u) => /possible key change/.test(u))) watch.push({ part: pi, text: `Possible key change in ${label}`, unclear: true });
+    if (above.some((u) => /possible key change/.test(u))) add("keyq", `Possible key change in ${label}`);
+    if (name === "Solo") solos.push({ part: pi, who: null, byPlayer: mark.has("solo") });
     let bar = 0;
     for (const it of items) {
       if (isBar(it)) bar++;
       if (it.kind === "cue") {
-        const c = it.text.toLowerCase();
-        if (pi === 0 && (START_CUES as readonly string[]).includes(c) && !start.cue) start = { cue: c, unclear: null };
-        else if (pi === secs.length - 1 && (END_CUES as readonly string[]).includes(c)) ending = { cue: c, unclear: null };
-        else watch.push({ part: pi, text: `“${it.text}” in ${label}`, unclear: false });
+        const c = it.text;
+        if (pi === 0 && isStartCue(c) && !start.cue) start = { cue: c, unclear: null, byPlayer: mark.has("start") };
+        else if (pi === last && isEndCue(c)) ending = { cue: c, unclear: null, byPlayer: mark.has("ending") };
+        else if (SOLO_CUE.test(c)) {
+          const who = /^solos?$/i.test(c) ? null : c;
+          const had = solos.find((x) => x.part === pi);
+          if (had) had.who ??= who;
+          else solos.push({ part: pi, who, byPlayer: mark.has("solo") });
+        } else add("cue", `“${c}” in ${label}`);
       } else if (it.kind === "tag" && (it.name === "key" || it.name === "mod")) {
-        watch.push({ part: pi, text: it.name === "key" ? `Key change to ${it.value} in ${label}` : `Modulate ${it.value} in ${label}`, unclear: false });
+        add("key", it.name === "key" ? `Key change to ${it.value} in ${label}` : `Modulate ${it.value} in ${label}`);
       } else if (it.kind === "tag" && it.name === "bpm") {
-        watch.push({ part: pi, text: `Tempo ${it.value} in ${label}`, unclear: false });
+        add("tempo", `Tempo ${it.value} in ${label}`);
       } else if (it.kind === "tag" && it.name === "feel") {
-        watch.push({ part: pi, text: `${it.value} feel in ${label}`, unclear: false });
+        add("feel", `${it.value} feel in ${label}`);
       }
       const beats = it.kind === "split" ? it.beats : isBar(it) ? [it] : [];
       for (const b of beats) {
         if (b.kind === "chord" || b.kind === "nc") {
-          if (b.end === "stop") watch.push({ part: pi, text: `Stop in ${label} bar ${bar}`, unclear: false });
-          if (b.end === "fermata") watch.push({ part: pi, text: `Hold in ${label} bar ${bar}`, unclear: false });
+          if (b.end === "stop") add("stop", `Stop in ${label} bar ${bar}`);
+          if (b.end === "fermata") add("stop", `Hold in ${label} bar ${bar}`);
         }
-        if (b.kind === "nc" && !watch.some((w) => w.text === `No chord in ${label} bar ${bar}`))
-          watch.push({ part: pi, text: `No chord in ${label} bar ${bar}`, unclear: false });
+        if (b.kind === "nc" && !watch.some((w) => w.text === `No chord in ${label} bar ${bar}`)) add("stop", `No chord in ${label} bar ${bar}`);
       }
     }
-    if (name === "Solo") watch.push({ part: pi, text: `Solo: ${label}`, unclear: false });
+    if (name === "Solo") add("solo", `Solo: ${label}`);
   });
 
   const formLine = parts
     .map((p, i) => {
       let s = `${p.label} ${p.bars}${p.repeat ? ` x${p.repeat}` : ""}`;
-      if (i === parts.length - 1 && ending.cue) s += ` ${CUE_LABEL[ending.cue].toLowerCase()}`;
+      if (i === parts.length - 1 && ending.cue) s += ` ${cueLabel(ending.cue).toLowerCase()}`;
       return s;
     })
     .join(" · ");
-  return { parts, formLine, start, ending, watch, hasSolo: parts.some((p) => p.name === "Solo") };
+  const hasStops = watch.some((w) => w.kind === "stop" || (w.kind === "cue" && STOP_CUE.test(w.text)));
+  return { parts, formLine, start, ending, watch, hasSolo: solos.length > 0, solos, hasStops };
 }
 
 // ── edits: each takes chart text and returns new canonical chart text ─────────
@@ -187,17 +247,16 @@ function sectionRows(doc: ChartDoc, which: "first" | "last"): Row[] | null {
   return sec.rows;
 }
 
-const stripCues = (rows: Row[], set: readonly string[]) => {
-  for (let r = 0; r < rows.length; r++)
-    rows[r] = rows[r].filter((i) => !(i.kind === "cue" && set.includes(i.text.toLowerCase())));
+const stripCues = (rows: Row[], test: (cue: string) => boolean) => {
+  for (let r = 0; r < rows.length; r++) rows[r] = rows[r].filter((i) => !(i.kind === "cue" && test(i.text)));
 };
 
-/** How the song starts (cue at the start of the first section), or null to clear. */
-export function setStart(text: string, cue: (typeof START_CUES)[number] | null): string {
+/** How the song starts (cue at the start of the first section: a START_CUES word or "start: …"), or null to clear. */
+export function setStart(text: string, cue: string | null): string {
   return edit(text, (doc) => {
     const secs = doc.lines.filter((l): l is Extract<Line, { kind: "section" }> => l.kind === "section");
     if (!secs.length) throw new Error("No sections");
-    stripCues(secs[0].rows, START_CUES);
+    stripCues(secs[0].rows, isStartCue);
     if (cue) {
       if (!secs[0].rows.length) secs[0].rows.push([]);
       secs[0].rows[0].unshift({ kind: "cue", text: cue });
@@ -206,8 +265,8 @@ export function setStart(text: string, cue: (typeof START_CUES)[number] | null):
   });
 }
 
-/** How the song ends (cue after the last bar), or null to clear. */
-export function setEnding(text: string, cue: (typeof END_CUES)[number] | null): string {
+/** How the song ends (cue after the last bar: an END_CUES word or "end: …"), or null to clear. */
+export function setEnding(text: string, cue: string | null): string {
   return edit(text, (doc) => {
     const secs = doc.lines.filter((l): l is Extract<Line, { kind: "section" }> => l.kind === "section");
     const last = secs[secs.length - 1];
@@ -216,7 +275,7 @@ export function setEnding(text: string, cue: (typeof END_CUES)[number] | null): 
     for (let i = at; i < doc.lines.length; i++) {
       const l = doc.lines[i];
       if (i > at && l.kind === "section") break;
-      if (l.kind === "section" || l.kind === "rows") stripCues(l.rows, END_CUES);
+      if (l.kind === "section" || l.kind === "rows") stripCues(l.rows, isEndCue);
     }
     if (cue) {
       const rows = sectionRows(doc, "last")!;
@@ -227,11 +286,17 @@ export function setEnding(text: string, cue: (typeof END_CUES)[number] | null): 
   });
 }
 
+/** A cue's words cleaned for the chart text; throws when empty or longer than `max` words. */
+export function cleanCue(cue: string, max = MAX_CUE_WORDS): string {
+  const c = cue.replace(/["{}[\]|#]/g, "").replace(/\s+/g, " ").trim();
+  if (!c) throw new Error("Type a few words.");
+  if (c.split(" ").length > max) throw new Error(`${max} words or fewer (never lyrics).`);
+  return c;
+}
+
 /** A short watch-out cue at the start of a section. Never lyrics: 6 words or fewer. */
 export function addCue(text: string, line: number, cue: string): string {
-  const c = cue.replace(/["{}[\]|#]/g, "").replace(/\s+/g, " ").trim();
-  if (!c) throw new Error("Type a short cue.");
-  if (c.split(" ").length > MAX_CUE_WORDS) throw new Error(`Cues are ${MAX_CUE_WORDS} words or fewer (never lyrics).`);
+  const c = cleanCue(cue);
   return edit(text, (doc) => {
     const l = doc.lines[line];
     if (l?.kind !== "section") throw new Error("Section not found");
@@ -247,6 +312,40 @@ export function removeCue(text: string, line: number, cue: string): string {
       if (i > line && l.kind === "section") break;
       if (l.kind === "section" || l.kind === "rows")
         l.rows = l.rows.map((r) => r.filter((it) => !(it.kind === "cue" && it.text === cue)));
+    }
+  });
+}
+
+/**
+ * Answer a "possible key change" question for a section: "+1"/"-2" (half steps, {mod:}),
+ * a key name ("D", "Bbm": {key:}) at the start of the section, or "none". Either way the
+ * question note above the section goes.
+ */
+export function setKeyChange(text: string, line: number, change: string): string {
+  const v = change.trim();
+  const tag = /^[+-]\d{1,2}$/.test(v) ? "mod" : v === "none" ? null : parseKey(v) ? "key" : undefined;
+  if (tag === undefined) throw new Error("Type a key like D, Bb or F#m.");
+  return edit(text, (doc) => {
+    const l = doc.lines[line];
+    if (l?.kind !== "section") throw new Error("Section not found");
+    if (tag) {
+      if (!l.rows.length) l.rows.push([]);
+      l.rows[0].unshift({ kind: "tag", name: tag, value: v });
+    }
+    dropComments(doc, (u) => /possible key change/.test(u), commentsAbove(doc, line));
+  });
+}
+
+/** Write ADDED_MARK notes above sections (part = index into the sections), once each. */
+export function addMarks(text: string, marks: { part: number; field: MarkField }[]): string {
+  if (!marks.length) return text;
+  return edit(text, (doc) => {
+    // last part first, so earlier line indexes stay right
+    for (const m of [...marks].sort((a, b) => b.part - a.part)) {
+      const sec = sectionsOf(doc)[m.part];
+      if (!sec) continue;
+      if (commentsAbove(doc, sec.line).some((i) => markOf(doc.lines[i]) === m.field)) continue;
+      doc.lines.splice(sec.line, 0, { kind: "comment", text: `${ADDED_MARK} ${m.field}` });
     }
   });
 }

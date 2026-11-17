@@ -115,6 +115,24 @@ They work inside split bars too: `(^<5> NC)`.
 | `{mod: +1}` | Modulate by half steps (`+1` = up a half step, `-2` = down a whole step) | on its own line before the section |
 | `"drums only"` | Cue note: short, 6 words or fewer, **never lyrics** | `"band out"` |
 
+## Song details (uploaded charts)
+
+The Song details card (lib/upload/structure.ts) is read from the chart text. It uses
+ordinary cues and comments, so these are conventions, not extra syntax:
+
+| Written as | Song details reads |
+|---|---|
+| `"count off"`, `"drum intro"`, `"guitar intro"`, `"band intro"` first in the first section | Starts |
+| `"start: piano alone"` first in the first section (a player's own words) | Starts: Piano alone |
+| `"cold stop"`, `"repeat and fade"`, `"ritard"`, `"tag"` last in the last section | Ends |
+| `"end: big hold"` last in the last section | Ends: Big hold |
+| a cue with the word solo (`"solo"`, `"fiddle solo"`) in a section, or a `[Solo]` section | Solos |
+| `# UNCLEAR: …` comments | a detail still to fill in (owner and admin screens) |
+| `# ADDED BY A PLAYER: start` directly above a section | that detail was filled in by a player (fields: `start`, `ending`, `solo`, `stop`, `key`) |
+
+The server writes the `# ADDED BY A PLAYER:` lines when a save fills in a detail
+(lib/upload/details.ts `markAdded`). Like every comment they are not shown in the chart.
+
 ## Canonical form
 
 The parser accepts loose spacing (`{key:A}`, `1   5|6-  4`). Saved charts use the

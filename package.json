@@ -30,6 +30,7 @@
     "clean:drafts": "node --env-file=.env.local --import tsx scripts/clean-drafts.ts",
     "check:clean": "node --env-file=.env.local scripts/check-clean.mjs",
     "check:prefs": "node --env-file=.env.local scripts/check-prefs.mjs",
+    "check:details": "node --env-file=.env.local scripts/check-details.mjs",
     "check:lyrics": "node --env-file=.env.local scripts/check-lyrics.mjs",
     "check:invites": "node --env-file=.env.local scripts/check-invites.mjs",
     "remove:demos": "node --env-file=.env.local --import tsx scripts/remove-demo-songs.ts"

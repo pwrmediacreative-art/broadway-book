@@ -9,6 +9,7 @@ import { getMeta } from "@/lib/chart/parse";
 import { sessionClient } from "@/lib/supabase/session";
 import { readMusicXml, MusicXmlError, MAX_MUSICXML_BYTES } from "@/lib/upload/musicxml";
 import { buildChart, BuildError } from "@/lib/upload/build";
+import { applyDetail, markAdded, type DetailInput } from "@/lib/upload/details";
 import type { Timeline } from "@/lib/upload/timeline";
 
 export type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string };
@@ -87,13 +88,30 @@ export async function createFromMusicXml(input: {
   return { ok: true, id: (data as { id: string }).id };
 }
 
-/** Save the owner's edits (chart text is the one source of truth, card edits included). */
+/** The live chart text of a private chart the user may open (RLS), or null. */
+async function liveText(db: Awaited<ReturnType<typeof sessionClient>>, songId: string): Promise<string | null> {
+  const { data } = await db
+    .from("songs")
+    .select("current:revisions!songs_current_revision_fk(chart_text)")
+    .eq("id", songId)
+    .eq("status", "private")
+    .maybeSingle();
+  return (data?.current as unknown as { chart_text: string } | null)?.chart_text ?? null;
+}
+
+/**
+ * Save the owner's edits (chart text is the one source of truth, card edits included).
+ * Details the owner filled in get an "added by a player" note and go into their count.
+ */
 export async function savePrivateChart(songId: string, chartText: string): Promise<Result<{ text: string }>> {
   const { db, user } = await signedIn();
   if (!user) return NOT_SIGNED_IN;
-  const m = metaOf(chartText);
+  const first = metaOf(chartText);
+  if ("error" in first) return { ok: false, error: first.error! };
+  if (!first.title) return { ok: false, error: "The chart needs a {title:} line." };
+  const added = markAdded(await liveText(db, songId), first.text);
+  const m = metaOf(added.text);
   if ("error" in m) return { ok: false, error: m.error! };
-  if (!m.title) return { ok: false, error: "The chart needs a {title:} line." };
   const { error } = await db.rpc("private_save", {
     p_song: songId,
     p_chart: m.text,
@@ -102,6 +120,35 @@ export async function savePrivateChart(songId: string, chartText: string): Promi
     p_artist: m.artist ?? "",
     p_note: "Edited",
   });
+  if (error) return { ok: false, error: plain(error.message) };
+  if (added.fields.length) {
+    // the chart is saved either way; the count is a thank-you, not a blocker
+    const { error: e2 } = await db.rpc("song_details_log", { p_song: songId, p_fields: added.fields });
+    if (e2) console.error("song_details_log", e2.message);
+  }
+  return { ok: true, text: m.text };
+}
+
+/**
+ * "+ Add…" on Song details: write one detail into the saved chart and save it right away.
+ * The server applies the detail to the live text itself (never text from the browser), so
+ * this only ever adds a detail. The owner, and admins on another admin's upload.
+ */
+export async function addSongDetail(songId: string, detail: DetailInput): Promise<Result<{ text: string }>> {
+  const { db, user } = await signedIn();
+  if (!user) return NOT_SIGNED_IN;
+  if (!/^[0-9a-f-]{36}$/.test(songId)) return { ok: false, error: "Chart not found." };
+  const live = await liveText(db, songId);
+  if (!live) return { ok: false, error: "Chart not found." };
+  let added;
+  try {
+    added = markAdded(live, applyDetail(live, detail));
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+  const m = metaOf(added.text);
+  if ("error" in m) return { ok: false, error: m.error! };
+  const { error } = await db.rpc("song_details_save", { p_song: songId, p_chart: m.text, p_meta: m.meta, p_fields: added.fields });
   if (error) return { ok: false, error: plain(error.message) };
   return { ok: true, text: m.text };
 }
