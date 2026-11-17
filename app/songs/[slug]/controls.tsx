@@ -14,6 +14,7 @@ import {
 } from "@/lib/chart";
 import { Caret, Fermata } from "./Chart";
 import type { ChartState } from "./hooks";
+import { PREF, setPref, usePref } from "@/lib/prefs";
 
 export const btn = "bb-btn h-12 min-w-12 px-4 text-lg font-semibold";
 export const on = "bb-on";
@@ -31,6 +32,7 @@ export function DisplayControls({ s }: { s: ChartState }) {
   const m = s.minorSymbol;
   return (
     <>
+      <LayoutSwitch />
       {original && (
         <select
           value={selected}
@@ -236,5 +238,21 @@ export function BpmToggle({ s, className = "" }: { s: ChartState; className?: st
         <b className="text-bb-chart-white">{bpm}</b> bpm
       </span>
     </button>
+  );
+}
+
+/** Scroll (the chart in one column) or Whole song (sections in columns; fits the screen in
+ *  stage mode). Remembered on this device. */
+export function LayoutSwitch() {
+  const whole = usePref(PREF.layout) === "whole";
+  return (
+    <div className="flex" role="group" aria-label="Layout">
+      <button className={`${btn} rounded-r-none ${whole ? off : on}`} onClick={() => setPref(PREF.layout, null)} aria-pressed={!whole}>
+        Scroll
+      </button>
+      <button className={`${btn} rounded-l-none ${whole ? on : off}`} onClick={() => setPref(PREF.layout, "whole")} aria-pressed={whole}>
+        Whole song
+      </button>
+    </div>
   );
 }

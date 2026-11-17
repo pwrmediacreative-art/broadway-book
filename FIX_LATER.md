@@ -133,3 +133,4 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - /api/lyrics has no per-visitor rate limit (fine while lyrics are admins-only); add one before opening lyrics to signed-in players or everyone.
 - Stage mode: the Lyrics button (Q7) stays visible; make it auto-hide with the other stage controls.
 - My notes (/notes) isn't saved for offline use (not in SHELLS); flags links open fine online.
+- Whole song: the road map strip has a `current` slot but nothing lights it yet (auto-scroll is off in Whole song; audio sync lives on the upload page).

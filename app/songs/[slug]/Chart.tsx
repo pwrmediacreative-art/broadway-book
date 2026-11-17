@@ -238,6 +238,7 @@ export default function Chart({
   marks,
   hold,
   play,
+  columns,
 }: {
   view: ChartView;
   chords: boolean;
@@ -251,6 +252,10 @@ export default function Chart({
   hold?: HoldMarks;
   /** Upload player: bar marker + tap a bar to jump the audio there. */
   play?: PlayMarks;
+  /** Whole song view: sections flow into columns and are never split. `count` + `height`
+   *  (stage mode) fills a fixed box, extra columns overflow to the right as pages; without
+   *  them (song page) the browser makes as many ~13em columns as fit. */
+  columns?: { count?: number; height?: number; innerRef?: Ref<HTMLDivElement> };
 }) {
   const bars = barIds(view, hold, play);
   return (
@@ -259,10 +264,24 @@ export default function Chart({
       className="@container w-full font-bold leading-none tabular-nums"
       style={{ fontFamily, fontWeight, ...style }}
     >
-      <div className="flex flex-col gap-[0.65em]">
+      <div
+        ref={columns?.innerRef}
+        className={columns ? "" : "flex flex-col gap-[0.65em]"}
+        style={
+          columns
+            ? columns.count
+              ? { columnCount: columns.count, columnGap: "1.2em", columnFill: "auto", height: columns.height }
+              : { columnWidth: "13em", columnGap: "1.5em" }
+            : undefined
+        }
+      >
         {view.sections.map((s, i) => (
-          <section key={i} className="flex flex-col gap-[0.2em] @md:flex-row @md:gap-[0.35em]">
-            <h2 className="shrink-0 @md:w-[2.2em] @md:pt-[0.3em]">
+          <section
+            key={i}
+            data-section={i}
+            className={columns ? "mb-[0.65em] flex break-inside-avoid flex-col gap-[0.2em]" : "flex flex-col gap-[0.2em] @md:flex-row @md:gap-[0.35em]"}
+          >
+            <h2 className={columns ? "shrink-0" : "shrink-0 @md:w-[2.2em] @md:pt-[0.3em]"}>
               <span className="inline-flex items-baseline gap-[0.15em] rounded-[0.15em] border-[0.06em] border-bb-downbeat-amber px-[0.3em] py-[0.12em] text-[0.55em] leading-none text-bb-downbeat-amber">
                 {s.label.replace(/ x\d+$/, "")}
                 {s.repeat > 1 && <span className="text-[0.85em]">×{s.repeat}</span>}

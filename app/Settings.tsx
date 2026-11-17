@@ -77,6 +77,7 @@ export default function SettingsButton() {
             <h3 className="mb-2 text-lg font-semibold">How do you read charts?</h3>
             <DisplayPicker />
             <p className="mt-2 text-base text-bb-cue-gray">The default on every chart, stage mode and setlists. The 123 / ABC switch on a song still flips it.</p>
+            <LayoutSetting />
             <LyricsToggle />
             <Link href="/notes" onClick={() => setOpen(false)} className="bb-btn bb-btn-secondary mt-5 flex h-12 w-full items-center justify-center text-lg">
               My notes (flags and my versions)
@@ -111,6 +112,39 @@ function LyricsToggle() {
         {opt(true, "On")}
       </div>
       <p className="mt-2 text-base text-bb-cue-gray">Beside the chart on a big screen, a pull-up drawer on a phone. From LRCLIB, not stored by Broadway Book.</p>
+    </>
+  );
+}
+
+/** Scroll / Whole song, and the smallest text size Whole song uses before it turns pages. */
+function LayoutSetting() {
+  const whole = usePref(PREF.layout) === "whole";
+  const min = Number(usePref(PREF.wholeMin)) || 24;
+  const opt = (on: boolean, label: string, onClick: () => void) => (
+    <button type="button" aria-pressed={on} onClick={onClick} className={`bb-btn h-12 flex-1 px-3 text-lg ${on ? "bb-btn-primary" : "bb-btn-secondary"}`}>
+      {label}
+    </button>
+  );
+  return (
+    <>
+      <h3 className="mb-2 mt-6 text-lg font-semibold">Chart layout</h3>
+      <div className="flex gap-3">
+        {opt(!whole, "Scroll", () => setPref(PREF.layout, null))}
+        {opt(whole, "Whole song", () => setPref(PREF.layout, "whole"))}
+      </div>
+      <p className="mt-2 text-base text-bb-cue-gray">Whole song puts the chart on one screen in columns. If it can’t fit, it turns pages (pedal, arrows, swipe or tap an edge).</p>
+      {whole && (
+        <>
+          <p className="mb-2 mt-3 text-base">Smallest text before pages</p>
+          <div className="flex gap-2">
+            {[20, 24, 28, 32].map((n) => (
+              <span key={n} className="contents">
+                {opt(min === n, `${n}`, () => setPref(PREF.wholeMin, n === 24 ? null : String(n)))}
+              </span>
+            ))}
+          </div>
+        </>
+      )}
     </>
   );
 }

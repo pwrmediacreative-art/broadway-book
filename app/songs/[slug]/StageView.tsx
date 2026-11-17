@@ -14,6 +14,8 @@ import CheatSheet from "@/app/upload/CheatSheet";
 import { HoldSheet, useHold, useHoldMarks, withHold, type Spot } from "./Hold";
 import ReadChoice from "@/app/ReadChoice";
 import Lyrics from "./Lyrics";
+import RoadMap from "./RoadMap";
+import WholeChart, { WHOLE_MIN_DEFAULT, type Pager } from "./WholeChart";
 
 const FIT_MIN = 30; // px: smallest size we shrink to so the whole chart fits without scrolling
 const SCROLL_SIZE = 40; // px: size used when it can't fit and has to scroll (if the width allows)
@@ -86,6 +88,11 @@ export default function StageView({
   const goTo = useGo();
   const local = useLocalNav();
   const scroller = useRef<HTMLDivElement>(null);
+  // Whole song: the chart fits one screen in columns (pages below WHOLE_MIN), never scrolls.
+  const whole = usePref(PREF.layout) === "whole";
+  const minPref = Number(usePref(PREF.wholeMin));
+  const wholeMin = Number.isFinite(minPref) && minPref >= 16 && minPref <= 48 ? minPref : WHOLE_MIN_DEFAULT;
+  const pager = useRef<Pager | null>(null);
   const chartEl = useRef<HTMLDivElement>(null);
   useWakeLock();
   const theme = usePref(PREF.stageTheme);
@@ -158,6 +165,7 @@ export default function StageView({
 
   // --- scrolling ------------------------------------------------------------------------
   const [scrollable, setScrollable] = useState(false);
+  const scroll = scrollable && !whole; // auto-scroll is off in Whole song
   const [suggested, setSuggested] = useState<number | null>(null);
   useLayoutEffect(() => {
     const box = scroller.current;
@@ -190,6 +198,7 @@ export default function StageView({
   // Always start paused (also covers prefers-reduced-motion). Never auto-advances songs.
   const [playing, setPlaying] = useState(false);
   const play = () => {
+    if (whole) return; // nothing to scroll in Whole song
     const box = scroller.current;
     if (!box || !scrollable) return;
     if (box.scrollTop >= box.scrollHeight - box.clientHeight - 1) box.scrollTop = 0;
@@ -261,6 +270,14 @@ export default function StageView({
     if (t) goTo(`/songs/${t.slug}/stage`);
     else setToast(d > 0 ? "Last song in the list" : "First song in the list");
   };
+  /** Whole song: turn a page first; past the first/last page, change song as usual. */
+  const turn = (d: -1 | 1) => {
+    if (whole && pager.current?.turn(d)) {
+      setSpot(null);
+      return;
+    }
+    go(d);
+  };
   const exit = () => {
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     if (set) set.onExit();
@@ -270,7 +287,13 @@ export default function StageView({
     if (!set && nav.next && !local) router.prefetch(`/songs/${nav.next.slug}/stage`);
   }, [set, nav.next, router, local]);
 
-  useSongKeys(go, (e) => {
+  useSongKeys(turn, (e) => {
+    if (whole && (e.key === " " || e.key === "ArrowUp" || e.key === "ArrowDown")) {
+      e.preventDefault();
+      turn(e.key === "ArrowUp" ? -1 : 1); // pedals mapped to Space or Up/Down turn pages too
+      poke();
+      return true;
+    }
     if (e.key === " ") {
       e.preventDefault();
       if (playing) setPlaying(false);
@@ -307,10 +330,20 @@ export default function StageView({
       if (playing) setPlaying(false);
       poke();
     },
-    onTap: () => {
-      if (!hold.held() && !wasPlaying.current && !closedPanel.current) play();
+    onTap: (x) => {
+      if (hold.held() || closedPanel.current) return;
+      if (whole) {
+        // Whole song: tap the right or left edge to turn the page.
+        const r = scroller.current?.getBoundingClientRect();
+        if (!r || x === undefined) return;
+        const f = (x - r.left) / r.width;
+        if (f > 0.67) turn(1);
+        else if (f < 0.33) turn(-1);
+        return;
+      }
+      if (!wasPlaying.current) play();
     },
-    onSwipe: (d) => !hold.held() && go(d),
+    onSwipe: (d) => !hold.held() && turn(d),
   });
   const gesture = withHold(tapSwipe, hold.handlers);
 
@@ -386,14 +419,30 @@ export default function StageView({
       )}
       {set?.note && <p className="shrink-0 truncate border-b border-bb-downbeat-amber/40 bg-bb-downbeat-amber/15 px-4 py-1.5 text-xl font-bold text-bb-downbeat-amber">{set.note}</p>}
 
+      {whole && <RoadMap view={view} className="pl-[max(var(--bb-space-6),env(safe-area-inset-left))] pr-[max(var(--bb-space-6),env(safe-area-inset-right))]" />}
       <div
         ref={scroller}
         {...gesture}
         onWheel={() => playing && setPlaying(false)}
-        className="relative min-h-0 flex-1 touch-pan-y select-none overflow-y-auto overflow-x-hidden overscroll-contain py-2 pl-[max(var(--bb-space-6),env(safe-area-inset-left))] pr-[max(var(--bb-space-6),env(safe-area-inset-right))]"
+        className={`relative min-h-0 flex-1 touch-pan-y select-none overflow-x-hidden overscroll-contain py-2 pl-[max(var(--bb-space-6),env(safe-area-inset-left))] pr-[max(var(--bb-space-6),env(safe-area-inset-right))] ${whole ? "overflow-y-hidden" : "overflow-y-auto"}`}
       >
-        <Chart rootRef={chartEl} view={view} chords={s.chords} fontFamily={FONTS[s.font].css} fontWeight={FONTS[s.font].weight} style={{ fontSize: fontPx }} hold={marks} />
-        {scrollable && <div className="h-32" aria-hidden />}
+        {whole ? (
+          <WholeChart
+            view={view}
+            chords={s.chords}
+            fontFamily={FONTS[s.font].css}
+            fontWeight={FONTS[s.font].weight}
+            hold={marks}
+            minPx={wholeMin}
+            next={set ? (set.next ?? null) : (nav.next?.title ?? null)}
+            pagerRef={pager}
+          />
+        ) : (
+          <>
+            <Chart rootRef={chartEl} view={view} chords={s.chords} fontFamily={FONTS[s.font].css} fontWeight={FONTS[s.font].weight} style={{ fontSize: fontPx }} hold={marks} />
+            {scroll && <div className="h-32" aria-hidden />}
+          </>
+        )}
       </div>
 
       {spot && <HoldSheet slug={slug} spot={spot} onMine={pick.usingMine} onClose={() => setSpot(null)} onSwipe={(d) => go(d)} />}
@@ -413,6 +462,10 @@ export default function StageView({
             <div className="mb-4 flex flex-wrap items-center gap-2">
               <DisplayControls s={s} />
             </div>
+            {whole ? (
+              <p className="mb-4 text-base text-bb-cue-gray">Whole song sizes the text to fit the screen. Change the smallest size in Settings.</p>
+            ) : (
+            <>
             <div className="mb-1 flex items-center justify-between text-lg">
               <label htmlFor="stage-size">Text size</label>
               <span className="text-bb-cue-gray">{manual ? `${fontPx}px` : `Auto · ${fontPx}px`}</span>
@@ -432,6 +485,8 @@ export default function StageView({
                 {manual ? "Reset" : "Auto"}
               </button>
             </div>
+            </>
+            )}
             <p className="mb-1 text-lg">Font</p>
             <div className="mb-4 grid grid-cols-2 gap-2" role="group" aria-label="Font">
               {(Object.keys(FONTS) as FontId[]).map((f) => (
@@ -467,11 +522,11 @@ export default function StageView({
 
         <div
           className={`flex flex-col gap-1 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 ${
-            scrollable || panel ? "border-t border-bb-rule-gray bg-bb-stage-black" : "pointer-events-none [&_button]:pointer-events-auto"
+            scroll || panel ? "border-t border-bb-rule-gray bg-bb-stage-black" : "pointer-events-none [&_button]:pointer-events-auto"
           }`}
         >
           <div className="flex items-center gap-1.5">
-            {scrollable && (
+            {scroll && (
               <>
                 <button
                   onClick={() => (playing ? setPlaying(false) : play())}
@@ -508,7 +563,7 @@ export default function StageView({
               Aa
             </button>
           </div>
-          {scrollable && (
+          {scroll && (
             <div className="flex items-center gap-2">
               <label htmlFor="stage-speed" className="text-sm text-bb-cue-gray">
                 Speed

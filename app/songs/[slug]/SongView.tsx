@@ -19,6 +19,8 @@ import { ConfirmButton, useConfirm } from "./Confirm";
 import { confirmedLine, sureLabel } from "@/lib/confirm";
 import ReadChoice from "@/app/ReadChoice";
 import Lyrics from "./Lyrics";
+import RoadMap from "./RoadMap";
+import { PREF, usePref } from "@/lib/prefs";
 
 export interface SongProps {
   slug: string;
@@ -88,6 +90,7 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
   const confirmed = showUnverified ? confirmedLine(confirm.state?.count) : null;
   const s = useChartState(slug, pick.text);
   const nav = useSongNav(slug, neighbors);
+  const whole = usePref(PREF.layout) === "whole"; // Whole song: sections in columns
   useEffect(() => recordRecent(slug), [slug]);
   // From "My notes": /songs/x#at=section.bar.beat scrolls to that spot and lights it briefly.
   // Re-runs when the chart changes (e.g. the player's own version loads in), then clears the
@@ -221,7 +224,16 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
       </div>
 
       <div {...gesture} className="touch-pan-y">
-        <Chart view={s.view} chords={s.chords} fontFamily={FONTS[s.font].css} fontWeight={FONTS[s.font].weight} style={{ fontSize: "clamp(1.6rem, 7vw, 2.4rem)" }} hold={marks} />
+        {whole && <RoadMap view={s.view} className="mb-2" />}
+        <Chart
+          view={s.view}
+          chords={s.chords}
+          fontFamily={FONTS[s.font].css}
+          fontWeight={FONTS[s.font].weight}
+          style={{ fontSize: whole ? "clamp(1.5rem, 5vw, 1.75rem)" : "clamp(1.6rem, 7vw, 2.4rem)" }}
+          hold={marks}
+          columns={whole ? {} : undefined}
+        />
       </div>
       </div>
       {spot && (

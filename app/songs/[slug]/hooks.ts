@@ -119,7 +119,7 @@ export function useSongKeys(go: (dir: -1 | 1) => void, extra?: (e: KeyboardEvent
 
 export interface Gesture {
   onSwipe: (dir: -1 | 1) => void; // swipe left = next (+1)
-  onTap?: () => void;
+  onTap?: (x?: number) => void; // x = where the tap was (clientX)
   onDown?: () => void;
 }
 
@@ -142,7 +142,7 @@ export function useGesture({ onSwipe, onTap, onDown }: Gesture) {
       const dx = e.clientX - s.x;
       const dy = e.clientY - s.y;
       if (Math.abs(dx) > 60 && Math.abs(dx) > 1.5 * Math.abs(dy)) onSwipe(dx < 0 ? 1 : -1);
-      else if (Math.abs(dx) < 10 && Math.abs(dy) < 10 && performance.now() - s.t < 500) onTap?.();
+      else if (Math.abs(dx) < 10 && Math.abs(dy) < 10 && performance.now() - s.t < 500) onTap?.(e.clientX);
     },
     onPointerCancel: () => {
       start.current = null;
