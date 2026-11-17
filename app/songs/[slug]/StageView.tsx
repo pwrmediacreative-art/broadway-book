@@ -13,6 +13,7 @@ import { recordRecent } from "@/lib/search/recent";
 import CheatSheet from "@/app/upload/CheatSheet";
 import { HoldSheet, useHold, useHoldMarks, withHold, type Spot } from "./Hold";
 import ReadChoice from "@/app/ReadChoice";
+import Lyrics from "./Lyrics";
 
 const FIT_MIN = 30; // px: smallest size we shrink to so the whole chart fits without scrolling
 const SCROLL_SIZE = 40; // px: size used when it can't fit and has to scroll (if the width allows)
@@ -328,8 +329,9 @@ export default function StageView({
   };
 
   return (
-    <div className={`fixed inset-0 z-50 flex flex-col bg-bb-house-black text-bb-chart-white ${stageLook(light)}`} onPointerDownCapture={poke}>
+    <div className={`bb-stage fixed inset-0 z-50 flex flex-col bg-bb-house-black text-bb-chart-white ${stageLook(light)}`} onPointerDownCapture={poke}>
       <ReadChoice />
+      <Lyrics slug={slug} stage />
       <header className="flex h-12 shrink-0 items-center gap-1 border-b border-bb-rule-gray/60 pl-1 pr-2 text-base">
         <button onClick={exit} aria-label={set ? "Exit play mode" : "Exit stage mode"} className="grid size-11 shrink-0 place-items-center rounded-bb-control text-2xl text-bb-cue-gray active:bg-bb-case-charcoal">
           ✕

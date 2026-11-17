@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import UploadAccess from "./UploadAccess";
+import LyricsAccess from "./LyricsAccess";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser, sessionClient, syncPro, syncRole } from "@/lib/supabase/session";
@@ -48,6 +49,8 @@ async function Dashboard() {
   const s = data as Stats;
   const { data: access } = await db.from("settings").select("value").eq("key", "audio_upload_access").maybeSingle();
   const uploadAccess = (access?.value === 0 || access?.value === 2 ? access.value : 1) as 0 | 1 | 2;
+  const { data: lyr } = await db.from("settings").select("value").eq("key", "lyrics_audience").maybeSingle();
+  const lyricsAudience = ([0, 1, 2, 3].includes(lyr?.value as number) ? lyr!.value : 0) as 0 | 1 | 2 | 3;
 
   return (
     <>
@@ -71,6 +74,7 @@ async function Dashboard() {
       </dl>
 
       <UploadAccess initial={uploadAccess} />
+      <LyricsAccess initial={lyricsAudience} />
 
       <ul className="divide-y divide-bb-rule-gray border-y border-bb-rule-gray">
         {SECTIONS.map((sec) => (

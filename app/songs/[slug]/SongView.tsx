@@ -18,6 +18,7 @@ import { HoldSheet, MoveFlagsBanner, MyFlags, useHold, useHoldMarks, withHold, t
 import { ConfirmButton, useConfirm } from "./Confirm";
 import { confirmedLine, sureLabel } from "@/lib/confirm";
 import ReadChoice from "@/app/ReadChoice";
+import Lyrics from "./Lyrics";
 
 export interface SongProps {
   slug: string;
@@ -129,6 +130,7 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
   return (
     <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-2">
       <ReadChoice />
+      <Lyrics slug={slug} />
       <div className="mb-1 flex items-center justify-between gap-2">
         <Link href="/" className="inline-flex h-12 items-center text-lg text-bb-cue-gray active:text-bb-chart-white">
           ← All songs

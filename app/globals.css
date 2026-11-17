@@ -316,3 +316,14 @@ textarea:disabled,
     scroll-behavior: auto !important;
   }
 }
+
+/* Lyrics side panel (Q7, 1280px and up): the page and stage mode make room for it, so the
+   chart never sits under the panel. */
+@media (min-width: 1280px) {
+  html.bb-lyrics-open body {
+    padding-right: 24rem;
+  }
+  html.bb-lyrics-open .bb-stage {
+    right: 24rem;
+  }
+}

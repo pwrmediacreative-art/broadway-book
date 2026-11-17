@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { setDisplay, type Display } from "@/lib/display";
-import { PREF, usePref } from "@/lib/prefs";
+import { PREF, setPref, usePref } from "@/lib/prefs";
+import { useLyricsAllowed } from "./songs/[slug]/Lyrics";
 
 /** The two big "How do you read charts?" buttons (first visit and Settings). */
 export function DisplayPicker({ onPick, autoFocus = false }: { onPick?: (v: Display) => void; autoFocus?: boolean }) {
@@ -75,9 +76,37 @@ export default function SettingsButton() {
             <h3 className="mb-2 text-lg font-semibold">How do you read charts?</h3>
             <DisplayPicker />
             <p className="mt-2 text-base text-bb-cue-gray">The default on every chart, stage mode and setlists. The 123 / ABC switch on a song still flips it.</p>
+            <LyricsToggle />
           </div>
         </div>
       )}
+    </>
+  );
+}
+
+/** Lyrics on/off for this device. Shown only when the /admin audience includes this player. */
+function LyricsToggle() {
+  const allowed = useLyricsAllowed();
+  const on = usePref(PREF.lyrics) === "1";
+  if (!allowed) return null;
+  const opt = (v: boolean, label: string) => (
+    <button
+      type="button"
+      aria-pressed={on === v}
+      onClick={() => setPref(PREF.lyrics, v ? "1" : null)}
+      className={`bb-btn h-12 flex-1 px-4 text-lg ${on === v ? "bb-btn-primary" : "bb-btn-secondary"}`}
+    >
+      {label}
+    </button>
+  );
+  return (
+    <>
+      <h3 className="mb-2 mt-6 text-lg font-semibold">Lyrics</h3>
+      <div className="flex gap-3">
+        {opt(false, "Off")}
+        {opt(true, "On")}
+      </div>
+      <p className="mt-2 text-base text-bb-cue-gray">Beside the chart on a big screen, a pull-up drawer on a phone. From LRCLIB, not stored by Broadway Book.</p>
     </>
   );
 }

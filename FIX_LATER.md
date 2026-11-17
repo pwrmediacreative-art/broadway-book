@@ -130,3 +130,4 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - check:review still expects players can't read revisions.ai_confidence, but fdf09af made that column public on purpose (song page "NN% sure"); update the check.
 - First-visit / Settings sheets: no focus trap and no focus return to the gear on close; make the page behind inert while open.
 - Numbers/Chords sync on a shared phone: the previous player's newer device choice is copied into the next player's account at sign-in.
+- /api/lyrics has no per-visitor rate limit (fine while lyrics are admins-only); add one before opening lyrics to signed-in players or everyone.
