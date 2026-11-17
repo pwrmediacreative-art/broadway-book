@@ -48,7 +48,6 @@ export function enterFullscreen() {
 export function UnverifiedBadge({ className = "" }: { className?: string }) {
   return (
     <span
-      title="Not checked against the original chart yet. Flag it or suggest a fix if something's off."
       data-unverified-badge
       className={`bb-chip bb-chip-muted ${className}`}
     >
@@ -195,15 +194,6 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
         {confirmed && (
           <p className="mt-1 text-base text-bb-chart-white" data-confirmed-line>
             ✓ {confirmed}
-          </p>
-        )}
-        {!isExample && unverified && (
-          <p className="mt-1 text-base text-bb-cue-gray" data-unverified-note>
-            Not yet checked against the original. Play it by ear and{" "}
-            <a href="#suggest" className="text-bb-chart-white underline">
-              suggest a fix
-            </a>{" "}
-            if something is off.
           </p>
         )}
       </header>

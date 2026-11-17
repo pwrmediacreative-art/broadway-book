@@ -79,14 +79,24 @@ export default function StructureCard({
       )}
 
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-lg">
-        <dt className="text-bb-cue-gray">Starts</dt>
-        <dd className={s.start.cue ? "font-semibold" : "text-bb-downbeat-amber"}>{startLine(s)}</dd>
-        <dt className="text-bb-cue-gray">Ends</dt>
-        <dd className={s.ending.cue ? "font-semibold" : "text-bb-downbeat-amber"}>{endLine(s)}</dd>
-        <dt className="text-bb-cue-gray">Solos</dt>
-        <dd className={s.hasSolo ? "font-semibold" : "text-bb-downbeat-amber"}>
-          {s.hasSolo ? s.parts.filter((p) => p.name === "Solo").map((p) => p.label).join(", ") : "Unclear: check by ear"}
-        </dd>
+        {s.start.cue && (
+          <>
+            <dt className="text-bb-cue-gray">Starts</dt>
+            <dd className="font-semibold">{startLine(s)}</dd>
+          </>
+        )}
+        {s.ending.cue && (
+          <>
+            <dt className="text-bb-cue-gray">Ends</dt>
+            <dd className="font-semibold">{endLine(s)}</dd>
+          </>
+        )}
+        {s.hasSolo && (
+          <>
+            <dt className="text-bb-cue-gray">Solos</dt>
+            <dd className="font-semibold">{s.parts.filter((p) => p.name === "Solo").map((p) => p.label).join(", ")}</dd>
+          </>
+        )}
       </dl>
       {s.watch.length > 0 && (
         <ul className="flex flex-col gap-1 text-lg">

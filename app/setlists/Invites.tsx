@@ -153,7 +153,7 @@ export function InvitePage({ code }: { code: string }) {
       ) : card.state === "expired" ? (
         msg("This link has expired. Ask the sender for a new one.")
       ) : (
-        msg("Nothing to accept here. The link may be wrong, or you declined it.")
+        msg("Nothing to accept here. The link is incomplete, or you declined it.")
       )}
     </main>
   );

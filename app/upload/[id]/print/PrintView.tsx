@@ -39,7 +39,7 @@ export default function PrintView({ chart }: { chart: MineChart }) {
             <Chart view={v} chords={s.chords} fontFamily={FONTS[s.font].css} fontWeight={FONTS[s.font].weight} style={{ fontSize: "22px" }} />
           </div>
         )}
-        <p className="text-base text-bb-cue-gray">Draft from an upload. Check it by ear. Broadway Book</p>
+        <p className="text-base text-bb-cue-gray">Broadway Book</p>
       </div>
     </div>
   );

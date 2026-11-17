@@ -111,7 +111,7 @@ export default function UploadForm({ maxMb }: { maxMb: number }) {
       </label>
 
       <button type="button" className="bb-btn bb-btn-primary h-14 text-xl font-bold" disabled={!xml || !title.trim() || busy || offline} onClick={submit}>
-        Make draft chart
+        Make chart
       </button>
       {offline && <p className="text-lg text-bb-cue-gray">{OFFLINE_MSG}</p>}
 

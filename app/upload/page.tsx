@@ -43,7 +43,7 @@ async function Upload() {
     <>
       <h1 className="text-3xl font-bold tracking-tight">Upload a chart</h1>
       <p className="mb-5 mt-1 text-lg text-bb-cue-gray">
-        A Moises chord chart (.musicxml) becomes a private draft chart you can edit, play in any key, use on stage and add to setlists.
+        A Moises chord chart (.musicxml) becomes a private chart you can edit, play in any key, use on stage and add to setlists.
       </p>
       <UploadForm maxMb={maxMb} />
       <h2 className="mb-2 mt-10 text-2xl font-bold">My uploads</h2>

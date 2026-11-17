@@ -39,6 +39,14 @@ readable at arm's length and usable with a thumb.
 
 ## Hard rules for content
 
+- **No disclaimers for players. Ever.** Never show players "check it by ear", "check by ear",
+  "play it by ear", "this is a draft", "not yet checked", "AI-generated, may be wrong" or any
+  similar disclaimer or warning about chart accuracy. Treat charts as close enough to correct.
+  Wrong details get fixed through Suggest a change and the "+ Add" prompts. Accuracy info
+  (confidence, unclear bars, Unverified) is for admin screens only; players keep the Unverified
+  badge, the "NN% sure" line and unclear-bar markings as plain data, never as a warning.
+  `lib/design/no-disclaimers.test.ts` fails if a banned phrase appears in player-facing code.
+
 - **No lyrics stored. Ever.** Charts hold numbers, structure, dynamics and short cue
   words only (cues of 6 words or fewer, never lyric lines). The parser warns on long cues.
 - Lyrics may only be **shown live** through the lyrics-provider module (`lib/lyrics/provider.ts`,

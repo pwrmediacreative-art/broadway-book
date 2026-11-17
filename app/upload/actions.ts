@@ -35,7 +35,7 @@ function metaOf(text: string) {
 
 const AUDIO_PATH = /^[0-9a-f-]{36}\/[A-Za-z0-9._-]{1,120}$/;
 
-/** Read a MusicXML file, build the draft chart and save it as a private chart. */
+/** Read a MusicXML file, build the chart and save it as a private chart. */
 export async function createFromMusicXml(input: {
   xml: string;
   title: string;

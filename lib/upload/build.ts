@@ -289,12 +289,12 @@ function render(tl: Timeline, opts: { title: string; artist?: string | null }, s
   else {
     const out = outOfKey(bars, k.minor, k.pc);
     const total = bars.reduce((n, b) => n + new Set(b.roots.filter((r) => r !== null)).size, 0);
-    if (total && out / total > 0.3) top.push(note(`key: ${Math.round((out / total) * 100)}% of chords don't fit ${keyStr}, check the key`));
+    if (total && out / total > 0.3) top.push(note(`key: ${Math.round((out / total) * 100)}% of chords don't fit ${keyStr}`));
   }
   if (!tl.bpm) top.push(note("tempo: the file has no BPM"));
   if (leadIn > 0)
     top.push(note(`start: ${leadIn} bar${leadIn > 1 ? "s" : ""} before the first chord: count-off or drum intro?`));
-  else top.push(note("start: how the song starts isn't in the file, check by ear"));
+  else top.push(note("start: how the song starts isn't in the file"));
   if (simplify) top.push(note("chords: simplified to plain major/minor so the chart could be read"));
   if (dropped.size) top.push(note(`chords: left out ${[...dropped].join(", ")} where the chart format can't show it`));
 
@@ -318,7 +318,7 @@ function render(tl: Timeline, opts: { title: string; artist?: string | null }, s
     if (last) {
       const slow = s.bars.slice(-4).some((b) => b.tempo && tl.bpm && b.tempo < tl.bpm * 0.9);
       if (slow) items[items.length - 1] = `"ritard" ${items[items.length - 1]}`;
-      else notes.push(note("ending: cold stop, fade, ritard or tag? check by ear"));
+      else notes.push(note("ending: cold stop, fade, ritard or tag?"));
     }
     const rows: string[] = [];
     for (let i = 0; i < items.length; i += ROW) rows.push(items.slice(i, i + ROW).join(" "));

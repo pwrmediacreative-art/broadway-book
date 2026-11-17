@@ -165,7 +165,7 @@ export default function Workspace({
   return (
     <div className="flex flex-col gap-4">
       <div className="bb-notice px-4 py-3 text-lg">
-        <b>Draft from a chord file.</b> Check every bar by ear: this is not a finished chart.
+        <b>From a chord file.</b>
         <span className="block text-base text-bb-cue-gray">
           {info.confidence !== null && `${Math.round(info.confidence * 100)}% sure${info.estimated ? " (estimated from the timing)" : ""} · `}
           {unclear} unclear spot{unclear === 1 ? "" : "s"} marked # UNCLEAR in the chart text

@@ -412,7 +412,7 @@ export default function SongSearch() {
       {rows.some((r) => r.kind === "song" && r.d.uv) && (
         <p className="-mt-1 mb-2 flex items-center gap-2 text-sm text-bb-cue-gray" data-uv-legend>
           <span aria-hidden className="bb-dot bb-dot-unverified size-2.5" />
-          Not yet checked against the original
+          Unverified
         </p>
       )}
 

@@ -42,7 +42,7 @@ function Body({ code, data }: { code: string; data: Shared }) {
     <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-2">
       <h1 className="text-3xl font-bold tracking-tight">{data.title}</h1>
       {data.artist && <p className="text-lg text-bb-cue-gray">{data.artist}</p>}
-      <p className="mb-4 mt-1 text-base text-bb-cue-gray">Shared with you to read. A draft chart: check it by ear.</p>
+      <p className="mb-4 mt-1 text-base text-bb-cue-gray">Shared with you to read.</p>
       <section className="bb-panel mb-4 px-4 py-4" aria-label="Structure">
         <h2 className="mb-2 text-2xl font-bold">Structure</h2>
         <CheatSheet text={data.chart_text} />

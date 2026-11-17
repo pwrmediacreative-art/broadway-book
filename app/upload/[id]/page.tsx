@@ -6,7 +6,7 @@ import Workspace, { type UploadInfo } from "./Workspace";
 import Rename from "@/app/songs/[slug]/Rename";
 import { withName } from "@/lib/songs/name";
 
-export const metadata = { title: "Draft chart · Broadway Book", robots: { index: false } };
+export const metadata = { title: "Your chart · Broadway Book", robots: { index: false } };
 
 export default function UploadResultPage({ params }: PageProps<"/upload/[id]">) {
   return (
