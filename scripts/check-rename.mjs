@@ -82,36 +82,14 @@ try {
   const n2 = await name();
   truthy(n2.title === t1 && n2.artist === "New Band", "new name kept after publish");
 
-  // ── suggestions + votes ──
-  const t2 = `Rename Check Three ${stamp}`;
-  const p = await A.db.rpc("propose_rename", { p_song: S, p_title: t2, p_artist: "New Band", p_note: "typo" });
-  ok(p, "player suggests a new name");
-  const P = p.data;
-  blocked(await A.db.rpc("propose_rename", { p_song: S, p_title: t2 + "x", p_artist: "", p_note: null }), "second open suggestion for the same song");
-  blocked(await A.db.rpc("vote_rename", { p_id: P, p_approve: true }), "author can't vote on own suggestion");
-  blocked(await anon.rpc("vote_rename", { p_id: P, p_approve: true }), "signed-out can't vote");
-  blocked(await V1.db.from("rename_votes").insert({ proposal_id: P, voter_id: V1.id, value: "approve" }), "votes only through the function");
-  ok(await V1.db.rpc("vote_rename", { p_id: P, p_approve: true }), "vote 1");
-  ok(await V2.db.rpc("vote_rename", { p_id: P, p_approve: true }), "vote 2");
-  truthy((await name()).title === t1, "not live after 2 approvals");
-  const v3 = await V3.db.rpc("vote_rename", { p_id: P, p_approve: true });
-  truthy(v3.data === "approved", "3rd approval publishes it");
-  const n3 = await name();
-  truthy(n3.title === t2, "suggested name is live");
-  truthy((await anon.rpc("resolve_slug", { p_slug: slug0 })).data === n3.slug, "oldest slug follows to the newest");
-  truthy((await anon.rpc("resolve_slug", { p_slug: n1.slug })).data === n3.slug, "middle slug follows too");
-  const log2 = await anon.from("song_renames").select("via, proposal_id, by_id").eq("song_id", S).eq("via", "community");
-  truthy(log2.data?.length === 1 && log2.data[0].proposal_id === P && log2.data[0].by_id === A.id, "community rename logged with its suggestion");
-
-  // ── rejections + admin decide ──
-  const q = await A.db.rpc("propose_rename", { p_song: S, p_title: "Nope " + stamp, p_artist: "", p_note: null });
-  for (const u of [V1, V2, V3]) await u.db.rpc("vote_rename", { p_id: q.data, p_approve: false });
-  const qs = await svc.from("rename_proposals").select("status").eq("id", q.data).single();
-  truthy(qs.data?.status === "rejected", "3 rejections close a suggestion");
-  const w = await A.db.rpc("propose_rename", { p_song: S, p_title: "Admin Pick " + stamp, p_artist: "", p_note: null });
-  blocked(await V1.db.rpc("admin_decide_rename", { p_id: w.data, p_approve: true }), "player can't decide instantly");
-  ok(await ADM.db.rpc("admin_decide_rename", { p_id: w.data, p_approve: true }), "admin approves instantly");
-  truthy((await name()).title === "Admin Pick " + stamp, "admin-approved name is live");
+  // ── players can't rename library songs (Q13): no suggestions, no votes ──
+  blocked(await A.db.rpc("propose_rename", { p_song: S, p_title: `Player Pick ${stamp}`, p_artist: "x", p_note: null }), "player can't suggest a library song name");
+  blocked(await V1.db.rpc("vote_rename", { p_id: "00000000-0000-0000-0000-000000000000", p_approve: true }), "player can't vote a library rename through");
+  ok(await ADM.db.rpc("rename_song", { p_song: S, p_title: `Admin Pick ${stamp}`, p_artist: "" }), "admin still renames a library song");
+  truthy((await name()).title === `Admin Pick ${stamp}`, "admin rename is live");
+  truthy((await anon.rpc("resolve_slug", { p_slug: slug0 })).data === (await name()).slug, "oldest slug follows to the newest");
+  truthy((await ADM.db.rpc("renames_to_review")).error === null, "admin review list loads");
+  blocked(await A.db.rpc("renames_to_review").then((r) => (r.error || (r.data ?? []).length ? r : { error: { message: "empty for players" } })), "players get no review list");
 
   // ── a new song taking an old slug wins it ──
   const taker = await svc.from("songs").insert({ slug: n1.slug, title: "Slug Taker", status: "published" }).select("id").single();

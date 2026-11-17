@@ -50,6 +50,8 @@ async function Dashboard() {
   const { data: access } = await db.from("settings").select("value").eq("key", "audio_upload_access").maybeSingle();
   const uploadAccess = (access?.value === 0 || access?.value === 2 ? access.value : 1) as 0 | 1 | 2;
   const { data: lyr } = await db.from("settings").select("value").eq("key", "lyrics_audience").maybeSingle();
+  const { data: toReview } = await db.rpc("renames_to_review");
+  const playerRenames = (Array.isArray(toReview) ? toReview : []) as { song_id: string; slug: string; old_title: string; old_artist: string | null; new_title: string; new_artist: string | null; by: string; at: string }[];
   const lyricsAudience = ([0, 1, 2, 3].includes(lyr?.value as number) ? lyr!.value : 0) as 0 | 1 | 2 | 3;
 
   return (
@@ -75,6 +77,25 @@ async function Dashboard() {
 
       <UploadAccess initial={uploadAccess} />
       <LyricsAccess initial={lyricsAudience} />
+      <section className="bb-panel mb-8 flex flex-col gap-2 p-4" aria-label="Name changes by players">
+        <h2 className="text-xl font-semibold">Library names changed by players</h2>
+        {playerRenames.length === 0 ? (
+          <p className="text-base text-bb-cue-gray">None. Players can only rename their own uploads now.</p>
+        ) : (
+          <ul className="divide-y divide-bb-rule-gray">
+            {playerRenames.map((r) => (
+              <li key={`${r.song_id}-${r.at}`} className="py-2 text-base">
+                <Link href={`/songs/${r.slug}/history`} className="underline">
+                  {r.old_title}
+                  {r.old_artist ? ` — ${r.old_artist}` : ""} → {r.new_title}
+                  {r.new_artist ? ` — ${r.new_artist}` : ""}
+                </Link>{" "}
+                <span className="text-bb-cue-gray">by {r.by}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <ul className="divide-y divide-bb-rule-gray border-y border-bb-rule-gray">
         {SECTIONS.map((sec) => (
