@@ -275,6 +275,7 @@ export default function SongSearch() {
 
   return (
     <>
+      <div className="contents lg:sticky lg:top-2 lg:col-start-1 lg:row-start-3 lg:block">
       <label htmlFor="search" className="sr-only">
         Search songs
       </label>
@@ -366,7 +367,7 @@ export default function SongSearch() {
       </div>
 
       {(active.length > 0 || suggestions.length > 0) && (
-        <div className="-mx-4 mb-2 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+        <div className="-mx-4 mb-2 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0">
           {active.length > 1 && (
             <Chip on={false} onClick={() => setF(NO_FILTERS)}>
               Clear all
@@ -389,7 +390,9 @@ export default function SongSearch() {
           ))}
         </div>
       )}
+      </div>
 
+      <div className="contents lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:block">
       <p className="mb-2 text-sm text-bb-cue-gray" aria-live="polite">
         {docs ? `${count} ${noun}` : ""}
         {docs && hidden > 0 && count > 0 && (
@@ -473,6 +476,7 @@ export default function SongSearch() {
         </div>
       )}
       {limit < count && <div ref={more} className="h-24" aria-hidden />}
+      </div>
 
       <FilterSheet
         open={sheet}

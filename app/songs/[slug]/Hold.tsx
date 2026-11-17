@@ -291,6 +291,9 @@ export function MyFlags({ slug, view }: { slug: string; view: ChartView | null }
         <span className="bb-dot bb-dot-flag mr-2 size-3 align-middle" aria-hidden />
         My flags ({flags.length})
       </h2>
+      <Link href="/notes" className="mb-1 inline-flex min-h-11 items-center text-lg text-bb-chart-white underline">
+        All my notes
+      </Link>
       <p className="mb-3 text-base text-bb-cue-gray">Only you can see these. Press and hold any chord to add one.</p>
       <ul className="divide-y divide-bb-rule-gray border-y border-bb-rule-gray">
         {sorted.map((f) => {

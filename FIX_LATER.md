@@ -132,3 +132,4 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Numbers/Chords sync on a shared phone: the previous player's newer device choice is copied into the next player's account at sign-in.
 - /api/lyrics has no per-visitor rate limit (fine while lyrics are admins-only); add one before opening lyrics to signed-in players or everyone.
 - Stage mode: the Lyrics button (Q7) stays visible; make it auto-hide with the other stage controls.
+- My notes (/notes) isn't saved for offline use (not in SHELLS); flags links open fine online.

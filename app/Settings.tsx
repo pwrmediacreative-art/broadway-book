@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { setDisplay, type Display } from "@/lib/display";
 import { PREF, setPref, usePref } from "@/lib/prefs";
@@ -77,6 +78,9 @@ export default function SettingsButton() {
             <DisplayPicker />
             <p className="mt-2 text-base text-bb-cue-gray">The default on every chart, stage mode and setlists. The 123 / ABC switch on a song still flips it.</p>
             <LyricsToggle />
+            <Link href="/notes" onClick={() => setOpen(false)} className="bb-btn bb-btn-secondary mt-5 flex h-12 w-full items-center justify-center text-lg">
+              My notes (flags and my versions)
+            </Link>
           </div>
         </div>
       )}

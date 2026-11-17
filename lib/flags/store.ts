@@ -141,6 +141,12 @@ function subscribe(l: () => void) {
 const SERVER: State = { ready: false, userId: null, flags: [], guest: [] };
 const useFlagState = () => useSyncExternalStore(subscribe, () => state, () => SERVER);
 
+/** All of this player's flags (account when signed in, else this device), for "My notes". */
+export function useAllFlags() {
+  const s = useFlagState();
+  return { ready: s.ready, signedIn: !!s.userId, flags: s.flags };
+}
+
 /** This player's flags on one song, plus how many signed-out flags wait to be moved. */
 export function useSongFlags(slug: string) {
   const s = useFlagState();

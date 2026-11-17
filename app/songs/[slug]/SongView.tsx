@@ -89,6 +89,28 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
   const s = useChartState(slug, pick.text);
   const nav = useSongNav(slug, neighbors);
   useEffect(() => recordRecent(slug), [slug]);
+  // From "My notes": /songs/x#at=section.bar.beat scrolls to that spot and lights it briefly.
+  // Re-runs when the chart changes (e.g. the player's own version loads in), then clears the
+  // hash so later key or display changes don't scroll back.
+  const view = s.view;
+  useEffect(() => {
+    if (!view) return;
+    const go = () => {
+      const m = /^#at=(\d+\.\d+\.\d+)$/.exec(window.location.hash);
+      const el = m && document.querySelector<HTMLElement>(`[data-beat="${m[1]}"]`);
+      if (!el) return;
+      el.scrollIntoView({ block: "center" });
+      el.classList.add("bb-flash");
+      history.replaceState(history.state, "", window.location.pathname + window.location.search);
+      window.setTimeout(() => el.classList.remove("bb-flash"), 2500);
+    };
+    const t = window.setTimeout(go, 60);
+    window.addEventListener("hashchange", go);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener("hashchange", go);
+    };
+  }, [view]);
   const router = useRouter();
   const goTo = useGo();
   const local = useLocalNav(); // saved-chart page: songs change in place, nothing to warm up
@@ -128,10 +150,12 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
   const { meta } = s.view;
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-2">
+    // Desktop (lg): chart on the left, song info, flags and actions in a side panel. The
+    // wrappers are `contents` below lg, so the phone layout and order are unchanged.
+    <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-2 lg:grid lg:max-w-7xl lg:grid-cols-[minmax(0,1fr)_22rem] lg:grid-rows-[auto_auto_1fr_auto] lg:gap-x-10 lg:px-8">
       <ReadChoice />
       <Lyrics slug={slug} />
-      <div className="mb-1 flex items-center justify-between gap-2">
+      <div className="mb-1 flex items-center justify-between gap-2 lg:col-span-2">
         <Link href="/" className="inline-flex h-12 items-center text-lg text-bb-cue-gray active:text-bb-chart-white">
           ← All songs
         </Link>
@@ -146,6 +170,7 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
         </Link>
         </div>
       </div>
+      <div className="contents lg:col-start-2 lg:row-start-2 lg:block lg:pt-2">
       <header className="mb-1">
         <h1 className="text-3xl font-bold leading-tight">{title}</h1>
         <p className="text-lg text-bb-cue-gray">
@@ -187,6 +212,9 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
         {meta.time && <span>{meta.time}</span>}
         {meta.feel && <span>{meta.feel}</span>}
       </KeyInfo>
+      </div>
+
+      <div className="contents lg:col-start-1 lg:row-span-2 lg:row-start-2 lg:block">
 
       <div className="sticky top-0 z-10 -mx-4 mb-4 flex flex-wrap items-center gap-2 border-b border-bb-rule-gray bg-bb-house-black px-4 py-2">
         <DisplayControls s={s} />
@@ -194,6 +222,7 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
 
       <div {...gesture} className="touch-pan-y">
         <Chart view={s.view} chords={s.chords} fontFamily={FONTS[s.font].css} fontWeight={FONTS[s.font].weight} style={{ fontSize: "clamp(1.6rem, 7vw, 2.4rem)" }} hold={marks} />
+      </div>
       </div>
       {spot && (
         <HoldSheet
@@ -204,6 +233,7 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
           onSwipe={(d) => go(d)}
         />
       )}
+      <div className="contents lg:col-start-2 lg:row-start-3 lg:block lg:self-start">
       <MyFlags slug={slug} view={s.view} />
 
       {showUnverified && <ConfirmButton slug={slug} songId={songId} c={confirm} />}
@@ -211,6 +241,9 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
       <div className="mt-3">
         <Rename slug={slug} songId={songId} title={title} artist={artist} />
       </div>
+      </div>
+
+      <div className="contents lg:col-start-1 lg:row-start-4 lg:block">
 
       <nav className="mt-10 grid grid-cols-2 gap-3" aria-label="Other songs">
         {nav.prev ? (
@@ -233,6 +266,7 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
       </nav>
       <p className="mt-3 text-center text-sm text-bb-cue-gray">Swipe, ← → or a page-turner pedal also changes song.</p>
       <AdminPdfLink />
+      </div>
     </main>
   );
 }

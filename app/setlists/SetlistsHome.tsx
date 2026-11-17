@@ -64,7 +64,7 @@ export default function SetlistsHome() {
   const deviceCount = device?.items.length ?? 0;
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-2">
+    <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-2 lg:max-w-7xl lg:px-8">
       <Link href="/" className="inline-flex h-12 items-center text-lg text-bb-cue-gray active:text-bb-chart-white">
         ← All songs
       </Link>
@@ -108,14 +108,14 @@ export default function SetlistsHome() {
               </button>
             </div>
           )}
-          <button disabled={busy || offline} onClick={make} className={`${btn} ${primary} mb-4 h-14 w-full text-xl`}>
+          <button disabled={busy || offline} onClick={make} className={`${btn} ${primary} mb-4 h-14 w-full text-xl lg:w-auto lg:px-10`}>
             + New setlist
           </button>
           {offline && <OfflineNote className="mb-4" />}
           {me.lists.length === 0 ? (
             <p className="text-lg text-bb-cue-gray">No setlists yet.</p>
           ) : (
-            <ul className="flex flex-col divide-y divide-bb-rule-gray border-y border-bb-rule-gray">
+            <ul className="flex flex-col divide-y divide-bb-rule-gray border-y border-bb-rule-gray lg:grid lg:grid-cols-2 lg:gap-3 lg:divide-y-0 lg:border-y-0 lg:[&>li]:border lg:[&>li]:border-bb-rule-gray">
               {me.lists.map((l) => (
                 <li key={l.id}>
                   <Link href={`/setlists/${l.id}`} className="flex min-h-20 items-center justify-between gap-3 bg-bb-case-charcoal px-4 py-3 active:bg-bb-rule-gray">

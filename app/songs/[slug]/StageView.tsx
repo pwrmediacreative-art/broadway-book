@@ -390,7 +390,7 @@ export default function StageView({
         ref={scroller}
         {...gesture}
         onWheel={() => playing && setPlaying(false)}
-        className="relative min-h-0 flex-1 touch-pan-y select-none overflow-y-auto overflow-x-hidden overscroll-contain px-3 py-2"
+        className="relative min-h-0 flex-1 touch-pan-y select-none overflow-y-auto overflow-x-hidden overscroll-contain py-2 pl-[max(var(--bb-space-6),env(safe-area-inset-left))] pr-[max(var(--bb-space-6),env(safe-area-inset-right))]"
       >
         <Chart rootRef={chartEl} view={view} chords={s.chords} fontFamily={FONTS[s.font].css} fontWeight={FONTS[s.font].weight} style={{ fontSize: fontPx }} hold={marks} />
         {scrollable && <div className="h-32" aria-hidden />}

@@ -285,6 +285,12 @@
     border: 2px solid var(--bb-color-cue-gray);
   }
   /* Personal flag: solid Chart White dot with a Stage Black ring. */
+  /* "My notes" jump: the flagged spot lights up for a moment. */
+  .bb-flash {
+    outline: 0.08em solid var(--bb-color-downbeat-amber);
+    outline-offset: 0.04em;
+    background: color-mix(in srgb, var(--bb-color-downbeat-amber) 25%, transparent);
+  }
   .bb-dot-flag {
     background-color: var(--bb-color-chart-white);
     border: max(1px, 0.03em) solid var(--bb-color-stage-black);

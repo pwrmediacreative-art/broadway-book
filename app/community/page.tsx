@@ -17,7 +17,7 @@ type Filter = (typeof FILTERS)[number][0];
 
 export default function CommunityPage({ searchParams }: PageProps<"/community">) {
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-2">
+    <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-2 lg:max-w-7xl lg:px-8">
       <Link href="/" className="inline-flex h-12 items-center text-lg text-bb-cue-gray active:text-bb-chart-white">
         ← All songs
       </Link>
@@ -146,6 +146,9 @@ async function List({ searchParams }: { searchParams: PageProps<"/community">["s
         </p>
       )}
 
+      {/* Desktop (lg): chart fixes and name suggestions side by side. */}
+      <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-10">
+      <section aria-label="Chart fixes">
       <h2 className="mb-2 mt-2 text-2xl font-bold">Chart fixes</h2>
       {rows.length === 0 ? (
         <p className="bb-panel p-4 text-lg text-bb-cue-gray">
@@ -179,8 +182,10 @@ async function List({ searchParams }: { searchParams: PageProps<"/community">["s
           })}
         </ul>
       )}
+      </section>
 
-      <h2 className="mb-2 mt-8 text-2xl font-bold">Name suggestions</h2>
+      <section aria-label="Name suggestions">
+      <h2 className="mb-2 mt-8 lg:mt-2 text-2xl font-bold">Name suggestions</h2>
       {renames.error ? (
         <p className="bb-error text-lg">Couldn&apos;t load name suggestions: {renames.error.message}</p>
       ) : renameRows.length === 0 ? (
@@ -195,6 +200,8 @@ async function List({ searchParams }: { searchParams: PageProps<"/community">["s
           loginHref={`/login?next=${encodeURIComponent(href({}))}`}
         />
       )}
+      </section>
+      </div>
     </>
   );
 }

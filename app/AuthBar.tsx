@@ -152,7 +152,7 @@ export default function AuthBar() {
 
 function Bar({ children }: { children?: React.ReactNode }) {
   return (
-    <nav aria-label="Account" className="mx-auto flex h-11 w-full max-w-3xl items-center justify-end gap-1 px-2">
+    <nav aria-label="Account" className="mx-auto flex h-11 w-full max-w-3xl items-center justify-end gap-1 px-2 lg:max-w-7xl lg:px-8">
       {children}
     </nav>
   );
