@@ -14,6 +14,7 @@ export const FILTERS = {
   verified: "Verified",
   needs_review: "Needs review",
   auto_approved: "Auto-approved",
+  clean: "Clean (auto-approved)",
   needs_manual: "Can't read (type it in)",
   duplicates: "Duplicates",
 } as const;

@@ -40,6 +40,7 @@ interface Row {
   claimed_by_me: boolean | null;
   auto_approved: boolean;
   confirmations: number;
+  clean: boolean;
 }
 interface ListData {
   counts: {
@@ -47,6 +48,7 @@ interface ListData {
     verified: number;
     needs_review: number;
     auto_approved: number;
+    clean: number;
     needs_manual: number;
     duplicates: number;
     manual_files_without_song: number;
@@ -97,7 +99,7 @@ async function Queue({ searchParams }: { searchParams: SearchParams }) {
       </p>
       <ReviewHeader prefs={prefs} progress={progress} page="queue" />
 
-      <dl className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">{/* six tiles: 2 across on a phone, 3 above that */}
+      <dl className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">{/* seven tiles: 2 across on a phone, 3 above that */}
         {(Object.keys(FILTERS) as (keyof typeof FILTERS)[]).map((k) => (
           <Link
             key={k}
@@ -109,6 +111,13 @@ async function Queue({ searchParams }: { searchParams: SearchParams }) {
           </Link>
         ))}
       </dl>
+
+      {(prefs.filter === "unverified" || prefs.filter === "clean") && (
+        <p className="mb-4 text-lg text-bb-cue-gray" data-clean-counts>
+          Unverified: <b className="text-bb-chart-white">{Math.max(d.counts.unverified - d.counts.clean, 0)}</b> need checking ·{" "}
+          <b className="text-bb-chart-white">{d.counts.clean}</b> clean (AI read with no unclear bars at 75%+, listed last)
+        </p>
+      )}
 
       {admin && prefs.filter === "needs_review" && <BulkPublish />}
       {admin && prefs.filter === "unverified" && d.counts.unverified > 0 && (
@@ -164,6 +173,7 @@ async function Queue({ searchParams }: { searchParams: SearchParams }) {
                   {s.has_draft && <span className="bb-chip bb-chip-muted">draft</span>}
                   {s.review_hold && <span className="bb-chip bb-chip-muted">held</span>}
                   {s.auto_approved && <span className="bb-chip">auto-approved</span>}
+                  {s.clean && <span className="bb-chip bb-chip-muted">clean</span>}
                   {s.status === "published" &&
                     (s.unverified ? (
                       <span className="bb-chip">live, unverified</span>

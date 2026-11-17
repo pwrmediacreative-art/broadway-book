@@ -26,7 +26,9 @@
     "publish:unverified": "node --env-file=.env.local --import tsx scripts/publish-unverified.ts",
     "icons": "node scripts/gen-icons.mjs",
     "dropbox:token": "node --env-file=.env.local scripts/dropbox-token.mjs",
-    "check:rename": "node --env-file=.env.local scripts/check-rename.mjs"
+    "check:rename": "node --env-file=.env.local scripts/check-rename.mjs",
+    "clean:drafts": "node --env-file=.env.local --import tsx scripts/clean-drafts.ts",
+    "check:clean": "node --env-file=.env.local scripts/check-clean.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",

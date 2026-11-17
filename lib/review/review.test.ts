@@ -121,3 +121,12 @@ describe("reviewKey", () => {
     expect(key("S", { meta: true, shift: true })).toBeNull();
   });
 });
+
+describe("clean filter", () => {
+  it("has the Clean (auto-approved) chip after Auto-approved", () => {
+    const keys = Object.keys(FILTERS);
+    expect(FILTERS.clean).toBe("Clean (auto-approved)");
+    expect(keys.indexOf("clean")).toBe(keys.indexOf("auto_approved") + 1);
+    expect(readPrefs({ f: "clean" }, null).filter).toBe("clean");
+  });
+});
