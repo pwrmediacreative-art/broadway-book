@@ -37,6 +37,15 @@ export function DupConfirm({ title, n, onAdd, onCancel }: { title: string; n: nu
   );
 }
 
+/** "Tue, Nov 24" for a moment in time (a timestamp), in the viewer's own time zone. */
+export function localDay(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) });
+}
+
 /** "Fri, Nov 20" from a YYYY-MM-DD date, without timezone shifts. */
 export function gigDate(d: string | null): string | null {
   if (!d) return null;
@@ -59,7 +68,7 @@ export function SetSongList({ items, current, onPick }: { items: SetItem[]; curr
           <>
             <span className="w-8 shrink-0 text-right font-bb-data text-lg tabular-nums text-bb-cue-gray">{ok ? n : "–"}</span>
             <span className="min-w-0 flex-1">
-              <span className={`block truncate text-xl font-semibold ${ok ? "" : "text-bb-cue-gray line-through"}`}>{it.song?.title ?? (it.hidden ? "Private chart" : "Not available")}</span>
+              <span className={`block truncate text-xl font-semibold ${ok ? "" : "text-bb-cue-gray line-through"}`}>{it.song?.title ?? (it.hidden ? "Private song, not shared" : "Not available")}</span>
               {it.note && <span className="block truncate text-base text-bb-cue-gray">{it.note}</span>}
             </span>
             {ok && k && <span className="shrink-0 font-bb-data text-2xl font-bold text-bb-chart-white">{pretty(k)}</span>}

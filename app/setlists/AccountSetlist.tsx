@@ -6,10 +6,11 @@ import { useCallback, useEffect, useState } from "react";
 import { deleteSetlist, loadSetlist, loadSharedSetlist, saveSetlist, shareSetlist, type AccountSet } from "@/lib/setlists/api";
 import type { PlaySet } from "@/lib/setlists/play";
 import Editor from "./Editor";
+import SendCopy from "./SendCopy";
 import PlayView from "./PlayView";
 import SavedSet from "./SavedSet";
 import { isOffline, OFFLINE_MSG } from "@/lib/offline/status";
-import { btn, enterFullscreen, gigDate, plain, primary, SetSongList } from "./ui";
+import { btn, enterFullscreen, gigDate, localDay, plain, primary, SetSongList } from "./ui";
 
 type Load = { state: "loading" } | { state: "missing" } | { state: "error"; message: string } | { state: "ok"; set: AccountSet };
 
@@ -61,7 +62,20 @@ export function AccountEditor({ id }: { id: string }) {
       initial={load.set}
       save={save}
       playHref={`/setlists/${id}/play`}
-      share={<ShareBox id={id} initial={load.set.share_code} />}
+      share={
+        <>
+          <ShareBox id={id} initial={load.set.share_code} />
+          <SendCopy id={id} />
+        </>
+      }
+      note={
+        load.set.copied_from ? (
+          <p className="mb-3 text-base text-bb-cue-gray">
+            Copied from {load.set.copied_from}
+            {load.set.copied_at ? ` on ${localDay(load.set.copied_at)}` : ""}. Your copy: changes stay yours.
+          </p>
+        ) : null
+      }
       danger={<DeleteButton id={id} />}
     />
   );

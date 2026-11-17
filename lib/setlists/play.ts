@@ -20,7 +20,7 @@ export interface SetItem {
   key: string | null; // setlist key override (in the song's own mode), null = chart's key
   note: string | null;
   song: SetSong | null;
-  hidden?: boolean; // someone else's private chart: shown as "Private chart", never the chart
+  hidden?: boolean; // someone else's private chart: shown as "Private song, not shared", never the chart
 }
 
 export interface PlaySet {

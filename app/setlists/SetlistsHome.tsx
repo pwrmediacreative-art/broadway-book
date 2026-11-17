@@ -8,6 +8,7 @@ import { saveDeviceSetlist, useDeviceSetlist } from "@/lib/setlists/device";
 import { btn, gigDate, plain, primary } from "./ui";
 import { OfflineNote } from "@/app/OfflineRoot";
 import { useOffline } from "@/lib/offline/status";
+import { WaitingInvites } from "./Invites";
 
 type Me = { state: "loading" } | { state: "out" } | { state: "in"; lists: SetlistSummary[] } | { state: "error"; message: string };
 
@@ -96,6 +97,7 @@ export default function SetlistsHome() {
 
       {me.state === "in" && (
         <>
+          <WaitingInvites />
           {device && deviceCount > 0 && (
             <div className="bb-notice mb-4">
               <p className="mb-2 text-lg">

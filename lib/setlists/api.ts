@@ -25,6 +25,8 @@ export interface AccountSet extends PlaySet {
   mine: boolean;
   updated_at: string;
   saved?: boolean; // true when this came from the phone's saved copy (offline): view and play only
+  copied_from?: string | null; // "Copied from <sender>" (a received copy)
+  copied_at?: string | null;
 }
 
 const db = () => browserClient();
@@ -89,6 +91,8 @@ interface BundleRow {
   updated_at: string;
   share_code: string | null;
   mine: boolean;
+  copied_from?: string | null;
+  copied_at?: string | null;
   items: { song_id: string; key_override: string | null; note: string | null; song: SetSong | null }[];
 }
 
@@ -99,6 +103,8 @@ const toSet = (b: BundleRow): AccountSet => ({
   updated_at: b.updated_at,
   share_code: b.share_code,
   mine: b.mine,
+  copied_from: b.copied_from ?? null,
+  copied_at: b.copied_at ?? null,
   items: b.items.map((i): SetItem => {
     const hidden = !!(i.song as { hidden?: boolean } | null)?.hidden;
     return { song_id: i.song_id, slug: hidden ? null : (i.song?.slug ?? null), key: i.key_override, note: i.note, song: hidden ? null : i.song, hidden };

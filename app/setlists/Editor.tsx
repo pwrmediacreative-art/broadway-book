@@ -23,12 +23,14 @@ export default function Editor({
   playHref,
   share,
   danger,
+  note,
 }: {
   initial: PlaySet;
   save: (s: PlaySet) => Promise<void>;
   playHref: string;
   share: ReactNode | ((current: PlaySet) => ReactNode);
   danger: ReactNode;
+  note?: ReactNode; // shown above Play (e.g. "Copied from Pat on Nov 16")
 }) {
   const router = useRouter();
   const [name, setName] = useState(initial.name);
@@ -220,6 +222,7 @@ export default function Editor({
       </div>
 
       {err && <p className="bb-error mb-3 border border-bb-stop-red p-3 text-lg">{err}</p>}
+      {note}
 
       <button onClick={play} disabled={!playable} className={`${btn} ${primary} mb-4 h-14 w-full text-xl`}>
         Play set ▸ {playable ? `(${playable} song${playable === 1 ? "" : "s"})` : ""}
@@ -347,7 +350,7 @@ function SongEditRow({
         </button>
         <span className="w-7 shrink-0 text-right font-bb-data text-lg tabular-nums text-bb-cue-gray">{n}</span>
         <span className="min-w-0 flex-1">
-          <span className={`block truncate text-xl font-semibold ${r.song ? "" : "text-bb-cue-gray line-through"}`}>{r.song?.title ?? (r.hidden ? "Private chart" : "Not available")}</span>
+          <span className={`block truncate text-xl font-semibold ${r.song ? "" : "text-bb-cue-gray line-through"}`}>{r.song?.title ?? (r.hidden ? "Private song, not shared" : "Not available")}</span>
           {r.song?.artist && <span className="block truncate text-sm text-bb-cue-gray">{r.song.artist}</span>}
         </span>
         {opts.length > 0 && (

@@ -30,7 +30,8 @@
     "clean:drafts": "node --env-file=.env.local --import tsx scripts/clean-drafts.ts",
     "check:clean": "node --env-file=.env.local scripts/check-clean.mjs",
     "check:prefs": "node --env-file=.env.local scripts/check-prefs.mjs",
-    "check:lyrics": "node --env-file=.env.local scripts/check-lyrics.mjs"
+    "check:lyrics": "node --env-file=.env.local scripts/check-lyrics.mjs",
+    "check:invites": "node --env-file=.env.local scripts/check-invites.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",

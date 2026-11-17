@@ -8,6 +8,7 @@ import { OFFLINE_MSG, useOffline } from "@/lib/offline/status";
 import { rememberedUser, rememberUser } from "@/lib/offline/user";
 import { syncDisplay } from "@/lib/display";
 import SettingsButton from "./Settings";
+import { INVITES_EVENT } from "@/lib/setlists/invites";
 
 type Me = { name: string; admin: boolean; reviewer: boolean; unread: number } | null;
 const READ_EVENT = "bb:notifications-read"; // fired by /notifications once it marks all read
@@ -16,6 +17,7 @@ const READ_EVENT = "bb:notifications-read"; // fired by /notifications once it m
 export default function AuthBar() {
   const pathname = usePathname();
   const [me, setMe] = useState<Me | undefined>(undefined);
+  const [invites, setInvites] = useState(0);
 
   // /auth/* pages handle sign-in tokens themselves; don't let a second client touch them.
   const authPage = pathname.startsWith("/auth/");
@@ -36,6 +38,7 @@ export default function AuthBar() {
         error: sessionError,
       } = await db.auth.getSession();
       if (!session) {
+        if (alive) setInvites(0);
         if (!sessionError) rememberUser(null);
         return alive && setMe(null);
       }
@@ -43,6 +46,9 @@ export default function AuthBar() {
         db.from("profiles").select("display_name, role, reviewer").eq("id", session.user.id).maybeSingle(),
         db.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", session.user.id).is("read_at", null),
       ]);
+      // Setlist copies sent to this player and opened but not answered yet (badge on Setlists).
+      const { data: inv } = await db.rpc("setlist_invites_waiting");
+      if (alive) setInvites(Array.isArray(inv) ? inv.length : 0);
       if (data) rememberUser({ id: session.user.id, name: data.display_name || "Profile", admin: data.role === "admin", reviewer: data.reviewer === true });
       void syncDisplay(db, session.user.id); // Numbers/Chords: newest of device and account wins
       if (alive) setMe({
@@ -55,12 +61,15 @@ export default function AuthBar() {
     load();
     const onRead = () => setMe((m) => (m ? { ...m, unread: 0 } : m));
     window.addEventListener(READ_EVENT, onRead);
+    const onInvites = () => void load();
+    window.addEventListener(INVITES_EVENT, onInvites);
     const { data: sub } = db.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_IN" || event === "SIGNED_OUT") setTimeout(load, 0);
     });
     return () => {
       alive = false;
       window.removeEventListener(READ_EVENT, onRead);
+      window.removeEventListener(INVITES_EVENT, onInvites);
       sub.subscription.unsubscribe();
     };
   }, [pathname, authPage, offline]);
@@ -72,8 +81,13 @@ export default function AuthBar() {
   const community = (
     <>
       <SettingsButton />
-      <Link href="/setlists" className={link}>
+      <Link href="/setlists" className={`${link} relative`} aria-label={invites ? `Setlists, ${invites} waiting` : undefined}>
         Setlists
+        {invites > 0 && (
+          <span className="ml-1 min-w-5 rounded-bb-control bg-bb-downbeat-amber px-1 text-center font-bb-data text-sm font-bold leading-5 text-bb-stage-black">
+            {invites > 9 ? "9+" : invites}
+          </span>
+        )}
       </Link>
       <Link href="/community" className={`${link} mr-auto`}>
         Community
