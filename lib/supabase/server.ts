@@ -76,3 +76,13 @@ export async function listSongIndex(): Promise<IndexRow[]> {
       .range(from, to),
   );
 }
+
+/** The current slug of a published song that used to live at `slug` (it was renamed), or null. */
+export async function renamedSlug(slug: string): Promise<string | null> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(SONGS_TAG);
+  const { data, error } = await publicClient().rpc("resolve_slug", { p_slug: slug });
+  if (error) throw error;
+  return (data as string | null) ?? null;
+}

@@ -2,6 +2,8 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { getCurrentUser, sessionClient } from "@/lib/supabase/session";
 import { StatusPill, when, ReviewerBadge } from "./ui";
+import RenameSuggestions from "./RenameSuggestions";
+import { renameStale, type RenameRow } from "./rename";
 
 export const metadata = { title: "Community · Broadway Book" };
 
@@ -21,7 +23,7 @@ export default function CommunityPage({ searchParams }: PageProps<"/community">)
       </Link>
       <h1 className="text-3xl font-bold tracking-tight">Community</h1>
       <p className="mb-4 mt-1 text-lg text-bb-cue-gray">
-        Suggested chart fixes waiting for votes. A suggestion goes live after enough players approve it.
+        Suggested chart fixes and song names waiting for votes. A suggestion goes live after enough players approve it.
       </p>
       <Suspense fallback={<p className="text-lg text-bb-cue-gray">Loading…</p>}>
         <List searchParams={searchParams} />
@@ -59,8 +61,18 @@ async function List({ searchParams }: { searchParams: PageProps<"/community">["s
     .order("created_at", { ascending: false })
     .limit(200);
   if (song) query = query.eq("song.slug", song);
-  const { data, error } = await query;
+  let renameQuery = db
+    .from("rename_proposals")
+    .select(
+      "id, author_id, base_title, base_artist, new_title, new_artist, note, created_at, author:profiles!rename_proposals_author_id_fkey(display_name, reviewer), song:songs!inner(slug, title, artist), votes:rename_votes(voter_id, value)",
+    )
+    .eq("status", "open")
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (song) renameQuery = renameQuery.eq("song.slug", song);
+  const [{ data, error }, renames, settings] = await Promise.all([query, renameQuery, db.from("settings").select("key, value")]);
   if (error) return <p className="bb-error text-lg">Couldn&apos;t load suggestions: {error.message}</p>;
+  const need = Object.fromEntries((settings.data ?? []).map((s) => [s.key, s.value])) as Record<string, number>;
 
   const needle = q.toLowerCase();
   const rows = ((data ?? []) as unknown as Row[]).filter((r) => {
@@ -69,6 +81,15 @@ async function List({ searchParams }: { searchParams: PageProps<"/community">["s
     if (f === "mine") return mine;
     if (f === "stale") return r.out_of_date;
     if (f === "needs") return !!user && !mine && !r.out_of_date && !r.votes.some((v) => v.voter_id === user.id);
+    return true;
+  });
+  const renameRows = ((renames.data ?? []) as unknown as RenameRow[]).filter((r) => {
+    const text = `${r.song.title} ${r.song.artist ?? ""} ${r.new_title} ${r.new_artist ?? ""} ${r.note ?? ""}`;
+    if (needle && !text.toLowerCase().includes(needle)) return false;
+    const mine = r.author_id === user?.id;
+    if (f === "mine") return mine;
+    if (f === "stale") return renameStale(r);
+    if (f === "needs") return !!user && !mine && !renameStale(r) && !r.votes.some((v) => v.voter_id === user.id);
     return true;
   });
 
@@ -125,6 +146,7 @@ async function List({ searchParams }: { searchParams: PageProps<"/community">["s
         </p>
       )}
 
+      <h2 className="mb-2 mt-2 text-2xl font-bold">Chart fixes</h2>
       {rows.length === 0 ? (
         <p className="bb-panel p-4 text-lg text-bb-cue-gray">
           {f === "needs" ? "Nothing needs your vote right now. Thanks!" : "No open suggestions here."}
@@ -156,6 +178,22 @@ async function List({ searchParams }: { searchParams: PageProps<"/community">["s
             );
           })}
         </ul>
+      )}
+
+      <h2 className="mb-2 mt-8 text-2xl font-bold">Name suggestions</h2>
+      {renames.error ? (
+        <p className="bb-error text-lg">Couldn&apos;t load name suggestions: {renames.error.message}</p>
+      ) : renameRows.length === 0 ? (
+        <p className="bb-panel p-4 text-lg text-bb-cue-gray">
+          {f === "needs" ? "No names need your vote right now." : "No open name suggestions here."}
+        </p>
+      ) : (
+        <RenameSuggestions
+          rows={renameRows}
+          me={user ? { id: user.id, admin: user.role === "admin" } : null}
+          approvalsNeeded={need.approvals_needed ?? 3}
+          loginHref={`/login?next=${encodeURIComponent(href({}))}`}
+        />
       )}
     </>
   );

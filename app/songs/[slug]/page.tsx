@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { buildParams, songPageData } from "./data";
+import { buildParams, movedOrNotFound, songPageData } from "./data";
 import SongView from "./SongView";
 
 export async function generateStaticParams() {
@@ -15,7 +15,8 @@ export async function generateMetadata({ params }: PageProps<"/songs/[slug]">) {
 export default async function SongPage({ params }: PageProps<"/songs/[slug]">) {
   const { slug } = await params;
   const { song, neighbors } = await songPageData(slug);
-  if (!song || !song.chart_text) notFound();
+  if (!song) return movedOrNotFound(slug);
+  if (!song.chart_text) notFound();
 
   return (
     <SongView

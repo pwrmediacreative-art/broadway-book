@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser, sessionClient } from "@/lib/supabase/session";
 import Workspace, { type UploadInfo } from "./Workspace";
+import Rename from "@/app/songs/[slug]/Rename";
+import { withName } from "@/lib/songs/name";
 
 export const metadata = { title: "Draft chart · Broadway Book", robots: { index: false } };
 
@@ -62,8 +64,11 @@ async function Result({ params }: { params: PageProps<"/upload/[id]">["params"] 
       </Link>
       <h1 className="mb-1 text-3xl font-bold tracking-tight">{song.title}</h1>
       {song.artist && <p className="mb-3 text-lg text-bb-cue-gray">{song.artist}</p>}
+      <div className="mb-3">
+        <Rename slug={song.slug} songId={song.id} title={song.title} artist={song.artist} direct />
+      </div>
       <p className="mb-4 text-base text-bb-cue-gray">Private: only you can see this chart.</p>
-      <Workspace id={song.id} slug={song.slug} initialText={rev.chart_text} info={info} audioUrl={audioUrl} maxMb={maxMb} />
+      <Workspace id={song.id} slug={song.slug} initialText={withName(rev.chart_text, song.title, song.artist)} info={info} audioUrl={audioUrl} maxMb={maxMb} />
     </>
   );
 }

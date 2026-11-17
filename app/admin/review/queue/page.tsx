@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { FILTERS, prefsQuery } from "@/lib/review/queue";
 import { reviewContext } from "../access";
 import ReviewHeader from "../ReviewHeader";
+import { Renamable } from "../Rename";
 import BulkPublish from "./BulkPublish";
 import ManualFile from "./ManualFile";
 import { SendBack } from "./SendBack";
@@ -148,8 +149,8 @@ async function Queue({ searchParams }: { searchParams: SearchParams }) {
         <p className="bb-panel p-4 text-lg text-bb-cue-gray">{q ? "No matches." : "Nothing here."}</p>
       ) : (
         <ul className="divide-y divide-bb-rule-gray border-y border-bb-rule-gray">
-          {d.songs.map((s) => (
-            <li key={s.id} className="flex flex-col">
+          {d.songs.map((s) => {
+            const row = (
               <Link href={`/admin/review/${s.id}?${pq}`} className="flex min-h-14 items-center justify-between gap-3 px-4 py-2 active:bg-bb-case-charcoal">
                 <span className="min-w-0">
                   <span className="block truncate text-lg font-semibold">{s.title}</span>
@@ -176,13 +177,20 @@ async function Queue({ searchParams }: { searchParams: SearchParams }) {
                   {s.confirmations > 0 && <span className="bb-chip">✓ {s.confirmations} confirmed</span>}
                 </span>
               </Link>
-              {admin && s.auto_approved && (
-                <div className="px-4 pb-3">
-                  <SendBack songId={s.id} title={s.title} />
-                </div>
-              )}
-            </li>
-          ))}
+            );
+            const sendBack = admin && s.auto_approved ? <SendBack songId={s.id} title={s.title} /> : null;
+            return (
+              <li key={s.id} className="flex flex-col">
+                {admin ? (
+                  <Renamable songId={s.id} title={s.title} artist={s.artist} actions={sendBack} layout="below" pad="px-4 pb-3">
+                    {row}
+                  </Renamable>
+                ) : (
+                  row
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
 

@@ -1,11 +1,12 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { diffCharts } from "@/lib/chart";
 import { getCurrentUser, sessionClient } from "@/lib/supabase/session";
 import BarDiff, { DiffSummary } from "@/app/community/BarDiff";
 import { SOURCE_LABEL, when } from "@/app/community/ui";
+import { songName } from "@/app/community/rename";
 import RevertButton from "./RevertButton";
+import { movedOrNotFound } from "../data";
 
 export const metadata = { title: "Chart history · Broadway Book" };
 
@@ -36,6 +37,17 @@ interface StatusRow {
   by: { display_name: string | null } | null;
 }
 
+interface RenameEvent {
+  id: string;
+  created_at: string;
+  old_title: string;
+  old_artist: string | null;
+  new_title: string;
+  new_artist: string | null;
+  via: "admin" | "owner" | "community";
+  by: { display_name: string | null } | null;
+}
+
 async function History({ params }: { params: PageProps<"/songs/[slug]/history">["params"] }) {
   const { slug } = await params;
   const user = await getCurrentUser(); // calls connection() first, so the Supabase client below runs at request time
@@ -46,9 +58,9 @@ async function History({ params }: { params: PageProps<"/songs/[slug]/history">[
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
-  if (!song) notFound();
+  if (!song) return movedOrNotFound(slug, "/history");
 
-  const [revs, merged, statuses] = await Promise.all([
+  const [revs, merged, statuses, renames] = await Promise.all([
     db
       .from("revisions")
       .select("id, created_at, source, note, chart_text, author:profiles(display_name)")
@@ -62,19 +74,25 @@ async function History({ params }: { params: PageProps<"/songs/[slug]/history">[
       .eq("song_id", song.id)
       .order("created_at", { ascending: false })
       .limit(200),
+    db
+      .from("song_renames")
+      .select("id, created_at, old_title, old_artist, new_title, new_artist, via, by:profiles(display_name)")
+      .eq("song_id", song.id)
+      .order("created_at", { ascending: false })
+      .limit(200),
   ]);
   const list = (revs.data ?? []) as unknown as Rev[];
   const status = (statuses.data ?? []) as unknown as StatusRow[];
-  // Versions and status changes in one timeline, newest first (a status change sorts above
-  // the version it happened to when both carry the same time).
-  const timeline: ({ kind: "rev"; r: Rev; i: number } | { kind: "status"; s: StatusRow })[] = [
+  const names = (renames.data ?? []) as unknown as RenameEvent[];
+  // Versions, status changes and name changes in one timeline, newest first (a status or name
+  // change sorts above the version it happened to when both carry the same time).
+  type Item = { kind: "rev"; r: Rev; i: number } | { kind: "status"; s: StatusRow } | { kind: "rename"; n: RenameEvent };
+  const at = (t: Item) => Date.parse(t.kind === "rev" ? t.r.created_at : t.kind === "status" ? t.s.created_at : t.n.created_at);
+  const timeline: Item[] = [
     ...list.map((r, i) => ({ kind: "rev" as const, r, i })),
     ...status.map((s) => ({ kind: "status" as const, s })),
-  ].sort((a, b) => {
-    const ta = Date.parse(a.kind === "rev" ? a.r.created_at : a.s.created_at);
-    const tb = Date.parse(b.kind === "rev" ? b.r.created_at : b.s.created_at);
-    return tb - ta || (a.kind === "status" ? -1 : 1);
-  });
+    ...names.map((n) => ({ kind: "rename" as const, n })),
+  ].sort((a, b) => at(b) - at(a) || (a.kind === "rev" ? 1 : 0) - (b.kind === "rev" ? 1 : 0));
   const fromProposal = new Map((merged.data ?? []).map((p) => [p.resulting_revision_id, p.id]));
   const admin = user?.role === "admin";
 
@@ -85,11 +103,34 @@ async function History({ params }: { params: PageProps<"/songs/[slug]/history">[
       </Link>
       <h1 className="text-3xl font-bold tracking-tight">Chart history</h1>
       <p className="mb-5 mt-1 text-lg text-bb-cue-gray">
-        Every version that has been live and every change of its Verified status, newest first. Nothing here is ever deleted
+        Every version that has been live and every change of its Verified status or name, newest first. Nothing here is ever deleted
         {admin ? "; reverting adds a new version." : "."}
       </p>
       <ol className="divide-y divide-bb-rule-gray border-y border-bb-rule-gray">
         {timeline.map((t) => {
+          if (t.kind === "rename") {
+            const { n } = t;
+            return (
+              <li key={`n${n.id}`} className="px-4 py-3" data-rename-row>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="bb-chip bb-chip-muted">Renamed</span>
+                  <span className="text-bb-cue-gray">{when(n.created_at)}</span>
+                </div>
+                <p className="mt-1 break-words text-lg">
+                  Renamed from “{songName(n.old_title, n.old_artist)}” to “{songName(n.new_title, n.new_artist)}”
+                </p>
+                <p className="mt-1 text-lg">
+                  {n.via === "community" ? (
+                    <>
+                      <b>Community vote</b> · suggested by {n.by?.display_name || "a player"}
+                    </>
+                  ) : (
+                    <b>{n.by?.display_name || (n.via === "admin" ? "An admin" : "The uploader")}</b>
+                  )}
+                </p>
+              </li>
+            );
+          }
           if (t.kind === "status") {
             const { s } = t;
             const ok = s.status === "verified";

@@ -11,6 +11,7 @@ import { modLabel, reviewKey, SHORTCUTS, type ReviewKey } from "@/lib/review/key
 import Chart from "@/app/songs/[slug]/Chart";
 import { FONTS } from "@/app/songs/[slug]/hooks";
 import PdfViewer from "../PdfViewer";
+import { Renamable } from "../Rename";
 import {
   cantRead,
   claimReview,
@@ -329,9 +330,17 @@ export default function ReviewEditor({ song, prefs }: { song: ReviewSong; prefs:
 
   return (
     <>
-      <h1 className="text-3xl font-bold leading-tight">
-        {song.title} <span className="text-bb-cue-gray">· {song.artist ?? "no artist"}</span>
-      </h1>
+      {song.is_admin ? (
+        <Renamable songId={song.id} title={song.title} artist={song.artist} pad="mb-3">
+          <h1 className="break-words text-3xl font-bold leading-tight">
+            {song.title} <span className="text-bb-cue-gray">· {song.artist ?? "no artist"}</span>
+          </h1>
+        </Renamable>
+      ) : (
+        <h1 className="text-3xl font-bold leading-tight">
+          {song.title} <span className="text-bb-cue-gray">· {song.artist ?? "no artist"}</span>
+        </h1>
+      )}
       <p className="mb-3 text-lg text-bb-cue-gray">
         {live
           ? song.is_example

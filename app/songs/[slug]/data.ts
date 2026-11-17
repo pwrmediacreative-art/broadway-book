@@ -1,4 +1,5 @@
-import { getSong, listSongs, type SongListItem } from "@/lib/supabase/server";
+import { notFound, permanentRedirect } from "next/navigation";
+import { getSong, listSongs, renamedSlug, type SongListItem } from "@/lib/supabase/server";
 import type { Neighbors } from "./hooks";
 
 const link = (s: SongListItem | undefined) => (s ? { slug: s.slug, title: s.title } : null);
@@ -18,4 +19,11 @@ export const BUILD_AHEAD = 20;
 export async function buildParams() {
   const songs = await listSongs();
   return songs.slice(0, BUILD_AHEAD).map((s) => ({ slug: s.slug }));
+}
+
+/** No song at this address: send renamed songs' old links to the new address, else 404. */
+export async function movedOrNotFound(slug: string, rest = ""): Promise<never> {
+  const to = await renamedSlug(slug);
+  if (to) permanentRedirect(`/songs/${to}${rest}`);
+  notFound();
 }

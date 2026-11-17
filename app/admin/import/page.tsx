@@ -8,6 +8,7 @@ import { AiPanel, type AiSummary } from "./AiPanel";
 import { AutoApprove, type AutoOverview } from "./AutoApprove";
 import { FixNameForm, ScanButton } from "./forms";
 import { PilotResults, type PilotItem } from "./PilotResults";
+import { Renamable } from "../review/Rename";
 
 export const metadata = { title: "Import · Broadway Book", robots: { index: false } };
 // The AI pilot and batch steps run as Server Actions on this page.
@@ -106,16 +107,24 @@ async function Inventory({ searchParams }: { searchParams: SearchParams }) {
 
   const raw = (await searchParams).q;
   const q = (Array.isArray(raw) ? raw[0] : raw)?.trim().slice(0, 100) ?? "";
-  let results: (FileRow & { missing: boolean })[] = [];
+  let results: (FileRow & { missing: boolean; song_id: string | null })[] = [];
   if (q) {
     const like = `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
     const res = await db
       .from("import_files")
-      .select("id, file_name, title, artist, missing")
+      .select("id, file_name, title, artist, missing, song_id")
       .ilike("file_name", like)
       .order("file_name")
       .limit(50);
     results = res.data ?? [];
+  }
+
+  // import_overview() leaves out each duplicate's song; look them up so those rows can be renamed.
+  const songOf = new Map<string, string>();
+  const dupIds = o.duplicate_list.map((f) => f.id);
+  for (let i = 0; i < dupIds.length; i += 200) {
+    const { data: rows } = await db.from("import_files").select("id, song_id").in("id", dupIds.slice(i, i + 200)).not("song_id", "is", null);
+    for (const r of rows ?? []) songOf.set(r.id as string, r.song_id as string);
   }
 
   const connected = dropboxConfigured();
@@ -218,15 +227,28 @@ async function Inventory({ searchParams }: { searchParams: SearchParams }) {
       {q && (
         <Section title={`Results for “${q}”`} count={results.length} open>
           <ul className="flex flex-col gap-3">
-            {results.map((r) => (
-              <li key={r.id} className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
+            {results.map((r) => {
+              const row = (
+                <>
                   <p className="break-words text-lg">{r.title ?? "—"} <span className="text-bb-cue-gray">· {r.artist ?? "no artist"}</span></p>
                   <p className="break-words text-sm text-bb-cue-gray">{r.file_name}{r.missing ? " · missing" : ""}</p>
-                </div>
-                <ViewPdf id={r.id} />
-              </li>
-            ))}
+                </>
+              );
+              return (
+                <li key={r.id}>
+                  {r.song_id ? (
+                    <Renamable songId={r.song_id} title={r.title} artist={r.artist} actions={<ViewPdf id={r.id} />}>
+                      {row}
+                    </Renamable>
+                  ) : (
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">{row}</div>
+                      <ViewPdf id={r.id} />
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
           {results.length === 50 && <p className="mt-3 text-bb-cue-gray">Showing the first 50.</p>}
         </Section>
@@ -249,15 +271,29 @@ async function Inventory({ searchParams }: { searchParams: SearchParams }) {
 
       <Section title="Duplicates (same title + artist)" count={o.duplicates}>
         <ul className="flex flex-col gap-3">
-          {o.duplicate_list.map((f) => (
-            <li key={f.id} className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
+          {o.duplicate_list.map((f) => {
+            const row = (
+              <>
                 <p className="break-words text-lg">{f.title} <span className="text-bb-cue-gray">· {f.artist}</span></p>
                 <p className="break-words text-sm text-bb-cue-gray">{f.file_name}</p>
-              </div>
-              <ViewPdf id={f.id} />
-            </li>
-          ))}
+              </>
+            );
+            const songId = songOf.get(f.id);
+            return (
+              <li key={f.id}>
+                {songId ? (
+                  <Renamable songId={songId} title={f.title} artist={f.artist} actions={<ViewPdf id={f.id} />}>
+                    {row}
+                  </Renamable>
+                ) : (
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">{row}</div>
+                    <ViewPdf id={f.id} />
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </Section>
 

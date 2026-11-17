@@ -13,6 +13,7 @@ import { usePickedChart } from "@/lib/personal/versions";
 import { checkedDate } from "@/lib/review/queue";
 import { useGo, useLocalNav } from "@/lib/offline/nav";
 import { OpenBadge, PersonalBar, SongActions, useOpenCount } from "./Community";
+import Rename from "./Rename";
 import { HoldSheet, MoveFlagsBanner, MyFlags, useHold, useHoldMarks, withHold, type Spot } from "./Hold";
 import { ConfirmButton, useConfirm } from "./Confirm";
 import { confirmedLine, sureLabel } from "@/lib/confirm";
@@ -203,6 +204,9 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
 
       {showUnverified && <ConfirmButton slug={slug} songId={songId} c={confirm} />}
       <SongActions slug={slug} songId={songId} pick={pick} />
+      <div className="mt-3">
+        <Rename slug={slug} songId={songId} title={title} artist={artist} />
+      </div>
 
       <nav className="mt-10 grid grid-cols-2 gap-3" aria-label="Other songs">
         {nav.prev ? (

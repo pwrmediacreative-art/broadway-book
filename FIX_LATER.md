@@ -124,3 +124,6 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - check:verify looks for its test song in the first 20 bulk cards, which are now the oldest of ~1,000 Unverified songs; make it page or filter.
 - Setlist duplicate question: after Cancel, focus falls to the page body; send it back to the button or search box that started the add (AddToSetlist picker, Editor).
 - Setlist editor duplicate question overlay has no focus trap (Tab can leave it); make the page behind it inert while it's open.
+- Renames: name suggestions don't send notifications (chart suggestions do); notify the author on approve/close.
+- Renames: a phone's offline copy keeps the song under its old slug too until the offline store is cleared; drop entries whose slug moved on sync.
+- Renames: old song links redirect inside the streamed page (HTTP 200 + client redirect), not with a 308 status; fine in browsers, link previews see the old page shell.

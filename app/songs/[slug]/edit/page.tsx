@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { withName } from "@/lib/songs/name";
+import { movedOrNotFound } from "../data";
 import { getCurrentUser, sessionClient } from "@/lib/supabase/session";
 import Editor from "./Editor";
 
@@ -38,12 +40,14 @@ async function Edit({
   const db = await sessionClient();
   const { data: song } = await db
     .from("songs")
-    .select("id, slug, title, current_revision_id, current:revisions!songs_current_revision_fk(chart_text)")
+    .select("id, slug, title, artist, current_revision_id, current:revisions!songs_current_revision_fk(chart_text)")
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
-  const publicText = (song?.current as unknown as { chart_text: string } | null)?.chart_text;
-  if (!song || !publicText) notFound();
+  if (!song) return movedOrNotFound(slug, `/edit${qs ? `?${qs}` : ""}`);
+  const liveText = (song.current as unknown as { chart_text: string } | null)?.chart_text;
+  if (!liveText) notFound();
+  const publicText = withName(liveText, song.title, song.artist);
 
   let proposal: { id: string; chart_text: string; note: string; base_text: string | null; stale: boolean } | null = null;
   const pid = typeof sp.proposal === "string" ? sp.proposal : null;

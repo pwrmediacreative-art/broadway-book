@@ -152,7 +152,8 @@ export async function loadSongs(slugs: string[]): Promise<Map<string, SetSong>> 
     async () => {
       const { data, error } = await db().rpc("songs_bundle", { p_slugs: [...new Set(slugs)] });
       fail(error);
-      return new Map(((data ?? []) as SetSong[]).map((s) => [s.slug, s]));
+      // A renamed song comes back under its new slug, with `asked` = the old slug the list holds.
+      return new Map(((data ?? []) as (SetSong & { asked?: string })[]).map(({ asked, ...s }) => [asked ?? s.slug, s]));
     },
     () => savedSongs(slugs),
   );
