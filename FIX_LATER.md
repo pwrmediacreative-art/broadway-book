@@ -134,3 +134,4 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Stage mode: the Lyrics button (Q7) stays visible; make it auto-hide with the other stage controls.
 - My notes (/notes) isn't saved for offline use (not in SHELLS); flags links open fine online.
 - Whole song: the road map strip has a `current` slot but nothing lights it yet (auto-scroll is off in Whole song; audio sync lives on the upload page).
+- Setlist Edit sheet: move focus into the sheet on open and back to the ⋯ button on close; Undo keeps only the last removal (a second remove within 8s replaces it).

@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import StageView from "@/app/songs/[slug]/StageView";
 import type { Neighbors } from "@/app/songs/[slug]/hooks";
 import { readPref, setPref } from "@/lib/prefs";
-import { playLabel, playOrder, step, type PlaySet } from "@/lib/setlists/play";
+import { playLabel, playOrder, startPos, step, type PlaySet } from "@/lib/setlists/play";
 import { SetSongList } from "./ui";
 
 const NO_NEIGHBORS: Neighbors = { prev: null, next: null };
@@ -21,10 +21,17 @@ export default function PlayView({ set, id, exitHref, onExit }: { set: PlaySet; 
   const posKey = `bb.play.${id}`;
   // Reopening (or reloading) the same set mid-gig comes back to the same song.
   const [pos, setPos] = useState(() => {
+    // Opened from a song in the setlist (?at=<its place>): start there.
+    const at = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("at");
+    if (at !== null && /^\d+$/.test(at)) return startPos(order, Number(at));
     const p = Number(readPref(posKey, "session"));
     return Number.isInteger(p) && p > 0 && p < order.length ? p : 0;
   });
   useEffect(() => setPref(posKey, String(pos), "session"), [posKey, pos]);
+  // Drop ?at= once used, so a reload comes back to wherever the player is now.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has("at")) history.replaceState(history.state, "", window.location.pathname);
+  }, []);
 
   const [sessionKeys, setSessionKeys] = useState<Record<number, string | null>>({});
   const [jump, setJump] = useState(false);

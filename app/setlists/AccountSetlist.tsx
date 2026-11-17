@@ -126,7 +126,13 @@ export function SharedView({ code }: { code: string }) {
       >
         Play set ▸
       </button>
-      <SetSongList items={set.items} />
+      <SetSongList
+        items={set.items}
+        onPick={(i) => {
+          enterFullscreen();
+          router.push(`/s/${code}/play?at=${i}`);
+        }}
+      />
       <p className="mt-4 text-base text-bb-cue-gray">Shared from Broadway Book. Refresh to get the latest version of the list.</p>
     </main>
   );

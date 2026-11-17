@@ -102,7 +102,34 @@ export default function Editor({
       next.splice(to, 0, r);
       return next;
     });
-  const remove = (u: string) => setRows((rs) => rs.filter((r) => r.uid !== u));
+  // Remove with Undo: the row comes back in the same place.
+  const [undo, setUndo] = useState<{ row: Row; index: number } | null>(null);
+  const remove = (u: string) => {
+    const index = rows.findIndex((r) => r.uid === u);
+    if (index < 0) return;
+    setUndo({ row: rows[index], index });
+    setRows((rs) => rs.filter((r) => r.uid !== u));
+  };
+  const undoRemove = () => {
+    if (!undo) return;
+    setRows((rs) => (rs.length >= MAX_SONGS ? rs : [...rs.slice(0, undo.index), undo.row, ...rs.slice(undo.index)]));
+    setUndo(null);
+  };
+  useEffect(() => {
+    if (!undo) return;
+    const t = window.setTimeout(() => setUndo(null), 8000);
+    return () => window.clearTimeout(t);
+  }, [undo]);
+  const [editing, setEditing] = useState<string | null>(null);
+  // Open the set at this song: setlist key and note, next/previous in setlist order.
+  const opening = useRef(false);
+  const openAt = async (i: number, stage: boolean) => {
+    if (opening.current) return; // a double tap opens once
+    opening.current = true;
+    if (stage) enterFullscreen();
+    await flush();
+    router.push(`${playHref}?at=${i}`);
+  };
 
   // --- drag to reorder (handle only; works with touch, mouse and pen) ---------------------------
   const list = useRef<HTMLOListElement>(null);
@@ -235,16 +262,48 @@ export default function Editor({
             key={r.uid}
             r={r}
             n={i + 1}
-            last={i === rows.length - 1}
             dragging={dragging === r.uid}
             onHandle={(e) => startDrag(e, r.uid)}
-            onUp={() => move(i, i - 1)}
-            onDown={() => move(i, i + 1)}
-            onRemove={() => remove(r.uid)}
-            onPatch={(p) => patch(r.uid, p)}
+            onOpen={() => void openAt(i, false)}
+            onEdit={() => setEditing(r.uid)}
           />
         ))}
       </ol>
+      {undo && (
+        <div className="fixed inset-x-0 bottom-0 z-[60] flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))]" aria-live="polite">
+          <div className="bb-panel flex w-full max-w-md items-center gap-3 border border-bb-rule-gray px-4 py-2">
+            <span className="min-w-0 flex-1 truncate text-lg">Removed {undo.row.song?.title ?? "song"}</span>
+            <button onClick={undoRemove} className={`${btn} ${primary} shrink-0`}>
+              Undo
+            </button>
+          </div>
+        </div>
+      )}
+      {(() => {
+        const i = rows.findIndex((r) => r.uid === editing);
+        if (i < 0) return null;
+        const r = rows[i];
+        return (
+          <EditSheet
+            key={r.uid}
+            r={r}
+            n={i + 1}
+            last={i === rows.length - 1}
+            onPatch={(p) => patch(r.uid, p)}
+            onUp={() => move(i, i - 1)}
+            onDown={() => move(i, i + 1)}
+            onStage={() => {
+              setEditing(null);
+              void openAt(i, true);
+            }}
+            onRemove={() => {
+              setEditing(null);
+              remove(r.uid);
+            }}
+            onClose={() => setEditing(null)}
+          />
+        );
+      })()}
 
       <section className="mb-6 border border-bb-rule-gray p-3">
         <label htmlFor="sl-add" className="mb-2 block text-lg font-semibold">
@@ -315,29 +374,22 @@ export default function Editor({
 function SongEditRow({
   r,
   n,
-  last,
   dragging,
   onHandle,
-  onUp,
-  onDown,
-  onRemove,
-  onPatch,
+  onOpen,
+  onEdit,
 }: {
   r: Row;
   n: number;
-  last: boolean;
   dragging: boolean;
   onHandle: (e: React.PointerEvent) => void;
-  onUp: () => void;
-  onDown: () => void;
-  onRemove: () => void;
-  onPatch: (p: Partial<SetItem>) => void;
+  onOpen: () => void;
+  onEdit: () => void;
 }) {
   const opts = useMemo(() => (r.song ? keyOptions(r.song.chart_text) : []), [r.song]);
   const orig = opts.find((o) => o.orig)?.value ?? null;
-  const [note, setNote] = useState(r.note ?? "");
-  const check = noteCheck(note);
-  const small = "bb-btn size-11 shrink-0 p-0 text-xl";
+  const changedKey = r.key && r.key !== orig ? opts.find((o) => o.value === r.key)?.label ?? r.key : null;
+  const title = r.song?.title ?? (r.hidden ? "Private song, not shared" : "Not available");
   return (
     <li className={`bg-bb-case-charcoal p-2 ${dragging ? "outline outline-1 -outline-offset-1 outline-bb-downbeat-amber" : ""}`}>
       <div className="flex items-center gap-2">
@@ -349,48 +401,159 @@ function SongEditRow({
           ≡
         </button>
         <span className="w-7 shrink-0 text-right font-bb-data text-lg tabular-nums text-bb-cue-gray">{n}</span>
-        <span className="min-w-0 flex-1">
-          <span className={`block truncate text-xl font-semibold ${r.song ? "" : "text-bb-cue-gray line-through"}`}>{r.song?.title ?? (r.hidden ? "Private song, not shared" : "Not available")}</span>
-          {r.song?.artist && <span className="block truncate text-sm text-bb-cue-gray">{r.song.artist}</span>}
-        </span>
-        {opts.length > 0 && (
-          <select
-            value={r.key && r.key !== orig ? r.key : (orig ?? "")}
-            onChange={(e) => onPatch({ key: e.target.value === orig ? null : e.target.value })}
-            aria-label={`Key for ${r.song?.title}`}
-            className={`bb-input h-12 shrink-0 px-2 font-bb-data text-lg font-bold ${r.key && r.key !== orig ? "border-bb-downbeat-amber bg-bb-downbeat-amber text-bb-stage-black" : ""}`}
-          >
-            {opts.map((o) => (
-              <option key={o.value} value={o.value}>
-                {pretty(o.label)}
-                {o.orig ? " orig" : ""}
-              </option>
-            ))}
-          </select>
+        {r.song ? (
+          <button onClick={onOpen} className="flex min-h-12 min-w-0 flex-1 flex-col justify-center text-left active:text-bb-downbeat-amber" aria-label={[`Open ${title}`, r.song.artist, changedKey ? `key ${pretty(changedKey)}` : null, r.note ? `note: ${r.note}` : null].filter(Boolean).join(", ")}>
+            <span className="block truncate text-xl font-semibold">{title}</span>
+            <span className="block truncate text-sm text-bb-cue-gray">
+              {[r.song.artist, changedKey ? `Key: ${pretty(changedKey)}` : null].filter(Boolean).join(" · ")}
+            </span>
+            {r.note && <span className="block truncate text-base text-bb-chart-white">“{r.note}”</span>}
+          </button>
+        ) : (
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-xl font-semibold text-bb-cue-gray line-through">{title}</span>
+            {r.note && <span className="block truncate text-base text-bb-chart-white">“{r.note}”</span>}
+          </span>
+        )}
+        {changedKey && (
+          <span className="shrink-0 border border-bb-downbeat-amber px-2 py-1 font-bb-data text-base font-bold text-bb-downbeat-amber" aria-hidden>
+            {pretty(changedKey)}
+          </span>
+        )}
+        <button onClick={onEdit} aria-label={`Edit ${title} in this setlist`} className={`bb-btn size-12 shrink-0 p-0 text-2xl ${plain}`}>
+          ⋯
+        </button>
+      </div>
+    </li>
+  );
+}
+
+/** One song's options in this setlist: note, key, order, stage, remove. Changes save as you go. */
+function EditSheet({
+  r,
+  n,
+  last,
+  onPatch,
+  onUp,
+  onDown,
+  onStage,
+  onRemove,
+  onClose,
+}: {
+  r: Row;
+  n: number;
+  last: boolean;
+  onPatch: (p: Partial<SetItem>) => void;
+  onUp: () => void;
+  onDown: () => void;
+  onStage: () => void;
+  onRemove: () => void;
+  onClose: () => void;
+}) {
+  const opts = useMemo(() => (r.song ? keyOptions(r.song.chart_text) : []), [r.song]);
+  const orig = opts.find((o) => o.orig)?.value ?? null;
+  const [note, setNote] = useState(r.note ?? "");
+  const [asking, setAsking] = useState(false);
+  const check = noteCheck(note);
+  const title = r.song?.title ?? (r.hidden ? "Private song, not shared" : "Not available");
+  const saveNote = () => {
+    if (!check.error) onPatch({ note: note.trim() || null });
+  };
+  const close = () => {
+    saveNote();
+    onClose();
+  };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.stopImmediatePropagation();
+      if (asking) setAsking(false);
+      else close();
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  });
+  const item = `${btn} ${plain} h-12 w-full justify-start text-left`;
+  return (
+    <div className="fixed inset-0 z-[70] flex items-end bg-bb-stage-black/80 sm:items-center sm:justify-center" onClick={close}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Edit ${title}`}
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-[90dvh] w-full overflow-y-auto border-t border-bb-rule-gray bg-bb-house-black p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:max-w-md sm:border"
+      >
+        <div className="mb-3 flex items-center gap-2">
+          <h2 className="min-w-0 flex-1 truncate text-xl font-bold">
+            {n}. {title}
+          </h2>
+          <button onClick={close} aria-label="Done" className="bb-btn bb-btn-quiet size-11 p-0 text-2xl text-bb-cue-gray">
+            ✕
+          </button>
+        </div>
+        {asking ? (
+          <div role="alertdialog" aria-label={`Remove ${title}?`}>
+            <p className="mb-4 text-xl">Remove “{title}” from this setlist?</p>
+            <div className="flex gap-2">
+              <button autoFocus onClick={() => setAsking(false)} className={`${btn} ${primary} h-14 flex-1`}>
+                Cancel
+              </button>
+              <button onClick={onRemove} className={`${btn} bb-btn-danger h-14 flex-1`}>
+                Remove
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            <label className="flex flex-col gap-1 text-base text-bb-cue-gray">
+              Note for this song in this setlist
+              <input
+                value={note}
+                maxLength={MAX_NOTE}
+                onChange={(e) => setNote(e.target.value)}
+                onBlur={saveNote}
+                onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+                placeholder="e.g. start on the chorus"
+                className="bb-input h-12 px-3 text-lg text-bb-chart-white"
+              />
+              {(check.warning || check.error) && <span className={`text-sm ${check.error ? "text-bb-stop-red" : "text-bb-chart-white"}`}>{check.error ?? check.warning}</span>}
+            </label>
+            {opts.length > 0 && (
+              <label className="flex flex-col gap-1 text-base text-bb-cue-gray">
+                Key in this setlist (the chart itself doesn’t change)
+                <select
+                  value={r.key && r.key !== orig ? r.key : (orig ?? "")}
+                  onChange={(e) => onPatch({ key: e.target.value === orig ? null : e.target.value })}
+                  className={`bb-input h-12 px-2 font-bb-data text-lg font-bold ${r.key && r.key !== orig ? "border-bb-downbeat-amber bg-bb-downbeat-amber text-bb-stage-black" : "text-bb-chart-white"}`}
+                >
+                  {opts.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {pretty(o.label)}
+                      {o.orig ? " orig" : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={onUp} disabled={n === 1} className={`${btn} ${plain} h-12`}>
+                ↑ Move up
+              </button>
+              <button onClick={onDown} disabled={last} className={`${btn} ${plain} h-12`}>
+                ↓ Move down
+              </button>
+            </div>
+            {r.song && (
+              <button onClick={onStage} className={item}>
+                ▸ Open in stage mode from this song
+              </button>
+            )}
+            <button onClick={() => setAsking(true)} className={`${btn} bb-btn-danger h-12 w-full`}>
+              Remove from setlist
+            </button>
+          </div>
         )}
       </div>
-      <div className="mt-2 flex items-center gap-2">
-        <input
-          value={note}
-          maxLength={MAX_NOTE}
-          onChange={(e) => setNote(e.target.value)}
-          onBlur={() => onPatch({ note: note.trim() || null })}
-          onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-          placeholder="Note (e.g. start on the chorus)"
-          aria-label={`Note for ${r.song?.title ?? "song"}`}
-          className="bb-input h-11 min-w-0 flex-1 px-3 text-base"
-        />
-        <button onClick={onUp} disabled={n === 1} aria-label="Move up" className={`${small} ${plain}`}>
-          ↑
-        </button>
-        <button onClick={onDown} disabled={last} aria-label="Move down" className={`${small} ${plain}`}>
-          ↓
-        </button>
-        <button onClick={onRemove} aria-label={`Remove ${r.song?.title ?? "song"}`} className={`${small} bb-btn-danger`}>
-          ✕
-        </button>
-      </div>
-      {(check.warning || check.error) && <p className={`mt-1 text-sm ${check.error ? "text-bb-stop-red" : "text-bb-chart-white"}`}>{check.error ?? check.warning}</p>}
-    </li>
+    </div>
   );
 }
