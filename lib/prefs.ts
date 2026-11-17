@@ -54,6 +54,7 @@ export function usePref(key: string, area: Area = "local"): string | null {
 
 export const PREF = {
   display: "bb.display", // "numbers" | "chords"
+  displayAt: "bb.display.at", // ISO time the Numbers/Chords choice last changed on this device
   minorSymbol: "bb.minor", // "-" | "m" (default "m"): how minor numbers are drawn
   legend: "bb.legend", // "1" = symbols legend open
   font: "bb.font", // FontId

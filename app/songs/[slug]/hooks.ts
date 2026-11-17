@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { buildView, parseChart, type MinorSymbol, type NumberStyle } from "@/lib/chart";
 import { PREF, setPref, usePref } from "@/lib/prefs";
+import { setDisplay } from "@/lib/display";
 
 export interface SongLink {
   slug: string;
@@ -61,7 +62,7 @@ export function useChartState(slug: string, chartText: string, keyCtl?: KeyContr
     pulse,
     minorSymbol,
     legend,
-    setChords: (on: boolean) => setPref(PREF.display, on ? "chords" : "numbers"),
+    setChords: (on: boolean) => setDisplay(on ? "chords" : "numbers"), // device + account (latest wins)
     setKey: (k: string) => (keyCtl ? keyCtl.setKey(k) : setPref(PREF.key(slug), view && k === view.meta.key ? null : k)),
     // Per song. Choosing the chart's own numbering clears the override.
     setStyle: (st: NumberStyle) => setPref(PREF.numbering(slug), view && st === view.meta.numbers ? null : st),

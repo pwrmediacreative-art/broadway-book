@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 import { browserClient } from "@/lib/supabase/browser";
 import { OFFLINE_MSG, useOffline } from "@/lib/offline/status";
 import { rememberedUser, rememberUser } from "@/lib/offline/user";
+import { syncDisplay } from "@/lib/display";
+import SettingsButton from "./Settings";
 
 type Me = { name: string; admin: boolean; reviewer: boolean; unread: number } | null;
 const READ_EVENT = "bb:notifications-read"; // fired by /notifications once it marks all read
@@ -42,6 +44,7 @@ export default function AuthBar() {
         db.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", session.user.id).is("read_at", null),
       ]);
       if (data) rememberUser({ id: session.user.id, name: data.display_name || "Profile", admin: data.role === "admin", reviewer: data.reviewer === true });
+      void syncDisplay(db, session.user.id); // Numbers/Chords: newest of device and account wins
       if (alive) setMe({
           name: data?.display_name || "Profile",
           admin: data?.role === "admin",
@@ -68,6 +71,7 @@ export default function AuthBar() {
   if (me === undefined) return <Bar />;
   const community = (
     <>
+      <SettingsButton />
       <Link href="/setlists" className={link}>
         Setlists
       </Link>
