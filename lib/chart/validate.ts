@@ -10,7 +10,7 @@ export interface ChartCheck {
   ok: boolean; // parses and has no long cues
   error: string | null; // parse error
   warnings: string[]; // non-blocking (missing title/key, …)
-  longCues: string[]; // blocking: cues over MAX_CUE_WORDS words (lyrics guard)
+  longCues: string[]; // blocking: cues, boxed notes or repeat notes over MAX_CUE_WORDS words (lyrics guard)
   doc: ChartDoc | null;
   canonical: string | null; // the text we store
 }
@@ -26,11 +26,12 @@ export function checkChart(text: string): ChartCheck {
   try {
     const { doc, warnings } = parseChart(src);
     const longCues: string[] = [];
+    const long = (t: string) => t.split(/\s+/).filter(Boolean).length > MAX_CUE_WORDS;
     for (const line of doc.lines) {
       if (line.kind !== "section" && line.kind !== "rows") continue;
       for (const row of line.rows)
         for (const item of row)
-          if (item.kind === "cue" && item.text.split(/\s+/).length > MAX_CUE_WORDS) longCues.push(item.text);
+          if ((item.kind === "cue" || item.kind === "box" || item.kind === "repeatSign") && long(item.text)) longCues.push(item.text);
     }
     return {
       ok: longCues.length === 0,

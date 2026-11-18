@@ -28,6 +28,8 @@ interface Props {
   approvalsNeeded: number;
   rejectionsNeeded: number;
   me: { id: string; admin: boolean } | null;
+  /** A player's own chart sent to the library: the author changes it by withdrawing (it's locked while it waits). */
+  newSongId?: string | null;
 }
 
 const REASONS = [
@@ -127,9 +129,15 @@ export default function VotePanel(p: Props) {
 
       {open && isAuthor && (
         <div className="mt-2 flex flex-wrap gap-3">
-          <Link href={`/songs/${p.songSlug}/edit?proposal=${p.proposalId}`} className={p.stale ? btn.primary : btn.ghost}>
-            {p.stale ? "Update to the newest chart" : "Edit suggestion"}
-          </Link>
+          {p.newSongId ? (
+            <Link href={`/make/${p.newSongId}`} className={btn.ghost}>
+              Open my chart
+            </Link>
+          ) : (
+            <Link href={`/songs/${p.songSlug}/edit?proposal=${p.proposalId}`} className={p.stale ? btn.primary : btn.ghost}>
+              {p.stale ? "Update to the newest chart" : "Edit suggestion"}
+            </Link>
+          )}
           <button
             disabled={pending}
             className={btn.ghost}

@@ -117,7 +117,38 @@ function Bar({ cell, chords, marks, spot }: { cell: BarCell; chords: boolean; ma
   );
 }
 
-function NoteChip({ n }: { n: Note }) {
+/** Repeat sign drawn on a bar's edge: |: before it, :| after it. */
+function RepeatMark({ end }: { end: boolean }) {
+  return (
+    <svg viewBox="0 0 10 24" className="h-[0.95em] w-[0.42em] shrink-0 text-bb-chart-white" role="img" aria-label={end ? "end repeat" : "start repeat"}>
+      {end ? (
+        <>
+          <circle cx="2" cy="9" r="1.7" fill="currentColor" />
+          <circle cx="2" cy="15" r="1.7" fill="currentColor" />
+          <rect x="5" y="1" width="1.2" height="22" fill="currentColor" />
+          <rect x="7.5" y="1" width="2.5" height="22" fill="currentColor" />
+        </>
+      ) : (
+        <>
+          <rect x="0" y="1" width="2.5" height="22" fill="currentColor" />
+          <rect x="3.8" y="1" width="1.2" height="22" fill="currentColor" />
+          <circle cx="8" cy="9" r="1.7" fill="currentColor" />
+          <circle cx="8" cy="15" r="1.7" fill="currentColor" />
+        </>
+      )}
+    </svg>
+  );
+}
+
+function NoteChip({ n, chords }: { n: Note; chords?: boolean }) {
+  if (n.kind === "box")
+    return (
+      <span className="border-[0.08em] border-bb-chart-white px-[0.4em] py-[0.15em] text-[0.45em] font-semibold leading-tight text-bb-chart-white">
+        {pretty(n.text)}
+        {chords && n.key ? ` → ${pretty(n.key)}` : ""}
+      </span>
+    );
+  if (n.kind === "repeat") return <span className="text-[0.5em] font-semibold text-bb-chart-white">{n.text}</span>;
   if (n.kind === "change")
     return (
       <span className="rounded-[0.3em] border-[0.08em] border-bb-key-change-blue px-[0.4em] py-[0.12em] text-[0.45em] font-semibold leading-tight text-bb-key-change-blue">
@@ -170,7 +201,7 @@ function Line({ line, chords, bars }: { line: GridLine; chords: boolean; bars?: 
   if (!line.bars.length) {
     return (
       <div className="flex flex-wrap items-center gap-[0.25em]">
-        {line.after?.notes.map((n, i) => <NoteChip key={i} n={n} />)}
+        {line.after?.notes.map((n, i) => <NoteChip key={i} n={n} chords={chords} />)}
       </div>
     );
   }
@@ -183,12 +214,25 @@ function Line({ line, chords, bars }: { line: GridLine; chords: boolean; bars?: 
           className="flex min-w-0 flex-wrap items-end gap-[0.2em]"
           style={{ gridColumn: `${g.col + 1} / span ${g.span}`, gridRow: 1 }}
         >
-          {g.notes.map((n, j) => <NoteChip key={j} n={n} />)}
+          {g.notes.map((n, j) => <NoteChip key={j} n={n} chords={chords} />)}
         </div>
       ))}
       {line.bars.map((x) => {
         const id = bars?.ids.get(x.cell);
-        const bar = <Bar cell={x.cell} chords={chords} marks={marks} spot={bars?.hold && id ? { id, hold: bars.hold } : null} />;
+        const plain = <Bar cell={x.cell} chords={chords} marks={marks} spot={bars?.hold && id ? { id, hold: bars.hold } : null} />;
+        const bar =
+          x.open || x.close !== null ? (
+            <div className="flex flex-col">
+              <div className="flex items-end gap-[0.08em]">
+                {x.open && <RepeatMark end={false} />}
+                <div className="min-w-0">{plain}</div>
+                {x.close !== null && <RepeatMark end />}
+              </div>
+              {x.close && <span className="truncate text-[0.4em] italic leading-tight text-bb-cue-gray">{x.close}</span>}
+            </div>
+          ) : (
+            plain
+          );
         if (bars?.play && id) {
           const on = bars.play.current === id;
           return (
@@ -218,7 +262,7 @@ function Line({ line, chords, bars }: { line: GridLine; chords: boolean; bars?: 
           className={`flex min-w-0 flex-wrap items-center gap-[0.2em] ${line.afterBelow ? "justify-end" : "self-center"}`}
           style={{ gridColumn: `${line.after.col + 1} / span ${line.after.span}`, gridRow: line.afterBelow ? 4 : 2 }}
         >
-          {line.after.notes.map((n, j) => <NoteChip key={j} n={n} />)}
+          {line.after.notes.map((n, j) => <NoteChip key={j} n={n} chords={chords} />)}
         </div>
       )}
       {line.hairpins.map((h, i) => (
@@ -282,7 +326,7 @@ export default function Chart({
             className={columns ? "mb-[0.65em] flex break-inside-avoid flex-col gap-[0.2em]" : "flex flex-col gap-[0.2em] @md:flex-row @md:gap-[0.35em]"}
           >
             <h2 className={columns ? "shrink-0" : "shrink-0 @md:w-[2.2em] @md:pt-[0.3em]"}>
-              <span className="inline-flex items-baseline gap-[0.15em] rounded-[0.15em] border-[0.06em] border-bb-downbeat-amber px-[0.3em] py-[0.12em] text-[0.55em] leading-none text-bb-downbeat-amber">
+              <span className="inline-flex max-w-full flex-wrap items-baseline gap-[0.15em] break-words rounded-[0.15em] border-[0.06em] border-bb-downbeat-amber px-[0.3em] py-[0.12em] text-[0.55em] leading-none text-bb-downbeat-amber">
                 {s.label.replace(/ x\d+$/, "")}
                 {s.repeat > 1 && <span className="text-[0.85em]">×{s.repeat}</span>}
               </span>

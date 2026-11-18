@@ -71,10 +71,10 @@ export function MineRow({ c, id }: { c: MineChart; id?: string }) {
         <span className="min-w-0 flex-1">
           <span className="block truncate text-xl font-semibold">{c.title}</span>
           <span className="block truncate text-base text-bb-cue-gray">
-            {[c.artist, c.mine === false ? `uploaded by ${c.by ?? "another admin"}` : null].filter(Boolean).join(" · ")}
+            {[c.artist, c.mine === false ? `${c.made ? "made" : "uploaded"} by ${c.by ?? "another admin"}` : null].filter(Boolean).join(" · ")}
           </span>
         </span>
-        <span className="bb-chip shrink-0">{c.mine === false ? "Uploaded" : "Yours"}</span>
+        <span className="bb-chip shrink-0">{c.mine === false ? (c.made ? "Made" : "Uploaded") : "Yours"}</span>
         {c.key && <span className="shrink-0 font-bb-data text-2xl font-bold">{c.key}</span>}
       </Link>
     </li>

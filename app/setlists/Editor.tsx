@@ -24,6 +24,7 @@ export default function Editor({
   share,
   danger,
   note,
+  newChartHref,
 }: {
   initial: PlaySet;
   save: (s: PlaySet) => Promise<void>;
@@ -31,6 +32,7 @@ export default function Editor({
   share: ReactNode | ((current: PlaySet) => ReactNode);
   danger: ReactNode;
   note?: ReactNode; // shown above Play (e.g. "Copied from Pat on Nov 16")
+  newChartHref?: string; // "+ New chart": make one and it lands on the end of this setlist
 }) {
   const router = useRouter();
   const [name, setName] = useState(initial.name);
@@ -343,6 +345,11 @@ export default function Editor({
               </li>
             ))}
           </ul>
+        )}
+        {newChartHref && !full && (
+          <Link href={newChartHref} className="bb-btn bb-btn-secondary mt-3 h-12 w-full px-4 text-lg font-semibold">
+            + New chart
+          </Link>
         )}
       </section>
 

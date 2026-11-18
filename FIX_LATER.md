@@ -142,3 +142,11 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Q11: no "+ Add the tempo" for charts with no {bpm:} (Song details doesn't show tempo except in the stage sheet header).
 - Q11: stage mode's Song details sheet is read-only; adding there would need the owner check in StageView.
 - Q11: accepting the audio "Check the ending" guess on /upload/[id] is marked "added by a player" on save.
+- Q16: made-chart autosave adds a revision per saved change; once approved, those private edits show in the song's public history (consider hiding pre-library revisions).
+- Q16: section reorder is move up/down only (no drag yet).
+- Q16: the "differs from the original" highlight on a duplicated section lasts for the editing session only (the link isn't saved).
+- Q16: visitors (signed out) don't see new-song submissions in Community; players do.
+- Q16: an admin's made charts are visible read-only to other admins, same as admin uploads.
+- Q16: publish_chart reads {key:} from anywhere in the text, so a key-less chart with an inline {key:} change would take that key on approval.
+- Q16: the 500-chart cap isn't covered by check:charts (needs 500 rows).
+- Q16: sign-in redirect from /make drops ?setlist= (the proxy keeps only the path).

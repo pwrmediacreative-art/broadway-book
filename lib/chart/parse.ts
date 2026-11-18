@@ -1,5 +1,6 @@
 import { parseKey } from "./transpose";
 import {
+  MAX_SECTION_NAME,
   SECTION_NAMES,
   type BeatItem,
   type ChartDoc,
@@ -9,7 +10,6 @@ import {
   type Row,
   type RowItem,
   type SectionLabel,
-  type SectionName,
   type Tag,
 } from "./types";
 
@@ -51,16 +51,23 @@ const CHORD_RE = new RegExp(
 const SECTION_RE = new RegExp(
   `^(${SECTION_NAMES.join("|")})(\\d+)?(?:\\s+x(\\d+))?$`,
 );
+// Custom section name: ["Big ending"], ["Breakdown"2 x2].
+const CUSTOM_SECTION_RE = /^"([^"]*)"(\d+)?(?:\s+x(\d+))?$/;
+const BAD_NAME_CHARS = /["[\]{}|#]/;
 const TAG_RE = /^\{([a-z]+):\s*([^{}]*?)\s*\}$/;
 
-/** Split on a separator (whitespace or "|") outside quotes, braces and parens. */
+/**
+ * Split on a separator (whitespace or "|") outside quotes, braces and parens.
+ * A "|" touching a ":" is part of a repeat sign (|: or :|), never a line break.
+ */
 function splitTop(s: string, sep: "space" | "bar", lineNo: number): string[] {
   const out: string[] = [];
   let cur = "";
   let quote = false;
   let brace = 0;
   let paren = 0;
-  for (const ch of s) {
+  const chars = [...s];
+  for (const [i, ch] of chars.entries()) {
     if (ch === '"') quote = !quote;
     else if (!quote) {
       if (ch === "{") brace++;
@@ -74,7 +81,7 @@ function splitTop(s: string, sep: "space" | "bar", lineNo: number): string[] {
       !quote &&
       brace === 0 &&
       paren === 0 &&
-      (sep === "space" ? /\s/.test(ch) : ch === "|");
+      (sep === "space" ? /\s/.test(ch) : ch === "|" && chars[i - 1] !== ":" && chars[i + 1] !== ":");
     if (isSep) {
       out.push(cur);
       cur = "";
@@ -147,14 +154,29 @@ function parseBeat(tok: string, lineNo: number): BeatItem {
   };
 }
 
+const words = (t: string) => t.split(/\s+/).filter(Boolean).length;
+
 function parseItem(tok: string, lineNo: number, warnings: string[]): RowItem {
+  if (tok === "|:") return { kind: "repeatSign", side: "start", text: "" };
+  if (tok.startsWith(":|")) {
+    if (tok === ":|") return { kind: "repeatSign", side: "end", text: "" };
+    const m = /^:\|"([^"]+)"$/.exec(tok);
+    const text = m?.[1].trim();
+    if (!text) throw new ChartParseError(`bad repeat sign ${tok} (use :| or :|"repeat out")`, lineNo);
+    if (words(text) > MAX_CUE_WORDS)
+      warnings.push(`Line ${lineNo}: repeat note "${text}" is long. Keep notes short, no lyrics.`);
+    return { kind: "repeatSign", side: "end", text };
+  }
   if (tok.startsWith('"')) {
     const m = /^"([^"]+)"$/.exec(tok);
     if (!m) throw new ChartParseError(`bad cue ${tok}`, lineNo);
-    const text = m[1].trim();
-    if (text.split(/\s+/).length > MAX_CUE_WORDS)
-      warnings.push(`Line ${lineNo}: cue "${text}" is long. Keep cues short, no lyrics.`);
-    return { kind: "cue", text };
+    const raw = m[1].trim();
+    const box = /^\[(.*)\]$/.exec(raw);
+    const text = box ? box[1].trim() : raw;
+    if (box && !text) throw new ChartParseError(`empty boxed note ${tok}`, lineNo);
+    if (words(text) > MAX_CUE_WORDS)
+      warnings.push(`Line ${lineNo}: ${box ? "note" : "cue"} "${text}" is long. Keep ${box ? "notes" : "cues"} short, no lyrics.`);
+    return box ? { kind: "box", text } : { kind: "cue", text };
   }
   if (tok.startsWith("{")) return { kind: "tag", ...parseTag(tok, "inline", lineNo) };
   if (tok === "<<") return { kind: "dynamic", value: "cresc" };
@@ -180,15 +202,27 @@ function parseRows(s: string, lineNo: number, warnings: string[]): Row[] {
 }
 
 function parseSectionLabel(inner: string, lineNo: number): SectionLabel {
-  const m = SECTION_RE.exec(inner.trim());
+  const trimmed = inner.trim();
+  const c = CUSTOM_SECTION_RE.exec(trimmed);
+  if (c) {
+    const name = c[1].trim().replace(/\s+/g, " ");
+    if (!name || name.length > MAX_SECTION_NAME || BAD_NAME_CHARS.test(name) || words(name) > MAX_CUE_WORDS)
+      throw new ChartParseError(
+        `bad section name [${inner}]: 1 to ${MAX_SECTION_NAME} characters, ${MAX_CUE_WORDS} words or fewer, no [ ] { } | # "`,
+        lineNo,
+      );
+    return { name, custom: true, number: c[2] ? Number(c[2]) : null, repeat: c[3] ? Number(c[3]) : null };
+  }
+  const m = SECTION_RE.exec(trimmed);
   if (!m) {
     throw new ChartParseError(
-      `unknown section [${inner}]. Use ${SECTION_NAMES.map((n) => `[${n}]`).join(" ")}, optionally numbered [V2] or repeated [C x2]`,
+      `unknown section [${inner}]. Use ${SECTION_NAMES.map((n) => `[${n}]`).join(" ")}, optionally numbered [V2] or repeated [C x2], or your own name in quotes ["Breakdown"]`,
       lineNo,
     );
   }
   return {
-    name: m[1] as SectionName,
+    name: m[1],
+    custom: false,
     number: m[2] ? Number(m[2]) : null,
     repeat: m[3] ? Number(m[3]) : null,
   };

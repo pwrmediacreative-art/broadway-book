@@ -2,7 +2,7 @@
 // Rows are what players read as one chart line (a section's rows split on |); cells are the
 // bars and inline items in a row, written in canonical chart text ("1", "(4 5)", "\"stop\"").
 import { parseChart } from "./parse";
-import { itemText } from "./serialize";
+import { itemText, labelShown } from "./serialize";
 import type { ChartDoc } from "./types";
 
 export type DiffState = "same" | "added" | "removed" | "changed";
@@ -43,8 +43,7 @@ export function flattenChart(doc: ChartDoc): FlatRow[] {
         line.rows.forEach((r) => out.push({ label: "", cells: r.map(itemText) }));
         break;
       case "section": {
-        const { name, number, repeat } = line.section;
-        const label = `${name}${number ?? ""}${repeat ? ` x${repeat}` : ""}`;
+        const label = labelShown(line.section);
         if (!line.rows.length) out.push({ label, cells: [] });
         line.rows.forEach((r, i) => out.push({ label: i === 0 ? label : `${label} ·`, cells: r.map(itemText) }));
         break;

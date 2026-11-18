@@ -21,7 +21,7 @@ export default function CommunityPage({ searchParams }: PageProps<"/community">)
       </Link>
       <h1 className="text-3xl font-bold tracking-tight">Community</h1>
       <p className="mb-4 mt-1 text-lg text-bb-cue-gray">
-        Suggested chart fixes waiting for votes. A suggestion goes live after enough players approve it.
+        Suggested chart fixes and new songs waiting for votes. A suggestion goes live after enough players approve it.
       </p>
       <Suspense fallback={<p className="text-lg text-bb-cue-gray">Loading…</p>}>
         <List searchParams={searchParams} />
@@ -37,7 +37,7 @@ interface Row {
   author_id: string;
   out_of_date: boolean;
   author: { display_name: string | null; reviewer: boolean } | null;
-  song: { slug: string; title: string; artist: string | null };
+  song: { slug: string; title: string; artist: string | null; status: string }; // private = a player's own chart sent to the library
   votes: { voter_id: string; value: "approve" | "reject" }[];
 }
 
@@ -53,7 +53,7 @@ async function List({ searchParams }: { searchParams: PageProps<"/community">["s
   let query = db
     .from("proposals")
     .select(
-      "id, note, created_at, author_id, out_of_date, author:profiles!proposals_author_id_fkey(display_name, reviewer), song:songs!inner(slug, title, artist), votes(voter_id, value)",
+      "id, note, created_at, author_id, out_of_date, author:profiles!proposals_author_id_fkey(display_name, reviewer), song:songs!inner(slug, title, artist, status), votes(voter_id, value)",
     )
     .eq("status", "open")
     .order("created_at", { ascending: false })
@@ -146,7 +146,10 @@ async function List({ searchParams }: { searchParams: PageProps<"/community">["s
                       <p className="truncate text-xl font-semibold">{r.song.title}</p>
                       {r.song.artist && <p className="truncate text-bb-cue-gray">{r.song.artist}</p>}
                     </div>
-                    <StatusPill status="open" stale={r.out_of_date} />
+                    <span className="flex shrink-0 flex-col items-end gap-1">
+                      <StatusPill status="open" stale={r.out_of_date} />
+                      {r.song.status === "private" && <span className="bb-chip">New song</span>}
+                    </span>
                   </div>
                   <p className="mt-2 text-lg">“{r.note}”</p>
                   <p className="mt-1 text-sm text-bb-cue-gray">

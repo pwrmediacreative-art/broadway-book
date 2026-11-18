@@ -65,7 +65,7 @@ describe("parser", () => {
     const intro = doc.lines[3];
     expect(intro.kind).toBe("section");
     if (intro.kind !== "section") return;
-    expect(intro.section).toEqual({ name: "Intro", number: null, repeat: null });
+    expect(intro.section).toEqual({ name: "Intro", custom: false, number: null, repeat: null });
     expect(intro.rows).toHaveLength(2);
     expect(intro.rows[0][2]).toMatchObject({ kind: "chord", root: { acc: "", degree: 6 }, quality: "-" });
   });

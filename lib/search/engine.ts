@@ -24,6 +24,7 @@ export interface SearchEngine {
 }
 
 export function createEngine(docs: SongDoc[]): SearchEngine {
+  const versions = new Set(docs.filter((d) => d.vb).map((d) => d.slug));
   const ms = new MiniSearch<SongDoc>({
     idField: "slug",
     fields: ["title", "artist", "feel", "tags"],
@@ -38,6 +39,8 @@ export function createEngine(docs: SongDoc[]): SearchEngine {
       prefix: true,
       fuzzy,
       maxFuzzy: 2,
+      // A player's version of a song ranks just under the original with the same name.
+      boostDocument: (id) => (versions.has(id as string) ? 0.98 : 1),
     },
   });
   ms.addAll(docs);

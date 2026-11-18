@@ -33,7 +33,12 @@ export default function MineView({ chart, offline = false }: { chart: MineChart;
       <h1 className="text-3xl font-bold tracking-tight">{chart.title}</h1>
       {chart.artist && <p className="text-lg text-bb-cue-gray">{chart.artist}</p>}
       <p className="mb-3 mt-1 text-base text-bb-cue-gray">
-        {chart.mine === false ? `Uploaded by ${chart.by ?? "another admin"}. Admins only` : "Your private chart"}.
+        {chart.mine === false
+          ? `${chart.made ? "Made" : "Uploaded"} by ${chart.by ?? "another admin"}. Admins only`
+          : chart.locked
+            ? "Your chart, waiting for library votes"
+            : "Your private chart"}
+        .
       </p>
       <div className="mb-3 flex flex-wrap gap-2">
         <Link href={`/mine/${chart.id}/stage`} onClick={enterFullscreen} className="bb-btn bb-btn-primary h-12 px-5 text-lg font-bold">
@@ -45,8 +50,8 @@ export default function MineView({ chart, offline = false }: { chart: MineChart;
         {!offline && (
           <>
             {chart.mine !== false && (
-              <Link href={`/upload/${chart.id}`} className={act}>
-                Edit
+              <Link href={chart.made ? `/make/${chart.id}` : `/upload/${chart.id}`} className={act}>
+                {chart.locked ? "Library votes" : "Edit"}
               </Link>
             )}
             <AddToSetlist slug={chart.slug} title={chart.title} variant="button" />
@@ -58,9 +63,9 @@ export default function MineView({ chart, offline = false }: { chart: MineChart;
           <CheatSheet
             text={text}
             onJump={(part) => document.querySelectorAll("[data-section]")[part]?.scrollIntoView({ block: "start" })}
-            nameHref={chart.mine !== false && !offline ? `/upload/${chart.id}` : undefined}
+            nameHref={chart.mine !== false && !offline ? (chart.made ? `/make/${chart.id}` : `/upload/${chart.id}`) : undefined}
             onAdd={
-              offline
+              offline || chart.locked
                 ? undefined
                 : async (d) => {
                     if (lostSignal) return OFFLINE_MSG;

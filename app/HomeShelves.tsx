@@ -1,8 +1,9 @@
 "use client";
 
-// Home, under the search box: a "Recent" row (songs opened on this phone) and a "My uploads"
-// row (your uploaded charts, newest first). Each is one line of tiles you swipe sideways;
-// a row with nothing in it isn't shown. The full song list follows below.
+// Home, under the search box: a "Recent" row (songs opened on this phone), a "My uploads"
+// row (your uploaded charts, newest first) and a "Made by me" row (charts you made in the
+// editor, newest first, with + New chart). Each is one line of tiles you swipe sideways;
+// a row with nothing in it isn't shown (signed in, New chart always is). The full song list follows below.
 import Link from "next/link";
 import { useNavMe } from "@/lib/nav/me";
 import { PREF, setPref } from "@/lib/prefs";
@@ -37,7 +38,8 @@ export default function HomeShelves({
   // Next/previous in the chart follows the row you opened it from.
   const openRecent = () =>
     setPref(PREF.nav, JSON.stringify(recentDocs.map((d) => ({ slug: d.slug, title: d.title }))), "session");
-  const yours = mine.filter((c) => c.mine !== false);
+  const yours = mine.filter((c) => c.mine !== false && !c.made);
+  const made = mine.filter((c) => c.mine !== false && c.made);
 
   return (
     <>
@@ -53,6 +55,19 @@ export default function HomeShelves({
           more={me?.upload ? { href: "/upload", label: "Upload" } : undefined}
           tiles={yours.map((c) => ({ key: c.id, href: `/mine/${c.id}`, title: c.title, sub: c.artist, songKey: c.key }))}
         />
+      )}
+      {made.length > 0 ? (
+        <Shelf
+          title="Made by me"
+          more={{ href: "/make", label: "New chart" }}
+          tiles={made.map((c) => ({ key: c.id, href: `/mine/${c.id}`, title: c.title, sub: c.locked ? "Waiting for votes" : c.artist, songKey: c.key }))}
+        />
+      ) : (
+        me && (
+          <Link href="/make" className="bb-btn bb-btn-secondary mb-4 h-12 w-full px-4 text-lg font-semibold lg:w-auto">
+            + New chart
+          </Link>
+        )
       )}
     </>
   );

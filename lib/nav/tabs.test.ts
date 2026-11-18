@@ -6,6 +6,8 @@ describe("tabs", () => {
     expect(tabFor("/")).toBe("home");
     expect(tabFor("/songs/jolene")).toBe("home");
     expect(tabFor("/mine/0a1a2dfe-6d92-41ae-b87b-7b61ee79db44")).toBe("home");
+    expect(tabFor("/make")).toBe("home");
+    expect(tabFor("/make/0a1a2dfe-6d92-41ae-b87b-7b61ee79db44")).toBe("home");
     expect(tabFor("/setlists")).toBe("setlists");
     expect(tabFor("/setlists/abc")).toBe("setlists");
     expect(tabFor("/s/CODE")).toBe("setlists");

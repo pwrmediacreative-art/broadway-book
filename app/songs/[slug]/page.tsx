@@ -29,6 +29,7 @@ export default async function SongPage({ params }: PageProps<"/songs/[slug]">) {
       verifiedAt={song.verified_at}
       chartText={song.chart_text}
       neighbors={neighbors}
+      versionLine={song.version_line ?? null}
     />
   );
 }

@@ -1,5 +1,5 @@
 import { getMeta } from "./parse";
-import { beatText } from "./serialize";
+import { beatText, labelShown } from "./serialize";
 import {
   chordName,
   degreeToNote,
@@ -13,7 +13,7 @@ import {
   shiftKey,
   type Key,
 } from "./transpose";
-import type { BeatItem, ChartDoc, Degree, ChartMeta, NumberStyle, RowItem, Tag } from "./types";
+import type { BeatItem, ChartDoc, Degree, ChartMeta, NumberStyle, Row, RowItem, Tag } from "./types";
 
 /** Everything the song page needs to draw a chart in any key / numbering style. */
 /** A chord split for drawing: root, quality (superscript part), slash bass. No modifiers. */
@@ -37,9 +37,11 @@ export type CellView =
   | { kind: "bar"; beats: BeatView[] } // 1 beat = whole bar, 2+ = split bar
   | { kind: "cue"; text: string }
   | { kind: "dynamic"; text: "<<" | ">>" }
-  | { kind: "change"; text: string };
+  | { kind: "change"; text: string }
+  | { kind: "box"; text: string; key: string | null } // boxed note; key = the new key when it marks a key change
+  | { kind: "repeatSign"; side: "start" | "end"; text: string };
 export interface SectionView {
-  label: string;
+  label: string; // "V2", "C x2", "Big ending"
   repeat: number; // [C x2] -> 2
   rows: CellView[][];
 }
@@ -55,7 +57,7 @@ export interface ChartView {
 }
 
 export interface ViewOptions {
-  key?: string | null; // display key; defaults to the chart's key
+  key?: string | null; // display key; defaults to the chart's key (a chart with no key shows this one)
   style?: NumberStyle; // minor-key numbering style; defaults to the chart's
   minorSymbol?: MinorSymbol; // how minor numbers are drawn; display only, default "-"
 }
@@ -78,8 +80,9 @@ function decorate(b: BeatItem, core: string): string {
 
 export function buildView(doc: ChartDoc, opts: ViewOptions = {}): ChartView {
   const meta = getMeta(doc);
-  const original = meta.key ? parseKey(meta.key) : null;
   const requested = opts.key ? parseKey(opts.key) : null;
+  // A chart with no {key:} reads in whatever key the player picks (numbers stay as written).
+  const original = meta.key ? parseKey(meta.key) : requested;
   const display: Key | null =
     original && requested && requested.minor === original.minor ? requested : original;
   const offset = original && display ? display.pc - original.pc : 0;
@@ -142,9 +145,29 @@ export function buildView(doc: ChartDoc, opts: ViewOptions = {}): ChartView {
         return { kind: "dynamic", text: item.value === "cresc" ? "<<" : ">>" };
       case "tag":
         return change(item);
+      case "box":
+        return { kind: "box", text: item.text, key: null };
+      case "repeatSign":
+        return { kind: "repeatSign", side: item.side, text: item.text };
       default:
         return { kind: "bar", beats: [beatView(item)] };
     }
+  };
+
+  // A key change written right before a boxed note ({mod: +5} "[Mod ↑ P.4th (1 becomes 5)]")
+  // shows as that one box, carrying the new key for Chords view.
+  const rowCells = (row: Row): CellView[] => {
+    const out: CellView[] = [];
+    for (let i = 0; i < row.length; i++) {
+      const item = row[i];
+      const next = row[i + 1];
+      if (item.kind === "tag" && (item.name === "mod" || item.name === "key") && next?.kind === "box") {
+        change(item);
+        out.push({ kind: "box", text: next.text, key: current ? keyPairShort(current, style) : null });
+        i++;
+      } else out.push(cell(item));
+    }
+    return out;
   };
 
   // A tags line standing right before a section label ({mod: +1}) belongs to that section.
@@ -155,16 +178,15 @@ export function buildView(doc: ChartDoc, opts: ViewOptions = {}): ChartView {
   };
   for (const line of doc.lines) {
     if (line.kind === "section") {
-      const { name, number, repeat } = line.section;
       sections.push({
-        label: `${name}${number ?? ""}${repeat ? ` x${repeat}` : ""}`,
-        repeat: repeat ?? 1,
-        rows: [...pending, ...line.rows.map((r) => r.map(cell))],
+        label: labelShown(line.section),
+        repeat: line.section.repeat ?? 1,
+        rows: [...pending, ...line.rows.map(rowCells)],
       });
       pending = [];
     } else if (line.kind === "rows") {
       flush();
-      sections.at(-1)!.rows.push(...line.rows.map((r) => r.map(cell)));
+      sections.at(-1)!.rows.push(...line.rows.map(rowCells));
     } else if (line.kind === "tags" && sections.length) {
       pending.push(line.tags.map(change));
     }

@@ -1,4 +1,4 @@
-import type { BeatItem, ChartDoc, Degree, Line, Row, RowItem, Tag } from "./types";
+import type { BeatItem, ChartDoc, Degree, Line, Row, RowItem, SectionLabel, Tag } from "./types";
 
 export function degreeText(d: Degree): string {
   return `${d.acc}${d.degree}`;
@@ -27,9 +27,23 @@ export function itemText(item: RowItem): string {
       return `"${item.text}"`;
     case "tag":
       return tagText(item);
+    case "box":
+      return `"[${item.text}]"`;
+    case "repeatSign":
+      return item.side === "start" ? "|:" : item.text ? `:|"${item.text}"` : ":|";
     default:
       return beatText(item);
   }
+}
+
+/** The text inside a section label's brackets: `V2 x2`, `"Big ending"`, `"Breakdown"2`. */
+export function labelText({ name, custom, number, repeat }: SectionLabel): string {
+  return `${custom ? `"${name}"` : name}${number ?? ""}${repeat ? ` x${repeat}` : ""}`;
+}
+
+/** A section label as players read it: `V2 x2`, `Big ending`, `Breakdown 2 x2`. */
+export function labelShown({ name, custom, number, repeat }: SectionLabel): string {
+  return `${name}${number != null ? (custom ? ` ${number}` : number) : ""}${repeat ? ` x${repeat}` : ""}`;
 }
 
 const rowsText = (rows: Row[]) => rows.map((r) => r.map(itemText).join(" ")).join(" | ");
@@ -45,8 +59,7 @@ function lineText(line: Line): string {
     case "rows":
       return rowsText(line.rows);
     case "section": {
-      const { name, number, repeat } = line.section;
-      const label = `[${name}${number ?? ""}${repeat ? ` x${repeat}` : ""}]`;
+      const label = `[${labelText(line.section)}]`;
       return line.rows.length ? `${label} ${rowsText(line.rows)}` : label;
     }
   }

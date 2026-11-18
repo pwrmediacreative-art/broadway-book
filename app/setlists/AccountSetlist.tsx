@@ -77,6 +77,7 @@ export function AccountEditor({ id }: { id: string }) {
         ) : null
       }
       danger={<DeleteButton id={id} />}
+      newChartHref={`/make?setlist=${id}`}
     />
   );
 }

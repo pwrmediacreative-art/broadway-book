@@ -34,12 +34,16 @@ implementation: if this document and the parser disagree, fix one of them.
 |---|---|---|
 | `{title:}` | `{title: Wagon Wheel}` | Required |
 | `{artist:}` | `{artist: Old Crow Medicine Show}` | |
-| `{key:}` | `{key: A}` `{key: Bb}` `{key: F#m}` | Required. The key the numbers count from. `m` = minor |
+| `{key:}` | `{key: A}` `{key: Bb}` `{key: F#m}` | The key the numbers count from. `m` = minor. Imported charts always have one; a player-made chart may leave it out (see below) |
 | `{bpm:}` | `{bpm: 140}` | 2–3 digits |
 | `{time:}` | `{time: 4/4}` `{time: 6/8}` | |
 | `{feel:}` | `{feel: shuffle}` | Free text: shuffle, two-step, train beat... |
 | `{tags:}` | `{tags: country, 90s}` | Comma separated |
 | `{numbers:}` | `{numbers: relative}` | Minor keys only, see below |
+
+A chart with **no `{key:}`** is allowed (a player making their own chart may not know it).
+The numbers show as written; Chords view and the key picker ask the player to pick a key, and
+chord names then follow that key. Nothing is written back into the chart.
 
 ## Minor keys
 
@@ -63,6 +67,10 @@ any minor chart between the two styles; chord names are identical either way.
 | `[V2]` | Numbered section (second verse) |
 | `[C x2]` | Play this section twice |
 | `[C2 x2]` | Both |
+| `["Big ending"]` | Your own section name, in quotes (1–30 characters, 6 words or fewer, no `[ ] { } \| # "`) |
+| `["Breakdown"2 x2]` | Own name, numbered and repeated (shown "Breakdown 2") |
+
+Unquoted names must be one of the list above, so a typo like `[Chrous]` is still an error.
 
 ## Chords
 
@@ -98,6 +106,12 @@ Qualities combine in this order: `-`, `maj7|maj9|dim|dim7|aug|+`, extension numb
 | `1~` | Fermata: hold until cued | `<1>~` |
 | `NC` | No chord (shown as N.C.) | `NC` `^NC` |
 | `%` | Repeat previous bar | `1 % 4 %` |
+| `\|:` | Start repeat: drawn on the left edge of the next bar | `\|: 1 4 1 5 :\|` |
+| `:\|` | End repeat: drawn on the right edge of the bar before | `1 5 :\|` |
+| `:\|"repeat out"` | End repeat with a short note (6 words or fewer), no space before the quote | `1 5 :\|"repeat out"` |
+
+A `|` that touches a `:` is always part of a repeat sign, never a line break, so
+`|: 1 4 | 1 5 :|` is two lines inside one repeat.
 
 Modifiers combine in the order `^` `<...>` then `~` or `!`: `^<b6>~`.
 They work inside split bars too: `(^<5> NC)`.
@@ -114,6 +128,8 @@ They work inside split bars too: `(^<5> NC)`.
 | `{key: B}` | Key change to a named key | |
 | `{mod: +1}` | Modulate by half steps (`+1` = up a half step, `-2` = down a whole step) | on its own line before the section |
 | `"drums only"` | Cue note: short, 6 words or fewer, **never lyrics** | `"band out"` |
+| `"[Band in]"` | Boxed note (drawn in a box, like a handwritten boxed note): square brackets inside the quotes, 6 words or fewer, never lyrics | `"[Mod ↑ P.4th (1 becomes 5)]"` |
+| `{mod: +5} "[Mod ↑ P.4th (1 becomes 5)]"` | A key change right before a boxed note shows as that one box (with the new key in Chords view). Numbers after it stay as written, read in the new key | |
 
 ## Song details (uploaded charts)
 
@@ -137,11 +153,15 @@ The server writes the `# ADDED BY A PLAYER:` lines when a save fills in a detail
 
 The parser accepts loose spacing (`{key:A}`, `1   5|6-  4`). Saved charts use the
 canonical form the serializer writes: single spaces between bars, ` | ` between lines,
-`{name: value}` tags, `[C x2]` labels, `# comment`, and a trailing newline.
+`{name: value}` tags, `[C x2]` / `["Name"2 x2]` labels, `|:` / `:|` / `:|"note"` repeat signs,
+`"[note]"` boxed notes, `# comment`, and a trailing newline.
 Canonical text round-trips exactly: text → JSON → text gives back the same text.
 
 ## Errors
 
-The parser rejects unknown tags, unknown section names, unreadable chords, empty lines
-between `|`, single-chord or nested split bars, and bars before the first section, with
-the line number. It warns (doesn't fail) on long cues and on a missing title or key.
+The parser rejects unknown tags, unknown section names, bad custom section names, unreadable
+chords, broken repeat signs, empty boxed notes, empty lines between `|`, single-chord or nested
+split bars, and bars before the first section, with the line number. It warns (doesn't fail) on
+long cues, boxed notes and repeat notes and on a missing title or key; `checkChart` (and the
+database, which treats every quoted text as a cue) refuses to save anything quoted that is over
+6 words.

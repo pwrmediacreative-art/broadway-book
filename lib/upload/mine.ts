@@ -15,6 +15,8 @@ export interface MineChart {
   mine?: boolean; // false: another admin uploaded it (read only)
   by?: string | null; // who uploaded it, when it isn't yours
   created_at?: string | null; // when it was uploaded (newest first on Home)
+  made?: boolean; // made in the tap-to-build editor (Made by me), not uploaded
+  locked?: boolean; // made chart waiting for library votes (read-only)
 }
 
 /** Newest upload first; ones without a date (older phone copies) last, by title. */

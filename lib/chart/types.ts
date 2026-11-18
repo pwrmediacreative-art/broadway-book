@@ -54,7 +54,20 @@ export interface TagItem {
   value: string;
 }
 
-export type RowItem = BeatItem | SplitBar | DynamicItem | CueItem | TagItem;
+/** Boxed note: "[Mod ↑ P.4th (1 becomes 5)]". Short (6 words or fewer), never lyrics. */
+export interface BoxItem {
+  kind: "box";
+  text: string;
+}
+
+/** Repeat sign: |: (start) or :| (end, optionally with a short note like "repeat out"). */
+export interface RepeatSignItem {
+  kind: "repeatSign";
+  side: "start" | "end";
+  text: string; // "" = none; end signs only
+}
+
+export type RowItem = BeatItem | SplitBar | DynamicItem | CueItem | TagItem | BoxItem | RepeatSignItem;
 
 /** One chart line as players read it. Rows are separated by | in the text. */
 export type Row = RowItem[];
@@ -72,8 +85,12 @@ export const SECTION_NAMES = [
 ] as const;
 export type SectionName = (typeof SECTION_NAMES)[number];
 
+/** Longest custom section name, in characters. */
+export const MAX_SECTION_NAME = 30;
+
 export interface SectionLabel {
-  name: SectionName;
+  name: string; // a SectionName, or the player's own name when `custom`
+  custom: boolean; // ["Big ending"]: any name, written in quotes
   number: number | null; // [V2]
   repeat: number | null; // [C x2]
 }

@@ -25,7 +25,7 @@ export function hidesTabs(pathname: string): boolean {
 /** Which tab a page belongs to (null: none lit, e.g. the sign-in callback). */
 export function tabFor(pathname: string): TabId | null {
   const p = pathname.replace(/\/+$/, "") || "/";
-  if (p === "/" || under(p, "/songs") || under(p, "/mine") || under(p, "/upload") || under(p, "/c") || under(p, "/offline/song") || under(p, "/offline/mine"))
+  if (p === "/" || under(p, "/songs") || under(p, "/mine") || under(p, "/make") || under(p, "/upload") || under(p, "/c") || under(p, "/offline/song") || under(p, "/offline/mine"))
     return "home";
   if (under(p, "/setlists") || under(p, "/s") || under(p, "/offline/setlist")) return "setlists";
   if (under(p, "/community") || under(p, "/notifications")) return "community";

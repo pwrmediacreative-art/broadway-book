@@ -16,6 +16,8 @@ export interface SongDoc {
   ex: boolean;
   /** Published before anyone checked it against the original chart. */
   uv: boolean;
+  /** Another player's version of a song already in the library (search shows the original first). */
+  vb?: boolean;
 }
 
 /** One `songs` row as the server reads it. */
@@ -30,6 +32,7 @@ export interface IndexRow {
   tags: string[] | null;
   is_example: boolean;
   unverified?: boolean;
+  version_of?: string | null;
 }
 
 type Cell = string | number;
@@ -53,6 +56,7 @@ export function packIndex(rows: IndexRow[]): PackedIndex {
         (r.tags ?? []).join(","),
         r.is_example ? 1 : 0,
         r.unverified ? 1 : 0,
+        r.version_of ? 1 : 0,
       ];
       while (row.length > 2 && (row[row.length - 1] === "" || row[row.length - 1] === 0)) row.pop();
       return row;
@@ -77,5 +81,6 @@ export function unpackIndex(p: unknown): SongDoc[] | null {
       tags: str(r[7])?.split(",").filter(Boolean) ?? [],
       ex: r[8] === 1,
       uv: r[9] === 1,
+      ...(r[10] === 1 ? { vb: true } : {}),
     }));
 }

@@ -110,7 +110,8 @@ export default function SongSearch() {
     // "Uploaded": the uploads this player may open, instead of the public index.
     if (st.f.uploaded) {
       const words = q.trim();
-      const pool = words ? matchMine(mine, words) : mine;
+      const ups = mine.filter((c) => !c.made); // made charts have their own Home row
+      const pool = words ? matchMine(ups, words) : ups;
       const docs = pool.map((c) => ({ d: mineDoc(c), c }));
       const f = { ...st.f, uploaded: false };
       const kept = docs.filter((x) => matches(x.d, f));
@@ -252,7 +253,7 @@ export default function SongSearch() {
   const custom = st.f.bpmMin !== null || st.f.bpmMax !== null;
   const suggestions: { label: string; on: Filters }[] = [
     // Uploads never sit in the public index; the chip shows them (only when there are some).
-    ...(mine.length && !st.f.uploaded ? [{ label: "Uploaded", on: { ...st.f, uploaded: true } }] : []),
+    ...(mine.some((c) => !c.made) && !st.f.uploaded ? [{ label: "Uploaded", on: { ...st.f, uploaded: true } }] : []),
     ...(custom
       ? []
       : fx.tempos.filter((t) => !st.f.tempos.includes(t.value))

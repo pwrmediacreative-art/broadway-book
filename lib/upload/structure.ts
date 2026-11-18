@@ -2,7 +2,7 @@
 // chart text, so the chart stays the one source of truth. Form = the sections in order with
 // bar counts and repeats; start / ending / watch-outs come from cue words and symbols.
 import { parseChart } from "../chart/parse";
-import { serializeChart } from "../chart/serialize";
+import { labelShown, serializeChart } from "../chart/serialize";
 import { parseKey } from "../chart/transpose";
 import { MAX_CUE_WORDS } from "../chart/validate";
 import { SECTION_NAMES, type ChartDoc, type Line, type Row, type RowItem, type SectionName } from "../chart/types";
@@ -52,8 +52,8 @@ export function cueLabel(cue: string): string {
 
 export interface FormPart {
   line: number; // index of the section line in the doc
-  label: string; // "V2"
-  name: SectionName;
+  label: string; // "V2", "Big ending"
+  name: string; // a SectionName, or a custom name
   number: number | null;
   repeat: number | null;
   bars: number;
@@ -134,7 +134,7 @@ export function readStructure(text: string): Structure {
   secs.forEach((s, pi) => {
     const l = doc.lines[s.line] as Extract<Line, { kind: "section" }>;
     const { name, number, repeat } = l.section;
-    const label = `${name}${number ?? ""}`;
+    const label = labelShown({ ...l.section, repeat: null });
     const above = commentsAbove(doc, s.line).map((i) => allUnclear[i]).filter(Boolean) as string[];
     const items = s.rows.flat();
     const mark = marks[pi];
@@ -212,12 +212,14 @@ function dropComments(doc: ChartDoc, test: (u: string) => boolean, only?: number
 }
 
 /** Rename (or confirm) a section. Removes the "label from repeat pattern" flag above it. */
-export function renamePart(text: string, line: number, name: SectionName, number: number | null): string {
-  if (!SECTION_NAMES.includes(name)) throw new Error("Unknown section name");
+export function renamePart(text: string, line: number, name: string, number: number | null): string {
+  const builtIn = (SECTION_NAMES as readonly string[]).includes(name);
   return edit(text, (doc) => {
     const l = doc.lines[line];
     if (l?.kind !== "section") throw new Error("Section not found");
-    l.section = { ...l.section, name, number: number && number > 1 ? number : null };
+    // A custom name can only be kept (renumbered / confirmed), not typed in here.
+    if (!builtIn && !(l.section.custom && l.section.name === name)) throw new Error("Unknown section name");
+    l.section = { ...l.section, name, custom: !builtIn, number: number && number > 1 ? number : null };
     dropComments(doc, (u) => u.includes(LABEL_GUESS), commentsAbove(doc, line));
   });
 }
@@ -357,7 +359,7 @@ export function sectionStartBars(text: string): { line: number; label: string; b
   return sectionsOf(doc).map((s) => {
     const l = doc.lines[s.line] as Extract<Line, { kind: "section" }>;
     const bars = s.rows.flat().filter(isBar).length * (l.section.repeat ?? 1);
-    const out = { line: s.line, label: `${l.section.name}${l.section.number ?? ""}`, bar, bars };
+    const out = { line: s.line, label: labelShown({ ...l.section, repeat: null }), bar, bars };
     bar += bars;
     return out;
   });
@@ -397,7 +399,7 @@ export function songMap(s: Structure): MapChip[] {
   const bridge =
     loose.length === 1 && s.parts.slice(0, loose[0]).some((p) => p.name === "C") && isChorus(loose[0] + 1) ? loose[0] : -1;
   return s.parts.map((p, i) => {
-    let name: string | null = `${SECTION_FULL[p.name]}${p.number ? ` ${p.number}` : ""}`;
+    let name: string | null = `${SECTION_FULL[p.name as SectionName] ?? p.name}${p.number ? ` ${p.number}` : ""}`;
     if (p.guessed && p.name === "B") name = i === bridge ? "Bridge" : null;
     return { part: i, name, bars: p.bars, repeat: p.repeat };
   });

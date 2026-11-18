@@ -33,6 +33,8 @@ export interface SongProps {
   verifiedAt?: string | null;
   chartText: string;
   neighbors: Neighbors;
+  /** "Version by Pat": another player's version of a song that is already in the library. */
+  versionLine?: string | null;
 }
 
 export function enterFullscreen() {
@@ -77,7 +79,7 @@ function VerifiedBadge({ at }: { at?: string | null }) {
   );
 }
 
-export default function SongView({ slug, songId, title, artist, isExample, unverified, verifiedAt, chartText, neighbors }: SongProps) {
+export default function SongView({ slug, songId, title, artist, isExample, unverified, verifiedAt, chartText, neighbors, versionLine }: SongProps) {
   // The signed-in player's own version replaces the public chart (they can flip back).
   const pick = usePickedChart(slug, chartText);
   const openCount = useOpenCount(songId);
@@ -183,6 +185,7 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
           {!isExample && (unverified ? <UnverifiedBadge className="ml-2" /> : <VerifiedBadge at={verifiedAt} />)}
           <OpenBadge slug={slug} count={openCount} />
         </p>
+        {versionLine && <p className="text-base text-bb-cue-gray">{versionLine}</p>}
         {confirmed && (
           <p className="mt-1 text-base text-bb-chart-white" data-confirmed-line>
             ✓ {confirmed}

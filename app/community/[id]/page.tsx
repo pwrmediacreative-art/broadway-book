@@ -5,6 +5,7 @@ import { diffCharts, type ChartDiff } from "@/lib/chart";
 import { getCurrentUser, sessionClient } from "@/lib/supabase/session";
 import BarDiff, { DiffSummary } from "../BarDiff";
 import { StatusPill, when, ReviewerBadge } from "../ui";
+import SubmittedChart from "./SubmittedChart";
 import VotePanel, { type VoteRow } from "./VotePanel";
 
 export const metadata = { title: "Suggestion · Broadway Book" };
@@ -34,8 +35,9 @@ interface Row {
   base_revision_id: string | null;
   author_id: string;
   out_of_date: boolean;
+  kind: "edit" | "new_song";
   author: { display_name: string | null; blocked: boolean; reviewer: boolean } | null;
-  song: { slug: string; title: string; artist: string | null; current_revision_id: string | null } | null;
+  song: { slug: string; title: string; artist: string | null; current_revision_id: string | null; status: string } | null;
 }
 
 async function Proposal({ params }: { params: PageProps<"/community/[id]">["params"] }) {
@@ -44,14 +46,13 @@ async function Proposal({ params }: { params: PageProps<"/community/[id]">["para
   const user = await getCurrentUser(); // calls connection() first, so the Supabase client below runs at request time
   const db = await sessionClient();
 
-  const { data } = await db
-    .from("proposals")
-    .select(
-      "id, song_id, chart_text, note, status, created_at, updated_at, decided_at, base_revision_id, author_id, out_of_date, author:profiles!proposals_author_id_fkey(display_name, blocked, reviewer), song:songs(slug, title, artist, current_revision_id)",
-    )
-    .eq("id", id)
-    .maybeSingle();
-  const p = data as unknown as Row | null;
+  const cols =
+    "id, song_id, chart_text, note, status, created_at, updated_at, decided_at, base_revision_id, author_id, out_of_date, author:profiles!proposals_author_id_fkey(display_name, blocked, reviewer), song:songs(slug, title, artist, current_revision_id, status)";
+  const read = (extra: string) => db.from("proposals").select(cols + extra).eq("id", id).maybeSingle();
+  let res = await read(", kind");
+  if (res.error) res = await read(""); // database without the made-charts migration: every suggestion is an edit
+  const p = res.data as unknown as Row | null;
+  if (p && !p.kind) p.kind = "edit";
   if (!p || !p.song) notFound();
 
   const [base, votes, settings] = await Promise.all([
@@ -66,10 +67,11 @@ async function Proposal({ params }: { params: PageProps<"/community/[id]">["para
     db.from("settings").select("key, value"),
   ]);
 
+  const newSong = p.kind === "new_song";
   let diff: ChartDiff | null = null;
   let diffError: string | null = null;
   try {
-    diff = diffCharts(base.data?.chart_text ?? "", p.chart_text);
+    if (!newSong) diff = diffCharts(base.data?.chart_text ?? "", p.chart_text);
   } catch (e) {
     diffError = (e as Error).message;
   }
@@ -82,12 +84,19 @@ async function Proposal({ params }: { params: PageProps<"/community/[id]">["para
       <header className="mb-4">
         <p className="mb-1 flex flex-wrap items-center gap-2">
           <StatusPill status={p.status} stale={p.out_of_date} />
-          <span className="text-bb-cue-gray">Suggested {when(p.created_at)}</span>
+          {newSong && <span className="bb-chip">New song</span>}
+          <span className="text-bb-cue-gray">
+            {newSong ? "Sent to the library" : "Suggested"} {when(p.created_at)}
+          </span>
         </p>
         <h1 className="text-3xl font-bold leading-tight">
-          <Link href={`/songs/${p.song.slug}`} className="active:text-bb-cue-gray">
-            {p.song.title}
-          </Link>
+          {p.song.status === "published" ? (
+            <Link href={`/songs/${p.song.slug}`} className="active:text-bb-cue-gray">
+              {p.song.title}
+            </Link>
+          ) : (
+            p.song.title
+          )}
         </h1>
         {p.song.artist && <p className="text-lg text-bb-cue-gray">{p.song.artist}</p>}
       </header>
@@ -118,8 +127,16 @@ async function Proposal({ params }: { params: PageProps<"/community/[id]">["para
         approvalsNeeded={need.approvals_needed ?? 3}
         rejectionsNeeded={need.rejections_needed ?? 3}
         me={user ? { id: user.id, admin: user.role === "admin" } : null}
+        newSongId={newSong ? p.song_id : null}
       />
 
+      {newSong ? (
+        <section className="mt-8">
+          <h2 className="mb-1 text-2xl font-bold">The chart</h2>
+          <p className="mb-3 text-lg text-bb-cue-gray">A new song made by {author}. Approved, it joins the library for everyone.</p>
+          <SubmittedChart text={p.chart_text} prefKey={`proposal-${p.id}`} />
+        </section>
+      ) : (
       <section className="mt-8">
         <h2 className="mb-2 flex flex-wrap items-baseline justify-between gap-2 text-2xl font-bold">
           What changed
@@ -139,6 +156,7 @@ async function Proposal({ params }: { params: PageProps<"/community/[id]">["para
           <pre className="bb-panel mt-2 overflow-x-auto whitespace-pre-wrap p-3 font-bb-data text-lg">{p.chart_text}</pre>
         </details>
       </section>
+      )}
     </>
   );
 }

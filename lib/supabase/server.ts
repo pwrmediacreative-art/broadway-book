@@ -57,7 +57,14 @@ export async function getSong(slug: string) {
   if (error) throw error;
   if (!data) return null;
   const current = data.current as unknown as { chart_text: string } | null;
-  return { ...data, chart_text: current?.chart_text ?? null };
+  return { ...data, chart_text: current?.chart_text ?? null, version_line: await versionLine(data.id) };
+}
+
+/** "Version by Pat" for a player's version of a library song (made charts, Q16), else null.
+ *  Never fails the page: a database without the made-charts migration just has no versions. */
+async function versionLine(id: string): Promise<string | null> {
+  const { data, error } = await publicClient().from("songs").select("version_line").eq("id", id).maybeSingle();
+  return error ? null : ((data as { version_line: string | null } | null)?.version_line ?? null);
 }
 
 /** Every published song with the fields the search index needs (see lib/search/pack.ts). */
@@ -66,7 +73,7 @@ export async function listSongIndex(): Promise<IndexRow[]> {
   cacheLife("minutes");
   cacheTag(SONGS_TAG);
   const db = publicClient();
-  return allPages<IndexRow>((from, to) =>
+  const rows = await allPages<IndexRow>((from, to) =>
     db
       .from("songs")
       .select("slug, title, artist, key, bpm, time_sig, feel, tags, is_example, unverified")
@@ -75,6 +82,11 @@ export async function listSongIndex(): Promise<IndexRow[]> {
       .order("slug")
       .range(from, to),
   );
+  // Players' versions of library songs (made charts, Q16) rank after the original.
+  // Tolerant: a database without the made-charts migration has none.
+  const { data, error } = await db.from("songs").select("slug").eq("status", "published").not("version_of", "is", null).limit(PAGE_ROWS);
+  const versions = new Set(error ? [] : ((data ?? []) as { slug: string }[]).map((r) => r.slug));
+  return versions.size ? rows.map((r) => (versions.has(r.slug) ? { ...r, version_of: "1" } : r)) : rows;
 }
 
 /** The current slug of a published song that used to live at `slug` (it was renamed), or null. */

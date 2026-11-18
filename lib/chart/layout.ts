@@ -5,8 +5,16 @@ export const COLS = 4;
 
 export type BarCell = Extract<CellView, { kind: "bar" }>;
 export interface Note {
-  kind: "cue" | "change" | "dynamic";
+  kind: "cue" | "change" | "dynamic" | "box" | "repeat";
   text: string;
+  key?: string | null; // box: the new key after a key change (Chords view)
+}
+/** A bar on a grid line, with the repeat signs drawn on its edges. */
+export interface GridBar {
+  cell: BarCell;
+  col: number;
+  open: boolean; // |: before this bar
+  close: string | null; // :| after this bar ("" = sign only, else its note, e.g. "repeat out")
 }
 /** Notes (cues, key/feel changes) drawn above the bar they come before. */
 export interface GridNotes {
@@ -23,7 +31,7 @@ export interface Hairpin {
   to: number;
 }
 export interface GridLine {
-  bars: { cell: BarCell; col: number }[];
+  bars: GridBar[];
   above: GridNotes[];
   after: GridNotes | null; // notes after the last bar
   afterBelow: boolean; // no room left on the line: draw them underneath
@@ -33,6 +41,9 @@ export interface GridLine {
 /** Split one chart row into grid lines of COLS bars, attaching notes and dynamics to bars. */
 export function layoutRow(row: CellView[], cols = COLS): GridLine[] {
   const bars: BarCell[] = [];
+  const opens = new Set<number>();
+  const closes = new Map<number, string>();
+  let pendingOpen = false;
   const before = new Map<number, Note[]>();
   const dyns: { dir: Hairpin["dir"]; start: number; end: number }[] = [];
   let pending: Note[] = [];
@@ -43,6 +54,8 @@ export function layoutRow(row: CellView[], cols = COLS): GridLine[] {
       const i = bars.length;
       if (pending.length) before.set(i, pending);
       pending = [];
+      if (pendingOpen) opens.add(i);
+      pendingOpen = false;
       if (pendingDyn) {
         const open = dyns.at(-1);
         if (open && open.end === -1) open.end = i - 1;
@@ -52,10 +65,18 @@ export function layoutRow(row: CellView[], cols = COLS): GridLine[] {
       bars.push(c);
     } else if (c.kind === "dynamic") {
       pendingDyn = c.text === "<<" ? "cresc" : "decresc";
+    } else if (c.kind === "repeatSign") {
+      // |: sits on the next bar, :| on the bar before. With no bar to sit on, it's a note.
+      if (c.side === "start") pendingOpen = true;
+      else if (bars.length && !closes.has(bars.length - 1)) closes.set(bars.length - 1, c.text);
+      else pending.push({ kind: "repeat", text: c.text ? `:| ${c.text}` : ":|" });
+    } else if (c.kind === "box") {
+      pending.push({ kind: "box", text: c.text, key: c.key });
     } else {
       pending.push({ kind: c.kind, text: c.text });
     }
   }
+  if (pendingOpen) pending.push({ kind: "repeat", text: "|:" });
   const open = dyns.at(-1);
   if (open && open.end === -1) open.end = bars.length - 1;
   if (pendingDyn) pending.push({ kind: "dynamic", text: pendingDyn === "cresc" ? "cresc." : "decresc." });
@@ -68,7 +89,8 @@ export function layoutRow(row: CellView[], cols = COLS): GridLine[] {
   for (let k0 = 0; k0 < bars.length; k0 += cols) {
     const k1 = Math.min(k0 + cols, bars.length) - 1;
     const line: GridLine = { bars: [], above: [], after: null, afterBelow: false, hairpins: [] };
-    for (let k = k0; k <= k1; k++) line.bars.push({ cell: bars[k], col: k - k0 });
+    for (let k = k0; k <= k1; k++)
+      line.bars.push({ cell: bars[k], col: k - k0, open: opens.has(k), close: closes.has(k) ? closes.get(k)! : null });
 
     const starts = [...before.keys()].filter((k) => k >= k0 && k <= k1).sort((a, b) => a - b);
     starts.forEach((k, idx) => {

@@ -111,6 +111,9 @@ export default function SetlistsHome() {
           <button disabled={busy || offline} onClick={make} className={`${btn} ${primary} mb-4 h-14 w-full text-xl lg:w-auto lg:px-10`}>
             + New setlist
           </button>
+          <Link href="/make" className={`${btn} ${plain} mb-4 ml-0 w-full lg:ml-3 lg:w-auto lg:px-10`}>
+            + New chart
+          </Link>
           {offline && <OfflineNote className="mb-4" />}
           {me.lists.length === 0 ? (
             <p className="text-lg text-bb-cue-gray">No setlists yet.</p>

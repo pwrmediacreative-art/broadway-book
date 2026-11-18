@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   beatsPerBar,
+  keyChoices,
   keyLongName,
   keyName,
   keyPickerOptions,
@@ -48,6 +49,25 @@ export function DisplayControls({ s }: { s: ChartState }) {
           ))}
         </select>
       )}
+      {!original && (
+        // A chart made without a key: numbers read as written; pick a key to see chord names.
+        <select
+          value={view.displayKey ?? ""}
+          onChange={(e) => e.target.value && s.setKey(e.target.value)}
+          className="bb-input h-12 font-bb-data text-lg font-semibold"
+          aria-label="Pick a key"
+        >
+          <option value="" disabled>
+            Pick a key
+          </option>
+          {[...keyChoices(false), ...keyChoices(true)].map((k) => (
+            <option key={k} value={k}>
+              {pretty(k)}
+            </option>
+          ))}
+        </select>
+      )}
+      {s.chords && !view.displayKey && <p className="w-full text-lg text-bb-chart-white">Pick a key to see chord names.</p>}
       <div className="flex" role="group" aria-label="Show as">
         <button className={`${btn} rounded-r-none ${s.chords ? off : on}`} onClick={() => s.setChords(false)} aria-pressed={!s.chords}>
           123
