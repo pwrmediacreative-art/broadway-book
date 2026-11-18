@@ -154,3 +154,4 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Q16 review: check:charts' expectErr passes on any error, so a typo'd RPC call reads as "blocked".
 - check:offline compares against an anon songs list capped at 1000 rows; the library now has 2365 published songs, so 3 checks fail (script limit, not the database).
 - check:verify looks for its new test song in the first 20 bulk cards (oldest Unverified first); with 2360 Unverified songs it is never there (script limit, not the database).
+- /make: the "Tap tempo" button is squeezed at 375px (its two-line label overflows the box).
