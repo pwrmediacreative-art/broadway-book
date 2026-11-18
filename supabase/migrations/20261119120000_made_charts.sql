@@ -11,7 +11,8 @@
 --   other players (or an admin's "Approve now"); rejections_needed rejections close it.
 -- * While it waits the chart is locked: no new revision, no change to the song row, no
 --   delete (triggers, so every write path refuses, uploads' functions included). Withdraw
---   (withdraw_proposal / chart_withdraw) or a close unlocks it; it stays private.
+--   (withdraw_proposal / chart_withdraw) or a close unlocks it; it stays private, and the
+--   closed suggestion (text, votes) is hidden again from everyone but its maker and admins.
 -- * Approved: the same song row becomes a library song, live as Unverified (the verification
 --   trigger sees to that), with a public slug; the private slug redirects. Only the approved
 --   text becomes public (a fresh revision): the autosaves before it stay private drafts. The made_charts row
@@ -174,6 +175,28 @@ language sql stable security definer set search_path = ''
 as $$
   select p.base_revision_id is distinct from (select s.current_revision_id from public.songs s where s.id = p.song_id);
 $$;
+
+-- A new-song submission is readable by signed-in players only while it waits (open) and once
+-- it is approved (then it's a library song). Withdrawn or closed, the chart is private again:
+-- the suggestion, its chart text (and so sent_name) and its votes are hidden from everyone but
+-- its maker and admins. Suggested edits to library songs read as before (every signed-in player).
+-- Visitors: "public read proposals" / "public read votes" (community_edits) already need a
+-- published song, which a withdrawn or closed submission never has.
+drop policy "signed-in read proposals" on public.proposals;
+create policy "signed-in read proposals" on public.proposals
+  for select to authenticated using (
+    kind <> 'new_song'
+    or status in ('open', 'approved')
+    or author_id = auth.uid()
+    or public.is_admin()
+  );
+
+-- Votes (and their comments) follow the suggestion: readable only when it is (proposals RLS decides).
+drop policy "signed-in read votes" on public.votes;
+create policy "signed-in read votes" on public.votes
+  for select to authenticated using (
+    exists (select 1 from public.proposals p where p.id = proposal_id)
+  );
 
 -- ── create / save / delete ───────────────────────────────────────────────────
 create or replace function public.chart_create(p_title text, p_artist text, p_chart text)

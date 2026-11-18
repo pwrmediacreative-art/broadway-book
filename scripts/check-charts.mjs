@@ -11,7 +11,9 @@
 //     players see it in Community by its sent name (sent_name, not out of date) but still can't
 //     read its song row, revisions or slug (setlist_add); visitors see nothing; the author can't vote
 //   * a waiting chart counts as one of the open suggestions (max_open_proposals)
-//   * withdraw unlocks it (saves work again); 3 rejections close it and it stays private
+//   * withdraw unlocks it (saves work again); 3 rejections close it and it stays private;
+//     either way the suggestion, its text and its votes are hidden again from other players,
+//     voters and visitors (its maker and admins still read it); an approved one stays readable
 //   * 3 approvals from other players publish it: library song, Unverified, no owner, public
 //     slug (the private one redirects), made_charts row gone, the creator can't save any more;
 //     its public history is only the approved version (autosaves stay private drafts, no
@@ -68,6 +70,20 @@ const create = (db, title = TITLE, body = BODY, key) =>
   db.rpc("chart_create", { p_title: title, p_artist: "Check Band", p_chart: chartText(title, body, key) });
 const save = (db, id, body, title = TITLE) => db.rpc("chart_save", { p_song: id, p_chart: chartText(title, body), p_title: title, p_artist: "Check Band" });
 const vote = (u, id, value) => u.db.from("votes").insert({ proposal_id: id, voter_id: u.id, value });
+// A closed (withdrawn / rejected) new-song suggestion is hidden again: only its maker and admins read it.
+async function hiddenAgain(pid, what, voters = []) {
+  for (const [who, db] of [["another player", other.db], ["a visitor", anon], ...voters.map((u, i) => [`voter ${i + 1}`, u.db])]) {
+    const r = await db.from("proposals").select("id, chart_text, sent_name").eq("id", pid);
+    check(!r.error && !r.data?.length, `${what}: ${who} can't read the suggestion or its text`);
+    const v = await db.from("votes").select("voter_id").eq("proposal_id", pid);
+    check(!v.error && !v.data?.length, `${what}: ${who} can't list its votes`);
+  }
+  for (const [who, db] of [["its maker", maker.db], ["an admin", admin.db]]) {
+    const r = await db.from("proposals").select("id, chart_text").eq("id", pid).maybeSingle();
+    check(!r.error && r.data?.chart_text?.includes(TITLE), `${what}: ${who} still reads it`);
+  }
+}
+let other, maker, admin;
 const song = async (id) =>
   (await svc.from("songs").select("slug, status, owner_id, unverified, key, version_of, version_by, current_revision_id").eq("id", id).single()).data;
 
@@ -80,10 +96,10 @@ try {
   if (ok.error) throw new Error(`Is the migration applied? ${ok.error.message}`);
   if (!access.error) await svc.from("settings").update({ value: 1 }).eq("key", "audio_upload_access"); // uploads: admins only
 
-  const maker = await makeUser("maker", { name: "Check Maker" });
-  const other = await makeUser("other");
+  maker = await makeUser("maker", { name: "Check Maker" });
+  other = await makeUser("other");
   const [v1, v2, v3] = await Promise.all(["v1", "v2", "v3"].map((t) => makeUser(t)));
-  const admin = await makeUser("admin", { admin: true });
+  admin = await makeUser("admin", { admin: true });
 
   // ── create ──────────────────────────────────────────────────────────────────
   check((await maker.db.rpc("upload_access")).data === false, "the maker can't upload (uploads stay admins only)");
@@ -165,6 +181,7 @@ try {
   check(!(await maker.db.rpc("chart_withdraw", { p_song: id })).error, "the owner withdraws it");
   check(!(await save(maker.db, id, BODY)).error, "unlocked: saving works again");
   check(!(await other.db.from("songs").select("id").eq("id", id).maybeSingle()).data, "private again: other players can't read it");
+  await hiddenAgain(P1, "withdrawn");
 
   // ── 3 rejections close it ───────────────────────────────────────────────────
   const P2 = (await maker.db.rpc("chart_submit", { p_song: id, p_note: "again" })).data;
@@ -173,12 +190,15 @@ try {
   const s2 = await song(id);
   check(s2?.status === "private" && s2?.owner_id === maker.id, "closed: it stays private to the maker");
   check(!(await save(maker.db, id, BODY)).error, "closed: unlocked again");
+  await hiddenAgain(P2, "closed", [v1]);
 
   // ── 3 approvals publish it ──────────────────────────────────────────────────
   const P3 = (await maker.db.rpc("chart_submit", { p_song: id, p_note: "new song" })).data;
   for (const u of [v1, v2, v3]) await vote(u, P3, "approve");
   const p3 = (await svc.from("proposals").select("status, resulting_revision_id").eq("id", P3).single()).data;
   check(p3?.status === "approved", "3 approvals from other players approve it");
+  check(!!(await other.db.from("proposals").select("id").eq("id", P3).maybeSingle()).data, "approved: the suggestion stays readable for players");
+  check(!!(await anon.from("proposals").select("id").eq("id", P3).maybeSingle()).data, "approved: and for visitors (it's a library song now)");
   const s3 = await song(id);
   check(s3?.status === "published" && s3?.owner_id === null && s3?.unverified === true, "it is a library song, Unverified, with no owner");
   check(s3?.slug === `zz-charts-check-${stamp}-check-band`, `it gets a public slug (${s3?.slug})`);
