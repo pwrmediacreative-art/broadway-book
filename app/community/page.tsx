@@ -37,9 +37,11 @@ interface Row {
   author_id: string;
   out_of_date: boolean;
   author: { display_name: string | null; reviewer: boolean } | null;
-  song: { slug: string; title: string; artist: string | null; status: string }; // private = a player's own chart sent to the library
+  song: { slug: string | null; title: string; artist: string | null; status: string }; // private = a player's own chart sent to the library
   votes: { voter_id: string; value: "approve" | "reject" }[];
 }
+/** As read: a player's own chart sent to the library has no readable song row (it stays private), only its sent name. */
+type RawRow = Omit<Row, "song"> & { song: Row["song"] | null; sent_name?: { title: string; artist: string | null } | null };
 
 async function List({ searchParams }: { searchParams: PageProps<"/community">["searchParams"] }) {
   const sp = await searchParams;
@@ -50,20 +52,31 @@ async function List({ searchParams }: { searchParams: PageProps<"/community">["s
 
   const user = await getCurrentUser(); // calls connection() first, so the Supabase client below runs at request time
   const db = await sessionClient();
-  let query = db
-    .from("proposals")
-    .select(
-      "id, note, created_at, author_id, out_of_date, author:profiles!proposals_author_id_fkey(display_name, reviewer), song:songs!inner(slug, title, artist, status), votes(voter_id, value)",
-    )
-    .eq("status", "open")
-    .order("created_at", { ascending: false })
-    .limit(200);
-  if (song) query = query.eq("song.slug", song);
-  const { data, error } = await query;
+  // One song (?song=slug): library songs only. Otherwise new songs (private charts sent to the
+  // library) come too, named from what was sent.
+  const read = (extra: string) => {
+    let query = db
+      .from("proposals")
+      .select(
+        `id, note, created_at, author_id, out_of_date, author:profiles!proposals_author_id_fkey(display_name, reviewer), song:songs${song ? "!inner" : ""}(slug, title, artist, status), votes(voter_id, value)${extra}`,
+      )
+      .eq("status", "open")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (song) query = query.eq("song.slug", song);
+    return query;
+  };
+  let res = await read(", sent_name");
+  if (res.error) res = await read(""); // database without the made-charts migration
+  const { data, error } = res;
   if (error) return <p className="bb-error text-lg">Couldn&apos;t load suggestions: {error.message}</p>;
 
+  const named = ((data ?? []) as unknown as RawRow[]).flatMap((r): Row[] => {
+    const s = r.song ?? (r.sent_name ? { slug: null, title: r.sent_name.title, artist: r.sent_name.artist, status: "private" } : null);
+    return s ? [{ ...r, song: s }] : [];
+  });
   const needle = q.toLowerCase();
-  const rows = ((data ?? []) as unknown as Row[]).filter((r) => {
+  const rows = named.filter((r) => {
     if (needle && !`${r.song.title} ${r.song.artist ?? ""} ${r.note ?? ""}`.toLowerCase().includes(needle)) return false;
     const mine = r.author_id === user?.id;
     if (f === "mine") return mine;

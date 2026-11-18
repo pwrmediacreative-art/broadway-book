@@ -150,3 +150,8 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Q16: publish_chart reads {key:} from anywhere in the text, so a key-less chart with an inline {key:} change would take that key on approval.
 - Q16: the 500-chart cap isn't covered by check:charts (needs 500 rows).
 - Q16: sign-in redirect from /make drops ?setlist= (the proxy keeps only the path).
+- Q16 review: a withdrawn or closed new-song submission's chart text stays readable by every signed-in player (proposals are readable to all signed-in users), so sending a chart shares it for good.
+- Q16 review: "+ Add…" on a made chart (/mine/[id]) saves through private_save: the revision says source 'upload' and made_charts.updated_at doesn't move.
+- Q16 review: publish_chart keeps songs.key when an edit drops the header {key:} (coalesce), so a library chart can gain a key but never lose one.
+- Q16 review: listSongIndex marks only the first PAGE_ROWS player versions (vb) for search ranking.
+- Q16 review: check:charts' expectErr passes on any error, so a typo'd RPC call reads as "blocked".

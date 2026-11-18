@@ -74,7 +74,8 @@ export function locateBar(text: string, section: number, bar: number): { start: 
     }
     for (const t of tokens(raw, from)) {
       const tok = raw.slice(t.start, t.end);
-      if (tok.startsWith('"') || tok.startsWith("{") || tok === "<<" || tok === ">>") continue;
+      // ":" is what's left of a repeat sign (|: or :|) once "|" splits it: not a bar.
+      if (tok.startsWith('"') || tok.startsWith("{") || tok === "<<" || tok === ">>" || tok === ":") continue;
       if (count === bar) return { start: lineStart + t.start, end: lineStart + t.end };
       count++;
     }

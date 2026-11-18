@@ -13,7 +13,8 @@
 --   delete (triggers, so every write path refuses, uploads' functions included). Withdraw
 --   (withdraw_proposal / chart_withdraw) or a close unlocks it; it stays private.
 -- * Approved: the same song row becomes a library song, live as Unverified (the verification
---   trigger sees to that), with a public slug; the private slug redirects. The made_charts row
+--   trigger sees to that), with a public slug; the private slug redirects. Only the approved
+--   text becomes public (a fresh revision): the autosaves before it stay private drafts. The made_charts row
 --   goes, so the creator has no special rights any more. When a library song with the same
 --   title + artist already exists, it becomes a separate entry: version_of points at the
 --   original and version_by at the creator ("Version by <display name>", never an email).
@@ -49,8 +50,8 @@ language sql stable security definer set search_path = ''
 as $$
   select exists (select 1 from public.proposals p where p.song_id = p_song and p.status = 'open' and p.kind = 'new_song');
 $$;
-revoke all on function public._chart_locked(uuid) from public;
-grant execute on function public._chart_locked(uuid) to anon, authenticated;
+-- Internal: only security definer functions and triggers call it.
+revoke all on function public._chart_locked(uuid) from public, anon, authenticated;
 
 -- The signed-in player's own made chart that is still private (row locked for the caller).
 create or replace function public._own_made_chart(p_song uuid)
@@ -69,7 +70,45 @@ end;
 $$;
 revoke all on function public._own_made_chart(uuid) from public, anon, authenticated;
 
+-- ── private drafts never become public ───────────────────────────────────────
+-- Every revision written while its song is private (each autosave of a made chart, every
+-- upload edit) is a private draft, set once when it is written. When a made chart is
+-- approved, publishing writes a fresh revision with the approved text; the drafts before it
+-- stay unreadable (not in the public history, not for admins, not for revert).
+alter table public.revisions add column private_draft boolean not null default false;
+grant select (private_draft) on public.revisions to anon, authenticated;
+update public.revisions r set private_draft = true
+  from public.songs s where s.id = r.song_id and s.status = 'private';
+
+drop policy "read history of published songs" on public.revisions;
+create policy "read history of published songs" on public.revisions
+  for select using (
+    not revisions.private_draft
+    and exists (select 1 from public.songs s where s.id = song_id and s.status = 'published')
+  );
+
+-- Same as 20261117110000_admin_shared_uploads.sql, except admins no longer read private drafts.
+drop policy "read current revision" on public.revisions;
+create policy "read current revision" on public.revisions
+  for select using (
+    (public.is_admin() and not public._is_private_song(song_id) and not revisions.private_draft)
+    or exists (
+      select 1 from public.songs s
+      where s.id = song_id and s.status = 'published' and s.current_revision_id = revisions.id
+    )
+    or exists (
+      select 1 from public.songs s
+      where s.id = song_id and s.status = 'private' and s.owner_id = auth.uid()
+    )
+    or exists (
+      select 1 from public.songs s
+      where s.id = song_id and s.status = 'private' and s.current_revision_id = revisions.id
+        and public._admin_sees_upload(s.owner_id)
+    )
+  );
+
 -- ── lock: refuse every change while a chart waits for votes ──────────────────
+-- (The same trigger marks private drafts.)
 create or replace function public.made_lock_revisions()
 returns trigger
 language plpgsql security definer set search_path = ''
@@ -78,6 +117,7 @@ begin
   if public._chart_locked(new.song_id) then
     raise exception 'This chart is waiting for library votes. Withdraw it to make changes.' using errcode = '42501';
   end if;
+  new.private_draft := exists (select 1 from public.songs s where s.id = new.song_id and s.status = 'private');
   return new;
 end;
 $$;
@@ -110,10 +150,30 @@ revoke execute on function public.made_lock_songs() from public, anon, authentic
 create trigger songs_made_lock before update or delete on public.songs
   for each row execute function public.made_lock_songs();
 
--- Signed-in players can read the song row (title, artist) of a chart waiting for their
--- vote, so Community can list it. Its chart text is in the proposal; its revisions stay private.
-create policy "signed-in read submitted charts" on public.songs
-  for select to authenticated using (status = 'private' and public._chart_locked(id));
+-- Community shows a submission's name from the text that was sent (proposal computed
+-- column: select=...,sent_name). The song row itself stays private: songs RLS is not
+-- widened, since setlist_add / setlist_save, slug redirects, renames and the same-name
+-- check all rely on it showing a private song only to its owner (and admins, for admins').
+create or replace function public.sent_name(p public.proposals)
+returns jsonb
+language sql stable set search_path = ''
+as $$
+  select case when p.kind = 'new_song' then jsonb_build_object(
+    'title', coalesce(public.chart_tag(public.chart_header(p.chart_text), 'title'), 'Untitled'),
+    'artist', public.chart_tag(public.chart_header(p.chart_text), 'artist'))
+  end;
+$$;
+grant execute on function public.sent_name(public.proposals) to anon, authenticated;
+
+-- Same as 20261112190000_community_edits.sql, but security definer: voters can't read a
+-- submission's private song row, and without it every submission would look out of date.
+-- It only ever answers yes/no for a proposal the caller can already read.
+create or replace function public.out_of_date(p public.proposals)
+returns boolean
+language sql stable security definer set search_path = ''
+as $$
+  select p.base_revision_id is distinct from (select s.current_revision_id from public.songs s where s.id = p.song_id);
+$$;
 
 -- ── create / save / delete ───────────────────────────────────────────────────
 create or replace function public.chart_create(p_title text, p_artist text, p_chart text)
@@ -353,7 +413,89 @@ $$;
 revoke execute on function public.update_proposal from public, anon;
 grant execute on function public.update_proposal to authenticated;
 
--- Approved submission -> library song. Internal (decide_proposal). Returns the new revision.
+-- Same as 20261118100000_song_rename.sql, except key, time and bpm come from the header only.
+-- A chart with no {key:} (made charts may have none) and a key change in its body
+-- ({key: B} after a section) kept taking that inline key as the song's key. For every chart
+-- that has a header key nothing changes (the header's tag is always the first one).
+create or replace function public.publish_chart(
+  p_song_id uuid, p_chart text, p_author uuid, p_source public.revision_source, p_note text
+)
+returns uuid
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  rev_id uuid;
+  header text := public.chart_header(p_chart);
+  bpm_text text := public.chart_tag(header, 'bpm');
+  renamed boolean := exists (select 1 from public.song_renames where song_id = p_song_id);
+begin
+  insert into public.revisions (song_id, chart_text, author_id, source, note)
+  values (p_song_id, p_chart, p_author, p_source, p_note)
+  returning id into rev_id;
+
+  update public.songs set
+    current_revision_id = rev_id,
+    title = case when renamed then title else coalesce(public.chart_tag(p_chart, 'title'), title) end,
+    artist = case when renamed then artist else coalesce(public.chart_tag(p_chart, 'artist'), artist) end,
+    key = coalesce(public.chart_tag(header, 'key'), key),
+    bpm = case when bpm_text ~ '^\d{2,3}$' then bpm_text::int else bpm end,
+    time_sig = coalesce(public.chart_tag(header, 'time'), time_sig),
+    feel = coalesce(lower(left(public.chart_tag(header, 'feel'), 60)), feel),
+    tags = coalesce(public.chart_tags(p_chart), tags),
+    updated_at = now()
+  where id = p_song_id;
+
+  return rev_id;
+end;
+$$;
+revoke execute on function public.publish_chart from public, anon, authenticated;
+
+-- Same as 20261113200000_verification.sql, plus: a private draft can't be brought back
+-- (that would publish text that was never approved).
+create or replace function public.revert_song(p_song_id uuid, p_revision_id uuid)
+returns uuid
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  src public.revisions%rowtype;
+  cur uuid;
+  new_rev uuid;
+  checked boolean;
+begin
+  if not public.is_admin() then
+    raise exception 'Only admins can revert' using errcode = '42501';
+  end if;
+  select * into src from public.revisions where id = p_revision_id and song_id = p_song_id and not private_draft;
+  if not found then
+    raise exception 'Revision not found for this song';
+  end if;
+  select current_revision_id into cur from public.songs where id = p_song_id for update;
+  if cur = p_revision_id then
+    raise exception 'That is already the live version';
+  end if;
+  checked := exists (
+    select 1 from public.verification_log l join public.revisions r on r.id = l.revision_id
+    where l.song_id = p_song_id and l.status = 'verified' and r.chart_text = src.chart_text
+  ) and coalesce((select status = 'published' and not is_example from public.songs where id = p_song_id), false);
+  if checked then
+    perform set_config('bb.verifying', '1', true);
+  end if;
+  new_rev := public.publish_chart(
+    p_song_id, src.chart_text, auth.uid(), 'human',
+    'Reverted to the version from ' || to_char(src.created_at at time zone 'America/Chicago', 'Mon FMDD, YYYY HH12:MI am')
+  );
+  if checked then
+    perform public._verify_song(p_song_id, 'Reverted to a checked version', false);
+    perform set_config('bb.verifying', '', true);
+  end if;
+  return new_rev;
+end;
+$$;
+revoke execute on function public.revert_song from public, anon;
+grant execute on function public.revert_song to authenticated;
+
+-- Approved submission -> library song. Internal (decide_proposal). Returns the new revision:
+-- a fresh, public one holding the approved text (the private drafts before it stay private).
 create or replace function public._publish_made_chart(p_id uuid)
 returns uuid
 language plpgsql security definer set search_path = ''

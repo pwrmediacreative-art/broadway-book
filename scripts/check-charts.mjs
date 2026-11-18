@@ -8,11 +8,14 @@
 //     a chart with no key saves with no key
 //   * "Send to library" locks it: chart_save, private_save, rename, upload_delete and
 //     chart_delete all refuse, update_proposal refuses, a second send refuses; other signed-in
-//     players can read its title in Community, visitors can't; the author can't vote
+//     players see it in Community by its sent name (sent_name, not out of date) but still can't
+//     read its song row, revisions or slug (setlist_add); visitors see nothing; the author can't vote
 //   * a waiting chart counts as one of the open suggestions (max_open_proposals)
 //   * withdraw unlocks it (saves work again); 3 rejections close it and it stays private
 //   * 3 approvals from other players publish it: library song, Unverified, no owner, public
-//     slug (the private one redirects), made_charts row gone, the creator can't save any more
+//     slug (the private one redirects), made_charts row gone, the creator can't save any more;
+//     its public history is only the approved version (autosaves stay private drafts, no
+//     revert to them); a chart with no {key:} but a key change inside keeps no key
 //   * same title + artist as a library song: an admin's "Approve now" makes a separate entry
 //     with version_of + "Version by <display name>" (version_line); library_key offers its key
 // It restores the setting it changes and deletes everything it made.
@@ -136,10 +139,19 @@ try {
   expectErr(await maker.db.rpc("chart_delete", { p_song: id }), "locked: chart_delete refuses");
   expectErr(await maker.db.rpc("update_proposal", { p_id: P1, p_chart: chartText(TITLE, BODY), p_note: "change" }), "locked: the suggestion text can't be changed");
   check(((await maker.db.rpc("upload_charts_visible")).data ?? []).find((c) => c.id === id)?.locked === true, "upload_charts_visible() says locked");
-  check((await other.db.from("songs").select("title").eq("id", id).maybeSingle()).data?.title === TITLE, "other players can read its title for Community");
-  check(!!(await other.db.from("proposals").select("id, song:songs!inner(title)").eq("id", P1).maybeSingle()).data, "Community lists it for players");
+  const seen = await other.db.from("songs").select("id").eq("id", id);
+  check(!seen.error && !seen.data?.length, "its song row stays private (songs RLS isn't widened)");
+  const listed = await other.db.from("proposals").select("id, out_of_date, sent_name, song:songs(title)").eq("id", P1).maybeSingle();
+  check(
+    !listed.error && listed.data?.sent_name?.title === TITLE && listed.data?.song === null && listed.data?.out_of_date === false,
+    `Community lists it for players by its sent name, not out of date ${listed.error?.message ?? ""}`,
+  );
   check(!(await anon.from("proposals").select("id").eq("id", P1).maybeSingle()).data, "visitors don't see it");
-  check(!(await other.db.from("revisions").select("id").eq("song_id", id)).data?.length, "its revisions stay private");
+  const revs = await other.db.from("revisions").select("id").eq("song_id", id);
+  check(!revs.error && !revs.data?.length, "its revisions stay private");
+  const add = await other.db.rpc("setlist_add", { p_id: crypto.randomUUID(), p_slug: privSlug });
+  check(/song not found/i.test(add.error?.message ?? ""), "other players can't find it by slug for a setlist");
+  expectErr(await other.db.rpc("_chart_locked", { p_song: id }), "_chart_locked is internal");
   expectErr(await vote(maker, P1, "approve"), "the author can't vote");
 
   // ── counts as an open suggestion ────────────────────────────────────────────
@@ -176,6 +188,23 @@ try {
   check(!(await svc.from("made_charts").select("song_id").eq("song_id", id)).data?.length, "its made_charts row is gone");
   expectErr(await save(maker.db, id, BODY), "the creator can't save it any more (Suggest a change from now on)");
   check(s3?.version_of === null, "no library song had its name: not a version");
+  const pubRevs = await anon.from("revisions").select("id").eq("song_id", id);
+  check(
+    !pubRevs.error && pubRevs.data?.length === 1 && pubRevs.data[0].id === p3?.resulting_revision_id,
+    "its public history holds only the approved version, never the private drafts",
+  );
+  const drafts = (await svc.from("revisions").select("id").eq("song_id", id).eq("private_draft", true)).data ?? [];
+  check(drafts.length > 0, "the autosaved versions are kept as private drafts");
+  const adminRevs = await admin.db.from("revisions").select("id").eq("song_id", id);
+  check(!adminRevs.error && adminRevs.data?.length === 1, "admins don't read the private drafts either");
+  expectErr(await admin.db.rpc("revert_song", { p_song_id: id, p_revision_id: drafts[0]?.id }), "an admin can't revert to a private draft");
+
+  // ── no key in the header + a key change inside: the song keeps no key ────────
+  const keyless = await create(maker.db, `${TITLE} keyless`, "[V] 1 4 5 1\n{key: A}\n[C] 1 5 6- 4\n", "{time: 4/4}");
+  songs.push(keyless.data?.id);
+  const P5 = (await maker.db.rpc("chart_submit", { p_song: keyless.data?.id, p_note: "no key" })).data;
+  check(!(await admin.db.rpc("admin_decide", { p_id: P5, p_approve: true })).error, "an admin approves a chart with no key");
+  check((await song(keyless.data?.id))?.key === null, "approved, a chart with no {key:} keeps no key (not the inline key change)");
 
   // ── same title + artist: a separate version ─────────────────────────────────
   const twin = await create(other.db, TITLE, "[V] 1 5 6- 4\n", "{key: G} {time: 4/4}");

@@ -27,6 +27,21 @@ describe("bar references", () => {
     }
   });
 
+  it("skips repeat signs, boxed notes and custom section names in made charts", () => {
+    const text = `{title: T}
+[V] |: 1 4 | 5 1 :|"repeat out"
+["Big ending"] "[Band in]" 1 :| 4
+`;
+    const v = view(text);
+    v.sections.forEach((_, s) => {
+      sectionBars(v, s).forEach((beats, b) => {
+        const at = locateBar(text, s, b);
+        expect(at && text.slice(at.start, at.end)).toBe(beats[0].src);
+      });
+      expect(locateBar(text, s, sectionBars(v, s).length)).toBeNull();
+    });
+  });
+
   it("skips cues, tags and dynamics and counts split bars once", () => {
     const at = (s: number, b: number) => {
       const r = locateBar(CHART, s, b);

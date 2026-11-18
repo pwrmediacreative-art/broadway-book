@@ -38,6 +38,8 @@ interface Row {
   kind: "edit" | "new_song";
   author: { display_name: string | null; blocked: boolean; reviewer: boolean } | null;
   song: { slug: string; title: string; artist: string | null; current_revision_id: string | null; status: string } | null;
+  /** New song: the name in the chart that was sent (its private song row is the author's alone). */
+  sent_name?: { title: string; artist: string | null } | null;
 }
 
 async function Proposal({ params }: { params: PageProps<"/community/[id]">["params"] }) {
@@ -49,14 +51,16 @@ async function Proposal({ params }: { params: PageProps<"/community/[id]">["para
   const cols =
     "id, song_id, chart_text, note, status, created_at, updated_at, decided_at, base_revision_id, author_id, out_of_date, author:profiles!proposals_author_id_fkey(display_name, blocked, reviewer), song:songs(slug, title, artist, current_revision_id, status)";
   const read = (extra: string) => db.from("proposals").select(cols + extra).eq("id", id).maybeSingle();
-  let res = await read(", kind");
+  let res = await read(", kind, sent_name");
   if (res.error) res = await read(""); // database without the made-charts migration: every suggestion is an edit
   const p = res.data as unknown as Row | null;
   if (p && !p.kind) p.kind = "edit";
+  if (p && !p.song && p.kind === "new_song" && p.sent_name)
+    p.song = { slug: "", title: p.sent_name.title, artist: p.sent_name.artist, current_revision_id: null, status: "private" };
   if (!p || !p.song) notFound();
 
   const [base, votes, settings] = await Promise.all([
-    p.base_revision_id
+    p.base_revision_id && p.kind !== "new_song"
       ? db.from("revisions").select("chart_text").eq("id", p.base_revision_id).maybeSingle()
       : Promise.resolve({ data: null }),
     db
