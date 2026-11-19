@@ -18,7 +18,7 @@ import { HoldSheet, MoveFlagsBanner, MyFlags, useHold, useHoldMarks, withHold, t
 import { ConfirmButton, useConfirm } from "./Confirm";
 import { confirmedLine } from "@/lib/confirm";
 import ReadChoice from "@/app/ReadChoice";
-import Lyrics from "./Lyrics";
+import { AdjustBar, LyricsControls, LyricsPanel, useLyrics } from "./Lyrics";
 import PaperHead from "./PaperHead";
 import StageView from "./StageView";
 import { pageFull, PREF, usePref } from "@/lib/prefs";
@@ -127,8 +127,14 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
     const t = d > 0 ? nav.next : nav.prev;
     if (t) goTo(`/songs/${t.slug}`);
   };
+  // Lyrics under the bar rows (Q18): the song's Lyrics button, Adjust lyrics, desktop panel.
+  const lyr = useLyrics(slug, s.view);
   useSongKeys(go, (e) => {
     if (pop) return true; // the Full song pop-up handles its own keys
+    if (lyr.edit.active) {
+      if (e.key === "Escape") lyr.edit.cancel();
+      return true; // no song changes while moving lyric lines
+    }
     if (e.key !== "Escape" || !spot) return false;
     setSpot(null);
     return true;
@@ -136,7 +142,7 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
   // Press and hold a chord: flag it or suggest an edit. A hold never counts as a swipe.
   const hold = useHold(s.view, s.chords, setSpot);
   const marks = useHoldMarks(slug, s.view, spot);
-  const gesture = withHold(useGesture({ onSwipe: (d) => !hold.held() && go(d) }), hold.handlers);
+  const gesture = withHold(useGesture({ onSwipe: (d) => !hold.held() && !lyr.edit.active && go(d) }), hold.handlers);
   useEffect(() => {
     if (nav.next && !local) router.prefetch(`/songs/${nav.next.slug}`);
   }, [nav.next, router, local]);
@@ -162,7 +168,7 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
     // wrappers are `contents` below lg, so the phone layout and order are unchanged.
     <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-2 lg:grid lg:max-w-7xl lg:grid-cols-[minmax(0,1fr)_22rem] lg:grid-rows-[auto_auto_1fr_auto] lg:gap-x-10 lg:px-8">
       <ReadChoice />
-      <Lyrics slug={slug} />
+      <LyricsPanel lyr={lyr} />
       <div className="mb-1 flex items-center justify-between gap-2 lg:col-span-2">
         <Link href="/" className="inline-flex h-12 items-center text-lg text-bb-cue-gray active:text-bb-chart-white">
           ← All songs
@@ -215,14 +221,15 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
         <DisplayControls s={s} />
       </div>
 
-      <div className="mb-2 flex justify-end">
+      <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
+        <LyricsControls lyr={lyr} page />
         <button
           type="button"
           onClick={() => {
             enterFullscreen();
             setPop(true);
           }}
-          className="bb-btn bb-btn-secondary h-12 gap-2 px-4 text-lg"
+          className="bb-btn bb-btn-secondary ml-auto h-12 gap-2 px-4 text-lg"
         >
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
             <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" strokeLinecap="round" strokeLinejoin="round" />
@@ -241,8 +248,11 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
           hold={marks}
           columns={whole ? {} : undefined}
           paper={whole}
+          lyrics={lyr.chart}
         />
       </div>
+      {lyr.edit.active && <div className="h-36" aria-hidden />}
+      <AdjustBar lyr={lyr} />
       </div>
       {spot && (
         <HoldSheet

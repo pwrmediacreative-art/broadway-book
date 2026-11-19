@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties, Ref } from "react";
+import { useRef, useState, type CSSProperties, type ReactNode, type Ref } from "react";
 import {
   barScale,
   layoutRow,
@@ -8,11 +8,13 @@ import {
   splitQuality,
   type BarCell,
   type BeatView,
+  type CellView,
   type ChartView,
   type GridLine,
   type Hairpin,
   type Note,
 } from "@/lib/chart";
+import { rowKey, type Placed } from "@/lib/lyrics/place";
 
 // Every size below is in em, relative to the chart's font size, so the whole chart
 // scales together (song page: fixed size; stage mode: auto-fit or the player's size).
@@ -301,6 +303,7 @@ export default function Chart({
   play,
   columns,
   paper,
+  lyrics,
 }: {
   view: ChartView;
   chords: boolean;
@@ -321,11 +324,14 @@ export default function Chart({
   /** Full song: drawn like a paper chart. Real section names underlined ("Verse 2"), split
    *  bars underlined instead of boxed. */
   paper?: boolean;
+  /** Lyric lines under their bar rows (Q18), and "Adjust lyrics" (move a line to another row). */
+  lyrics?: ChartLyrics;
 }) {
   const bars = barIds(view, hold, play);
   return (
     <div
       ref={rootRef}
+      data-lyrics-chart={lyrics ? "" : undefined}
       className="@container w-full font-bold leading-none tabular-nums"
       style={{ fontFamily, fontWeight, ...style }}
     >
@@ -386,13 +392,149 @@ export default function Chart({
                       </button>
                     );
                   })
-                : s.rows.flatMap((row, j) =>
-                    layoutRow(row).map((line, k) => <Line key={`${j}-${k}`} line={line} chords={chords} bars={bars} paper={paper} />),
-                  )}
+                : lyrics
+                  ? withLyrics(i, s.rows, lyrics, (line, key) => <Line key={key} line={line} chords={chords} bars={bars} paper={paper} />)
+                  : s.rows.flatMap((row, j) =>
+                      layoutRow(row).map((line, k) => <Line key={`${j}-${k}`} line={line} chords={chords} bars={bars} paper={paper} />),
+                    )}
             </div>
           </section>
         ))}
       </div>
     </div>
+  );
+}
+
+/** Lyric lines for the chart (Q18): under each bar row, keyed "section.row" (lib/lyrics/place). */
+export interface ChartLyrics {
+  rows: ReadonlyMap<string, Placed[]>;
+  /** "Adjust lyrics": tap a line to pick it, drag it onto another bar row to move it. */
+  adjust?: { selected: number | null; pick: (line: number) => void; drop: (line: number, rowKey: string) => void };
+}
+
+// Small next to the chart, never under 14px; scales with the chart so it pages and fits with it.
+const LYRIC = "font-bb-ui font-normal leading-snug text-[length:max(0.875rem,0.32em)]";
+
+/** A section's grid lines, each bar row wrapped with the lyric lines that go under it. */
+function withLyrics(section: number, rows: CellView[][], lyrics: ChartLyrics, line: (l: GridLine, key: string) => ReactNode): ReactNode[] {
+  const out: ReactNode[] = [];
+  let r = 0;
+  rows.forEach((row, j) =>
+    layoutRow(row).forEach((l, k) => {
+      const key = `${j}-${k}`;
+      if (!l.bars.length) {
+        out.push(line(l, key));
+        return;
+      }
+      const at = rowKey(section, r++);
+      const placed = lyrics.rows.get(at) ?? [];
+      out.push(
+        <div
+          key={key}
+          data-lyric-row={at}
+          className={`flex flex-col gap-[0.15em] ${lyrics.adjust ? "rounded-bb-control data-[drop=1]:bg-bb-downbeat-amber/15 data-[drop=1]:outline data-[drop=1]:outline-[0.06em] data-[drop=1]:outline-bb-downbeat-amber" : ""}`}
+        >
+          {line(l, "l")}
+          {placed.length > 0 &&
+            (lyrics.adjust ? (
+              <div className={`${LYRIC} flex flex-col gap-1`}>
+                {placed.map((p) => (
+                  <AdjustLine key={p.line} p={p} adjust={lyrics.adjust!} />
+                ))}
+              </div>
+            ) : (
+              <div className={`${LYRIC} flex flex-col text-bb-cue-gray`}>
+                {placed.map((p) => (
+                  <p key={p.line} className="break-words">
+                    {p.text}
+                  </p>
+                ))}
+              </div>
+            ))}
+        </div>,
+      );
+    }),
+  );
+  return out;
+}
+
+/** One line in "Adjust lyrics": drag it onto a bar row (touch or mouse), or tap to pick it for
+ *  the ▲ ▼ buttons. Its presses never reach the page's swipe or press-and-hold. */
+function AdjustLine({ p, adjust }: { p: Placed; adjust: NonNullable<ChartLyrics["adjust"]> }) {
+  const drag = useRef<{ id: number; x: number; y: number; moved: boolean; over: HTMLElement | null } | null>(null);
+  const [shift, setShift] = useState<{ x: number; y: number } | null>(null);
+  const picked = adjust.selected === p.line;
+  const rowAt = (el: HTMLElement, x: number, y: number) => {
+    const root = el.closest("[data-lyrics-chart]");
+    for (const row of root?.querySelectorAll<HTMLElement>("[data-lyric-row]") ?? []) {
+      const b = row.getBoundingClientRect();
+      if (x >= b.left && x <= b.right && y >= b.top && y <= b.bottom) return row;
+    }
+    return null;
+  };
+  const end = () => {
+    drag.current?.over?.removeAttribute("data-drop");
+    drag.current = null;
+    setShift(null);
+  };
+  return (
+    <button
+      type="button"
+      aria-pressed={picked}
+      aria-label={`Lyric line ${p.line + 1}${picked ? ", picked" : ""}`}
+      className={`relative flex min-h-11 w-full touch-none select-none items-center gap-2 border px-2 py-1 text-left text-bb-chart-white ${
+        picked ? "border-bb-downbeat-amber bg-bb-downbeat-amber/15" : "border-bb-rule-gray bg-bb-case-charcoal"
+      } ${shift ? "z-30" : ""}`}
+      style={shift ? { transform: `translate(${shift.x}px, ${shift.y}px)` } : undefined}
+      onPointerDown={(e) => {
+        e.stopPropagation();
+        if (e.button !== 0) return;
+        try {
+          e.currentTarget.setPointerCapture(e.pointerId);
+        } catch {
+          // pointer already gone
+        }
+        drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: false, over: null };
+      }}
+      onPointerMove={(e) => {
+        const d = drag.current;
+        if (!d || d.id !== e.pointerId) return;
+        e.stopPropagation();
+        const x = e.clientX - d.x;
+        const y = e.clientY - d.y;
+        if (!d.moved && Math.hypot(x, y) < 8) return;
+        d.moved = true;
+        setShift({ x, y });
+        const over = rowAt(e.currentTarget, e.clientX, e.clientY);
+        if (over !== d.over) {
+          d.over?.removeAttribute("data-drop");
+          over?.setAttribute("data-drop", "1");
+          d.over = over;
+        }
+      }}
+      onPointerUp={(e) => {
+        e.stopPropagation();
+        const d = drag.current;
+        const key = d?.over?.dataset.lyricRow;
+        const moved = !!d?.moved;
+        end();
+        if (!d) return;
+        if (!moved) adjust.pick(p.line);
+        else if (key) adjust.drop(p.line, key);
+      }}
+      onPointerCancel={(e) => {
+        e.stopPropagation();
+        end();
+      }}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (e.detail === 0) adjust.pick(p.line); // keyboard (Enter / Space)
+      }}
+    >
+      <span aria-hidden className="text-bb-cue-gray">
+        ⠿
+      </span>
+      <span className="min-w-0 break-words">{p.text}</span>
+    </button>
   );
 }

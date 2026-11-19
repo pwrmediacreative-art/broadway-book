@@ -4,10 +4,12 @@ import "server-only";
 // `lyricsCandidates`, so a licensed provider (Musixmatch, LyricFind) can replace LRCLIB here
 // without changing them. Lyrics are returned to the caller and never stored.
 import { getById, getTrack, searchTracks } from "./lrclib";
-import { hasLyrics, isMatch, lyricsText, norm, pickBest, type LyricsRecord } from "./match";
+import { hasLyrics, isMatch, lyricLines, lyricsText, norm, pickBest, type LyricLine, type LyricsRecord } from "./match";
 
 export interface Found {
-  text: string;
+  text: string; // the whole text (side panel)
+  lines: LyricLine[]; // the lines placed under the chart's bar rows (Q18), timed when synced
+  synced: boolean;
   source: { provider: "LRCLIB"; id: number; title: string; artist: string; album: string | null };
 }
 export interface Candidate {
@@ -22,7 +24,7 @@ export interface Candidate {
 const found = (r: LyricsRecord): Found | null => {
   const text = lyricsText(r);
   return text
-    ? { text, source: { provider: "LRCLIB", id: r.id, title: r.trackName, artist: r.artistName, album: r.albumName ?? null } }
+    ? { text, ...lyricLines(r), source: { provider: "LRCLIB", id: r.id, title: r.trackName, artist: r.artistName, album: r.albumName ?? null } }
     : null;
 };
 

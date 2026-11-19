@@ -58,8 +58,8 @@ export const PREF = {
   layout: "bb.layout", // "whole" = Full song, "scroll" = Scrolling, unset = never picked (see stageFull / pageFull)
   fullPeek: "bb.fullPeek", // sessionStorage: "1" = Full song opened over a Scrolling stage (stays across setlist songs)
   wholeMin: "bb.wholeMin", // Full song: smallest text size in px before it pages (default 24)
-  lyrics: "bb.lyrics", // "1" = show lyrics (when the /admin audience allows this player); off by default
-  lyricsFull: "bb.lyrics.full", // sessionStorage: "1" = phone drawer at full height
+  lyricsPanel: "bb.lyrics.panel", // "1" = desktop lyrics side panel open with Lyrics (Q18; per player, lib/lyrics/mine.ts)
+  lyricsSong: (user: string, slug: string) => `bb.lyrics.song.${user}.${slug}`, // JSON: Lyrics on/off + moved lines (numbers only)
   minorSymbol: "bb.minor", // "-" | "m" (default "m"): how minor numbers are drawn
   legend: "bb.legend", // "1" = symbols legend open
   font: "bb.font", // FontId

@@ -66,3 +66,52 @@ export function lyricsText(r: LyricsRecord): string | null {
   const synced = r.syncedLyrics?.trim();
   return synced ? lrcToPlain(synced) : null;
 }
+
+/** One lyric line to place under the chart's bar rows; `t` = seconds into the song (synced). */
+export interface LyricLine {
+  t: number | null;
+  text: string;
+}
+/** Most lines a song's lyrics are cut to (placements store line numbers 0..MAX_LINES-1). */
+export const MAX_LINES = 500;
+
+const LRC_META = /^\[(ar|ti|al|by|offset|length|re|ve):/i;
+const LRC_STAMP = /\[(\d{1,2}):(\d{2})(?:[.:](\d{1,3}))?\]/g;
+
+/** Synced (LRC) lyrics -> lines in time order. A line with two stamps is sung twice; empty
+ *  stamped lines (instrumental breaks) are dropped. */
+export function lrcLines(lrc: string): LyricLine[] {
+  const out: LyricLine[] = [];
+  let last = 0;
+  for (const raw of lrc.split(/\r?\n/)) {
+    const l = raw.trim();
+    if (!l || LRC_META.test(l)) continue;
+    const times = [...l.matchAll(LRC_STAMP)].map((m) => Number(m[1]) * 60 + Number(m[2]) + (m[3] ? Number(`0.${m[3]}`) : 0));
+    const text = l.replace(LRC_STAMP, "").trim();
+    if (!text) continue;
+    if (!times.length) times.push(last);
+    for (const t of times) out.push({ t, text });
+    last = times.at(-1)!;
+  }
+  return out.sort((a, b) => a.t! - b.t!).slice(0, MAX_LINES);
+}
+
+/** Plain lyrics -> lines, without the blank lines between verses. */
+export const plainLines = (s: string): LyricLine[] =>
+  s
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .slice(0, MAX_LINES)
+    .map((text) => ({ t: null, text }));
+
+/** The lines to place under the bar rows: timed when the record is synced, else plain. */
+export function lyricLines(r: LyricsRecord): { lines: LyricLine[]; synced: boolean } {
+  const synced = r.syncedLyrics?.trim();
+  if (synced) {
+    const lines = lrcLines(synced);
+    if (lines.length) return { lines, synced: true };
+  }
+  const plain = r.plainLyrics?.trim();
+  return { lines: plain ? plainLines(plain) : [], synced: false };
+}

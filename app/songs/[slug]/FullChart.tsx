@@ -9,7 +9,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import type { ChartView } from "@/lib/chart";
 import { MAX_STAGE_SIZE } from "@/lib/chart/layout";
-import Chart, { type HoldMarks } from "./Chart";
+import Chart, { type ChartLyrics, type HoldMarks } from "./Chart";
 
 export const FULL_MIN_DEFAULT = 24;
 const GAP_EM = 1.2; // Chart's column gap
@@ -32,6 +32,7 @@ export default function FullChart({
   next,
   pagerRef,
   head,
+  lyrics,
 }: {
   view: ChartView;
   chords: boolean;
@@ -43,6 +44,8 @@ export default function FullChart({
   pagerRef: RefObject<Pager | null>;
   /** Drawn above the columns (the paper header); the chart fits the space left under it. */
   head?: ReactNode;
+  /** Lyric lines under the bar rows (Q18): measured with the chart, so they fit and page with it. */
+  lyrics?: ChartLyrics;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const root = useRef<HTMLDivElement>(null);
@@ -51,8 +54,9 @@ export default function FullChart({
   const [size, setSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
   const [pg, setPg] = useState<{ view: ChartView; page: number }>({ view, page: 0 });
   const page = pg.view === view && fit ? Math.min(pg.page, fit.pages - 1) : 0;
+  const lyricRows = lyrics?.rows ?? null; // new lines (on/off, moved) = fit again
 
-  // Re-fit when the box changes size (rotation, window resize, lyrics panel).
+  // Re-fit when the box changes size (rotation, window resize, lyrics side panel).
   useEffect(() => {
     const el = box.current;
     if (!el) return;
@@ -115,7 +119,7 @@ export default function FullChart({
     const gap = GAP_EM * px;
     const pages = Math.max(1, Math.ceil((c.scrollWidth + gap - 1) / (W + gap)));
     setFit({ size: px, cols, pages, w: W });
-  }, [view, chords, fontFamily, fontWeight, minPx, size]);
+  }, [view, chords, fontFamily, fontWeight, minPx, size, lyricRows]);
 
   // Page turns for keys, pedals, swipes and edge taps (StageView asks before changing song).
   // Reads refs, so two quick presses in one frame both count.
@@ -157,6 +161,7 @@ export default function FullChart({
           hold={hold}
           columns={{ count: fit?.cols ?? 1, height: size.h > FOOT ? size.h - FOOT : undefined, innerRef: inner }}
           paper
+          lyrics={lyrics}
         />
       </div>
       {fit && (fit.pages > 1 || next) && (

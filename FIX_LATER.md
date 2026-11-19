@@ -164,3 +164,8 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Q17 stage: before prefs load, the server HTML shows Full song, so players who picked Scrolling see it flash on first paint (Whole song pickers had the reverse before).
 - Q17 removed the road map strip, so the "Whole song: the road map strip has a `current` slot" line above no longer applies.
 - Q17 Full song Edit: about 5% of edits to tap-editable charts (a section added or moved after a last section that ends in `{...}` tag lines, and similar) fall back to the editor's own layout, so the bar diff shows extra rows there.
+- Q18 stage: switching Full song → Scrolling in place (header button or Settings) doesn't re-run the stage text auto-fit until something else changes (its effect has no `whole` dependency), so bars can sit wider than the screen until then; true with or without lyrics.
+- Q18 lyrics: auto-placement assumes the chart starts at 0:00 of the recording; songs with a long count-in or intro on the record land a few rows early (Adjust lyrics fixes it).
+- Q18 lyrics: a song's on/off and moved lines are keyed by its slug on the device; after a rename the device copy starts over (the account copy follows the song id).
+- Q18 lyrics: Adjust lyrics is on the song page only (Scrolling and Full song layouts); stage mode and the Full song pop-up show the lines but can't move them.
+- Q18 lyrics: dragging a line doesn't scroll the page near the screen edge; for far moves, tap the line and use ▲ ▼.

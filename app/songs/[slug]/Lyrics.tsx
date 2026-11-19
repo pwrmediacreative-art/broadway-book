@@ -1,19 +1,30 @@
 "use client";
 
-// Lyrics beside the chart (Q7). Shown only when the player turned Lyrics on in Settings AND
-// the /admin audience includes them (the server checks again on every request). The text
-// comes live from /api/lyrics and is kept only on this device (localStorage) for offline use;
-// a server answer of "off", "hidden" or "none" deletes that copy. Never stored by us otherwise.
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+// Lyrics per song (Q18, on top of Q7). Each song has a small Lyrics button, shown only when the
+// /admin audience includes the player (the server checks again on every request); lyrics stay
+// hidden until it's tapped, and the choice is kept per song per player (lib/lyrics/mine.ts).
+// The lines sit under the chart's bar rows (lib/lyrics/place.ts), so they scroll and page with
+// it; "Adjust lyrics" moves lines and saves only where they sit (numbers, never the text). On
+// a big screen (1280px+) the "Side panel" switch also opens the whole text beside the chart.
+// The text comes live from /api/lyrics and is kept only on this device (localStorage) for
+// offline use; a server answer of "off", "hidden" or "none" deletes that copy.
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { setLyricsHidden, setLyricsPick } from "@/app/api/lyrics/actions";
 import { OfflineNote } from "@/app/OfflineRoot";
-import { useOffline } from "@/lib/offline/status";
-import { PREF, readPref, setPref, usePref } from "@/lib/prefs";
+import type { ChartView } from "@/lib/chart";
+import type { LyricLine } from "@/lib/lyrics/match";
+import { saveMine, setPanel, syncMine, syncPanel, useMine, usePanel } from "@/lib/lyrics/mine";
+import { barRows, decodePlacements, encodePlacements, findRow, placeLines, stepRow, type RowRef } from "@/lib/lyrics/place";
+import { useNavMe } from "@/lib/nav/me";
+import { rememberedUser } from "@/lib/offline/user";
+import { OFFLINE_MSG, useOffline } from "@/lib/offline/status";
+import { readPref, setPref } from "@/lib/prefs";
 import { browserClient } from "@/lib/supabase/browser";
+import type { ChartLyrics } from "./Chart";
 
 type Source = { provider: string; id: number; title: string; artist: string; album: string | null };
 type Answer =
-  | { status: "ok"; text: string; source: Source; admin: boolean; songId: string; pinned: number | null }
+  | { status: "ok"; text: string; lines?: LyricLine[]; synced?: boolean; source: Source; admin: boolean; songId: string; pinned: number | null }
   | { status: "none" | "hidden"; admin?: boolean; songId?: string; pinned?: number | null }
   | { status: "off" | "error" };
 type Candidate = { id: number; title: string; artist: string; album: string | null; seconds: number | null; hasLyrics: boolean };
@@ -76,6 +87,12 @@ const useWide = () =>
     () => false,
   );
 const useHydrated = () => useSyncExternalStore(noop, () => true, () => false);
+/** Signed-in player's id: from the nav once it loaded, else the one remembered on this device. */
+function useUid(): string | null {
+  const me = useNavMe();
+  const remembered = useSyncExternalStore(noop, () => rememberedUser()?.id ?? null, () => null);
+  return me === undefined ? remembered : (me?.id ?? null);
+}
 
 /** Live from the server; the phone's copy when offline or on an error. Keeps that copy in step. */
 async function fetchLyrics(slug: string, offline: boolean): Promise<Answer | null> {
@@ -91,110 +108,283 @@ async function fetchLyrics(slug: string, offline: boolean): Promise<Answer | nul
     return readCache(slug) ?? { status: "error" };
   }
 }
+// One request per song per page (the song page and its Full song pop-up share it).
+const asked = new Map<string, Promise<Answer | null>>();
+function getLyrics(slug: string, offline: boolean, fresh: boolean): Promise<Answer | null> {
+  const k = `${slug}|${offline}`;
+  let p = fresh ? undefined : asked.get(k);
+  if (!p) {
+    p = fetchLyrics(slug, offline);
+    asked.set(k, p);
+    void p.then((a) => {
+      if (!a || a.status === "error") asked.delete(k);
+    });
+  }
+  return p;
+}
 
-export default function Lyrics({ slug, stage = false }: { slug: string; stage?: boolean }) {
+type AdjustState = { slug: string; moved: Map<number, RowRef>; sel: number | null; err: string | null; busy: boolean };
+
+/** Everything one song's lyrics need: the button, the lines under the bar rows, Adjust, the panel. */
+export function useLyrics(slug: string, view: ChartView | null, { enabled = true }: { enabled?: boolean } = {}) {
   const hydrated = useHydrated();
-  const on = usePref(PREF.lyrics) === "1";
   const allowed = useLyricsAllowed();
   const offline = useOffline();
   const wide = useWide();
-  const [open, setOpen] = useState(false); // phone drawer
-  const full = usePref(PREF.lyricsFull, "session") === "1";
-  const [answer, setAnswer] = useState<Answer | null>(null);
+  const uid = useUid();
+  const mine = useMine(uid, slug);
+  const panelOn = usePanel();
+  const [got, setGot] = useState<{ slug: string; a: Answer | null } | null>(null);
   const [nonce, setNonce] = useState(0); // bump to fetch again (admin changes)
 
-  const cached = hydrated ? readCache(slug) : null;
-  const visible = hydrated && on && (allowed === true || (allowed === null && offline && !!cached));
-  const showing = visible && (wide || open);
+  const hasCache = hydrated && !!readCache(slug);
+  const visible = enabled && hydrated && (allowed === true || (allowed === null && offline && hasCache));
+  const on = visible && mine.shown;
+
+  // Signed in: the account's choice for this song (and the side panel switch) win when newer.
+  useEffect(() => {
+    if (visible && uid && !offline) void syncMine(uid, slug);
+  }, [visible, uid, slug, offline]);
+  useEffect(() => {
+    if (visible && wide && uid && !offline) void syncPanel(uid);
+  }, [visible, wide, uid, offline]);
 
   useEffect(() => {
-    if (!showing) return;
+    if (!on) return;
     let alive = true;
-    void fetchLyrics(slug, offline).then((a) => alive && setAnswer(a));
+    void getLyrics(slug, offline, nonce > 0).then((a) => alive && setGot({ slug, a }));
     return () => {
       alive = false;
     };
-  }, [showing, slug, offline, nonce]);
-  const load = useCallback(async () => setNonce((n) => n + 1), []);
-  const loading = showing && answer === null;
+  }, [on, slug, offline, nonce]);
+  const answer = on && got?.slug === slug ? got.a : null;
+  const loading = on && answer === null;
+  const reload = useCallback(async () => setNonce((n) => n + 1), []);
   // The audience no longer includes this player (kill switch): drop the copy.
   useEffect(() => {
     if (allowed === false) clearAllCaches();
   }, [allowed]);
+
+  const ok = answer?.status === "ok" ? answer : null;
+  const lines = ok?.lines ?? null;
+  const record = ok?.source.id ?? null;
+  const rowsOfChart = useMemo(() => (view ? barRows(view) : []), [view]);
+  const saved = useMemo(
+    () => (record !== null && mine.lrclib === record ? decodePlacements(mine.placements) : new Map<number, RowRef>()),
+    [record, mine.lrclib, mine.placements],
+  );
+  const [adjust, setAdjust] = useState<AdjustState | null>(null);
+  const adjusting = adjust?.slug === slug && ok ? adjust : null;
+  const moved = adjusting?.moved ?? saved;
+  const rows = useMemo(() => (on && view && lines?.length ? placeLines(view, lines, moved) : null), [on, view, lines, moved]);
+
+  const panel = on && wide && panelOn && answer?.status !== "off";
   // Desktop side panel: give the page (and stage mode) room so the chart never sits under it.
   useEffect(() => {
-    if (!(visible && wide)) return;
+    if (!panel) return;
     document.documentElement.classList.add("bb-lyrics-open");
     return () => document.documentElement.classList.remove("bb-lyrics-open");
-  }, [visible, wide]);
+  }, [panel]);
 
-  if (!visible || answer?.status === "off") return null;
+  const placedRow = (line: number) => {
+    for (const [k, list] of rows ?? []) if (list.some((p) => p.line === line)) return k;
+    return null;
+  };
+  const drop = (line: number, key: string) => {
+    const r = rowsOfChart.find((x) => x.key === key);
+    if (r) setAdjust((a) => a && { ...a, moved: new Map(a.moved).set(line, r.ref), sel: line, err: null });
+  };
+  const edit = {
+    active: !!adjusting,
+    selected: adjusting?.sel ?? null,
+    err: adjusting?.err ?? null,
+    busy: adjusting?.busy ?? false,
+    canAdjust: !!lines?.length,
+    start: () => setAdjust({ slug, moved: new Map(saved), sel: null, err: null, busy: false }),
+    pick: (line: number) => setAdjust((a) => a && { ...a, sel: a.sel === line ? null : line }),
+    drop,
+    step: (d: -1 | 1) => {
+      const sel = adjusting?.sel;
+      const at = sel == null ? null : placedRow(sel);
+      const to = at ? stepRow(rowsOfChart, at, d) : null;
+      if (sel != null && to) drop(sel, to.key);
+    },
+    reset: () => setAdjust((a) => a && { ...a, moved: new Map(), sel: null }),
+    cancel: () => setAdjust(null),
+    save: async () => {
+      if (!adjusting || record === null) return;
+      if (offline) return setAdjust({ ...adjusting, err: OFFLINE_MSG });
+      // Keep only lines whose bar row still exists; the rest are placed automatically again.
+      const kept = new Map([...adjusting.moved].filter(([, ref]) => findRow(rowsOfChart, ref) >= 0));
+      setAdjust({ ...adjusting, busy: true, err: null });
+      try {
+        await saveMine(uid, slug, { placements: encodePlacements(kept), lrclib: record });
+        setAdjust(null);
+      } catch {
+        setAdjust({ ...adjusting, busy: false, err: "Couldn’t save to your account. Try again." });
+      }
+    },
+  };
 
-  if (wide) {
-    return (
-      <aside aria-label="Lyrics" className="fixed bottom-0 right-0 top-0 z-[55] flex w-[24rem] flex-col border-l border-bb-rule-gray bg-bb-house-black">
-        <header className="flex h-12 shrink-0 items-center border-b border-bb-rule-gray px-4">
-          <h2 className="flex-1 text-lg font-bold">Lyrics</h2>
-        </header>
-        <Body slug={slug} answer={answer} loading={loading} offline={offline} reload={load} />
-      </aside>
-    );
+  const chart: ChartLyrics | undefined = rows
+    ? { rows, adjust: adjusting ? { selected: adjusting.sel, pick: edit.pick, drop } : undefined }
+    : undefined;
+
+  return {
+    slug,
+    visible,
+    on,
+    answer,
+    loading,
+    offline,
+    wide,
+    panel,
+    panelOn,
+    admin: !!answer && "admin" in answer && !!answer.admin,
+    rows,
+    chart,
+    edit,
+    reload,
+    toggle: () => {
+      if (on) setAdjust(null);
+      void saveMine(uid, slug, { shown: !mine.shown }).catch(() => {});
+    },
+    setPanel: (v: boolean) => setPanel(uid, v),
+  };
+}
+export type SongLyrics = ReturnType<typeof useLyrics>;
+
+/** What the Lyrics button says. Quiet when there's nothing to show. */
+function buttonLabel(l: SongLyrics): string {
+  if (!l.on) return "Lyrics";
+  if (l.loading) return "Lyrics…";
+  switch (l.answer?.status) {
+    case "none":
+      return "No lyrics found";
+    case "hidden":
+      return "Lyrics hidden";
+    case "error":
+      return "Couldn’t load lyrics";
+    default:
+      return "Lyrics";
   }
-
-  if (!open) {
-    return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className={`bb-btn bb-btn-secondary fixed z-[52] h-12 px-4 text-lg ${stage ? "right-2 top-14" : "bottom-[calc(var(--bb-tabs-bottom,0px)+1rem)] right-4"}`}
-      >
-        Lyrics
-      </button>
-    );
-  }
-  return <Drawer full={full} onClose={() => setOpen(false)} slug={slug} answer={answer} loading={loading} offline={offline} reload={load} />;
 }
 
-type BodyProps = { slug: string; answer: Answer | null; loading: boolean; offline: boolean; reload: () => Promise<void> };
-
-/** Phone drawer: opens at half height; drag the grip up (or tap "Full") for full height. */
-function Drawer({ full, onClose, ...body }: { full: boolean; onClose: () => void } & BodyProps) {
-  const y0 = useRef<number | null>(null);
-  const setFull = (v: boolean) => setPref(PREF.lyricsFull, v ? "1" : null, "session");
-  return (
-    <section
-      aria-label="Lyrics"
-      className={`fixed inset-x-0 bottom-0 z-[60] flex flex-col border-t border-bb-rule-gray bg-bb-house-black pb-[env(safe-area-inset-bottom)] ${full ? "h-[92dvh]" : "h-[50dvh]"}`}
-    >
-      <header
-        className="flex h-12 shrink-0 touch-none items-center gap-2 border-b border-bb-rule-gray pl-4 pr-1"
-        onPointerDown={(e) => {
-          y0.current = e.clientY;
-        }}
-        onPointerUp={(e) => {
-          if (y0.current === null) return;
-          const dy = e.clientY - y0.current;
-          y0.current = null;
-          if (dy < -40) setFull(true);
-          else if (dy > 40) {
-            if (full) setFull(false);
-            else onClose();
-          }
-        }}
-      >
-        <span className="mr-1 h-1 w-8 bg-bb-rule-gray" aria-hidden />
-        <h2 className="flex-1 text-lg font-bold">Lyrics</h2>
-        <button type="button" onClick={() => setFull(!full)} className="bb-btn bb-btn-quiet h-11 px-3 text-base">
-          {full ? "Half" : "Full"}
+/**
+ * The song's Lyrics button, with the "Side panel" switch on a big screen. On the song page
+ * (`page`) also "Adjust lyrics" and, for admins, Hide / Pick another.
+ */
+export function LyricsControls({ lyr, page = false }: { lyr: SongLyrics; page?: boolean }) {
+  const [tools, setTools] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  if (!lyr.visible || lyr.answer?.status === "off") return null;
+  const label = buttonLabel(lyr);
+  const lit = lyr.on && lyr.answer?.status === "ok";
+  const showPanel = lyr.wide && lyr.on && lyr.answer?.status === "ok";
+  if (!page) {
+    // Stage header: same height as the other header buttons.
+    const quiet = "h-11 shrink-0 rounded-bb-control px-2 text-sm font-bold active:bg-bb-case-charcoal";
+    return (
+      <>
+        <button type="button" onClick={lyr.toggle} aria-pressed={lyr.on} className={`${quiet} ${lit ? "text-bb-downbeat-amber" : "text-bb-cue-gray"}`}>
+          {label}
         </button>
-        <button type="button" onClick={onClose} aria-label="Close lyrics" className="bb-btn bb-btn-quiet size-11 p-0 text-2xl text-bb-cue-gray">
+        {showPanel && (
+          <button type="button" onClick={() => lyr.setPanel(!lyr.panelOn)} aria-pressed={lyr.panelOn} className={`${quiet} ${lyr.panelOn ? "text-bb-downbeat-amber" : "text-bb-cue-gray"}`}>
+            Side panel
+          </button>
+        )}
+      </>
+    );
+  }
+  const small = "bb-btn h-12 px-3 text-base";
+  return (
+    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+      <button type="button" onClick={lyr.toggle} aria-pressed={lyr.on} className={`${small} ${lit ? "bb-on" : lyr.on ? "bb-btn-quiet text-bb-cue-gray" : "bb-btn-secondary"}`}>
+        {label}
+      </button>
+      {showPanel && (
+        <button type="button" onClick={() => lyr.setPanel(!lyr.panelOn)} aria-pressed={lyr.panelOn} className={`${small} ${lyr.panelOn ? "bb-on" : "bb-btn-secondary"}`}>
+          Side panel
+        </button>
+      )}
+      {lyr.on && lyr.edit.canAdjust && !lyr.edit.active && (
+        <button
+          type="button"
+          onClick={() => {
+            if (lyr.offline) return setMsg(OFFLINE_MSG);
+            setMsg(null);
+            lyr.edit.start();
+          }}
+          className={`${small} bb-btn-secondary`}
+        >
+          Adjust lyrics
+        </button>
+      )}
+      {lyr.on && lyr.admin && !lyr.offline && lyr.answer && (
+        <button type="button" onClick={() => setTools(!tools)} aria-expanded={tools} className={`${small} bb-btn-quiet text-bb-cue-gray`}>
+          Lyrics admin
+        </button>
+      )}
+      {msg && <p className="basis-full text-base text-bb-cue-gray">{msg}</p>}
+      {tools && lyr.on && lyr.admin && !lyr.offline && lyr.answer && (
+        <div className="basis-full">
+          <AdminTools slug={lyr.slug} answer={lyr.answer} reload={lyr.reload} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** "Adjust lyrics": pinned to the bottom of the screen while the player moves lines. */
+export function AdjustBar({ lyr }: { lyr: SongLyrics }) {
+  const e = lyr.edit;
+  if (!e.active) return null;
+  const icon = "bb-btn bb-btn-secondary size-12 shrink-0 p-0 text-xl";
+  return (
+    <div className="fixed bottom-[var(--bb-tabs-bottom,0px)] left-[var(--bb-rail,0px)] right-0 z-40 border-t border-bb-rule-gray bg-bb-house-black p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+      <p className="mb-2 px-1 text-base text-bb-cue-gray" aria-live="polite">
+        {e.err ?? (e.selected == null ? "Drag a line to another bar row, or tap a line and move it with ▲ ▼." : "Move the picked line a row up or down, or drag it.")}
+      </p>
+      <div className="flex items-center gap-2">
+        <button type="button" disabled={e.selected == null} onClick={() => e.step(-1)} aria-label="Move the line up a row" className={icon}>
+          ▲
+        </button>
+        <button type="button" disabled={e.selected == null} onClick={() => e.step(1)} aria-label="Move the line down a row" className={icon}>
+          ▼
+        </button>
+        <button type="button" onClick={e.reset} className="bb-btn bb-btn-quiet h-12 px-2 text-base text-bb-cue-gray">
+          Reset
+        </button>
+        <span className="flex-1" />
+        <button type="button" onClick={e.cancel} className="bb-btn bb-btn-secondary h-12 px-3 text-base">
+          Cancel
+        </button>
+        <button type="button" disabled={e.busy} onClick={() => void e.save()} className="bb-btn bb-btn-primary h-12 px-4 text-base">
+          Save
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Desktop (1280px+) side panel with the whole text, when the player switched it on. */
+export function LyricsPanel({ lyr }: { lyr: SongLyrics }) {
+  if (!lyr.panel) return null;
+  return (
+    <aside aria-label="Lyrics" className="fixed bottom-0 right-0 top-0 z-[55] flex w-[24rem] flex-col border-l border-bb-rule-gray bg-bb-house-black">
+      <header className="flex h-12 shrink-0 items-center border-b border-bb-rule-gray pl-4 pr-1">
+        <h2 className="flex-1 text-lg font-bold">Lyrics</h2>
+        <button type="button" onClick={() => lyr.setPanel(false)} aria-label="Close the side panel" className="bb-btn bb-btn-quiet size-11 p-0 text-2xl text-bb-cue-gray">
           ✕
         </button>
       </header>
-      <Body {...body} />
-    </section>
+      <Body slug={lyr.slug} answer={lyr.answer} loading={lyr.loading} offline={lyr.offline} reload={lyr.reload} />
+    </aside>
   );
 }
+
+type BodyProps = { slug: string; answer: Answer | null; loading: boolean; offline: boolean; reload: () => Promise<void> };
 
 function Body({ slug, answer, loading, offline, reload }: BodyProps) {
   const admin = !!answer && "admin" in answer && !!answer.admin;

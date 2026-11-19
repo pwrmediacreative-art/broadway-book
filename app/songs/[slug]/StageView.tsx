@@ -13,7 +13,7 @@ import { recordRecent } from "@/lib/search/recent";
 import CheatSheet from "@/app/upload/CheatSheet";
 import { HoldSheet, useHold, useHoldMarks, withHold, type Spot } from "./Hold";
 import ReadChoice from "@/app/ReadChoice";
-import Lyrics from "./Lyrics";
+import { LyricsControls, LyricsPanel, useLyrics } from "./Lyrics";
 import FullChart, { FULL_MIN_DEFAULT, type Pager } from "./FullChart";
 import PaperHead from "./PaperHead";
 import FullEdit, { useCanEdit, type EditTarget } from "./FullEdit";
@@ -90,6 +90,9 @@ export default function StageView({
   // The player's own version, if they have one (one tap on the chip flips to public).
   const pick = usePickedChart(slug, chartText);
   const s = useChartState(slug, pick.text, set?.keyCtl);
+  // Lyrics under the bar rows (Q18). The player's own uploads have none (library songs only).
+  const lyr = useLyrics(slug, s.view, { enabled: !mine });
+  const lyricRows = lyr.rows; // lines on/off or moved: fit the text again
   const nav = useSongNav(slug, neighbors);
   useEffect(() => {
     if (!mine) recordRecent(slug);
@@ -181,7 +184,7 @@ export default function StageView({
     size = Math.floor(size);
     set(size);
     setAutoSize(size);
-  }, [manual, s.view, s.chords, s.font, tick]);
+  }, [manual, s.view, s.chords, s.font, tick, lyricRows]);
 
   // --- scrolling ------------------------------------------------------------------------
   const [scrollable, setScrollable] = useState(false);
@@ -194,7 +197,7 @@ export default function StageView({
     const dist = el.offsetHeight + PAD_Y - box.clientHeight;
     setScrollable(dist > 2);
     setSuggested(suggestSpeed(s.view, dist, fontPx));
-  }, [fontPx, s.view, s.chords, s.font, tick, autoSize]);
+  }, [fontPx, s.view, s.chords, s.font, tick, autoSize, lyricRows]);
 
   const savedSongSpeed = num(usePref(PREF.songSpeed(slug)));
   const savedDeviceSpeed = num(usePref(PREF.speed));
@@ -462,7 +465,8 @@ export default function StageView({
       aria-label={popup ? `Full song: ${title}` : undefined}
     >
       {!popup && <ReadChoice />}
-      {!popup && <Lyrics slug={slug} stage />}
+      {/* The pop-up sits over the song page, which draws the side panel. */}
+      {!popup && <LyricsPanel lyr={lyr} />}
       <header className="flex h-12 shrink-0 items-center gap-1 border-b border-bb-rule-gray/60 pl-1 pr-2 text-base">
         <button
           onClick={exit}
@@ -489,6 +493,7 @@ export default function StageView({
             {pick.usingMine ? "Yours" : "Public"}
           </button>
         )}
+        <LyricsControls lyr={lyr} />
         <BpmToggle s={s} className="shrink-0 text-sm text-bb-cue-gray" />
         {whole && canEdit && (
           <button onClick={() => setEditing(true)} className={`${quiet} text-bb-chart-white`}>
@@ -554,10 +559,11 @@ export default function StageView({
             next={popup ? null : set ? (set.next ?? null) : (nav.next?.title ?? null)}
             pagerRef={pager}
             head={<PaperHead view={view} title={title} artist={artist} fontFamily={FONTS[s.font].css} className="mb-3" />}
+            lyrics={lyr.chart}
           />
         ) : (
           <>
-            <Chart rootRef={chartEl} view={view} chords={s.chords} fontFamily={FONTS[s.font].css} fontWeight={FONTS[s.font].weight} style={{ fontSize: fontPx }} hold={marks} />
+            <Chart rootRef={chartEl} view={view} chords={s.chords} fontFamily={FONTS[s.font].css} fontWeight={FONTS[s.font].weight} style={{ fontSize: fontPx }} hold={marks} lyrics={lyr.chart} />
             {scroll && <div className="h-32" aria-hidden />}
           </>
         )}

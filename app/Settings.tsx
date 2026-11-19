@@ -7,7 +7,6 @@ import { setDisplay, type Display } from "@/lib/display";
 import { useNavMe } from "@/lib/nav/me";
 import { OFFLINE_MSG, useOffline } from "@/lib/offline/status";
 import { PREF, setPref, stageFull, usePref } from "@/lib/prefs";
-import { useLyricsAllowed } from "./songs/[slug]/Lyrics";
 
 /** The two big "How do you read charts?" buttons (first visit and Settings). */
 export function DisplayPicker({ onPick, autoFocus = false }: { onPick?: (v: Display) => void; autoFocus?: boolean }) {
@@ -49,7 +48,6 @@ export default function SettingsView() {
       <p className="mt-2 text-base text-bb-cue-gray">The default on every chart, stage mode and setlists. The 123 / ABC switch on a song still flips it.</p>
       <LayoutSetting />
       <StageSize />
-      <LyricsToggle />
 
       <h2 className="mb-2 mt-10 text-xl font-bold">Account</h2>
       {me === undefined ? (
@@ -136,33 +134,6 @@ function StageSize() {
         )}
       </div>
       <p className="mt-2 text-base text-bb-cue-gray">Change it with the Text size slider in stage mode.</p>
-    </>
-  );
-}
-
-/** Lyrics on/off for this device. Shown only when the /admin audience includes this player. */
-function LyricsToggle() {
-  const allowed = useLyricsAllowed();
-  const on = usePref(PREF.lyrics) === "1";
-  if (!allowed) return null;
-  const opt = (v: boolean, label: string) => (
-    <button
-      type="button"
-      aria-pressed={on === v}
-      onClick={() => setPref(PREF.lyrics, v ? "1" : null)}
-      className={`bb-btn h-12 flex-1 px-4 text-lg ${on === v ? "bb-btn-primary" : "bb-btn-secondary"}`}
-    >
-      {label}
-    </button>
-  );
-  return (
-    <>
-      <h3 className="mb-2 mt-6 text-lg font-semibold">Lyrics</h3>
-      <div className="flex gap-3">
-        {opt(false, "Off")}
-        {opt(true, "On")}
-      </div>
-      <p className="mt-2 text-base text-bb-cue-gray">Beside the chart on a big screen, a pull-up drawer on a phone. From LRCLIB, not stored by Broadway Book.</p>
     </>
   );
 }
