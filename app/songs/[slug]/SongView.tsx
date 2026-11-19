@@ -19,8 +19,9 @@ import { ConfirmButton, useConfirm } from "./Confirm";
 import { confirmedLine } from "@/lib/confirm";
 import ReadChoice from "@/app/ReadChoice";
 import Lyrics from "./Lyrics";
-import RoadMap from "./RoadMap";
-import { PREF, usePref } from "@/lib/prefs";
+import PaperHead from "./PaperHead";
+import StageView from "./StageView";
+import { pageFull, PREF, usePref } from "@/lib/prefs";
 
 export interface SongProps {
   slug: string;
@@ -35,7 +36,11 @@ export interface SongProps {
   neighbors: Neighbors;
   /** "Version by Pat": another player's version of a song that is already in the library. */
   versionLine?: string | null;
+  /** The live revision (base for "Just for me" / "Suggest for everyone" from the Full song pop-up). */
+  revisionId?: string | null;
 }
+
+const NO_NEIGHBORS = { prev: null, next: null };
 
 export function enterFullscreen() {
   try {
@@ -79,7 +84,7 @@ function VerifiedBadge({ at }: { at?: string | null }) {
   );
 }
 
-export default function SongView({ slug, songId, title, artist, isExample, unverified, verifiedAt, chartText, neighbors, versionLine }: SongProps) {
+export default function SongView({ slug, songId, title, artist, isExample, unverified, verifiedAt, chartText, neighbors, versionLine, revisionId = null }: SongProps) {
   // The signed-in player's own version replaces the public chart (they can flip back).
   const pick = usePickedChart(slug, chartText);
   const openCount = useOpenCount(songId);
@@ -88,7 +93,8 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
   const confirmed = showUnverified ? confirmedLine(confirm.state?.count) : null;
   const s = useChartState(slug, pick.text);
   const nav = useSongNav(slug, neighbors);
-  const whole = usePref(PREF.layout) === "whole"; // Whole song: sections in columns
+  const whole = pageFull(usePref(PREF.layout)); // Full song: laid out like a paper chart, sections in columns
+  const [pop, setPop] = useState(false); // the Full song pop-up over this page
   useEffect(() => recordRecent(slug), [slug]);
   // From "My notes": /songs/x#at=section.bar.beat scrolls to that spot and lights it briefly.
   // Re-runs when the chart changes (e.g. the player's own version loads in), then clears the
@@ -122,6 +128,7 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
     if (t) goTo(`/songs/${t.slug}`);
   };
   useSongKeys(go, (e) => {
+    if (pop) return true; // the Full song pop-up handles its own keys
     if (e.key !== "Escape" || !spot) return false;
     setSpot(null);
     return true;
@@ -208,8 +215,23 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
         <DisplayControls s={s} />
       </div>
 
+      <div className="mb-2 flex justify-end">
+        <button
+          type="button"
+          onClick={() => {
+            enterFullscreen();
+            setPop(true);
+          }}
+          className="bb-btn bb-btn-secondary h-12 gap-2 px-4 text-lg"
+        >
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+            <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Full song
+        </button>
+      </div>
       <div {...gesture} className="touch-pan-y">
-        {whole && <RoadMap view={s.view} className="mb-2" />}
+        {whole && <PaperHead view={s.view} title={title} artist={artist} fontFamily={FONTS[s.font].css} className="mb-4" />}
         <Chart
           view={s.view}
           chords={s.chords}
@@ -218,6 +240,7 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
           style={{ fontSize: whole ? "clamp(1.5rem, 5vw, 1.75rem)" : "clamp(1.6rem, 7vw, 2.4rem)" }}
           hold={marks}
           columns={whole ? {} : undefined}
+          paper={whole}
         />
       </div>
       </div>
@@ -264,6 +287,17 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
       <p className="mt-3 text-center text-sm text-bb-cue-gray">Swipe, ← → or a page-turner pedal also changes song.</p>
       <AdminPdfLink />
       </div>
+      {pop && (
+        <StageView
+          popup={{ onClose: () => setPop(false) }}
+          slug={slug}
+          title={title}
+          artist={artist}
+          chartText={chartText}
+          neighbors={NO_NEIGHBORS}
+          edit={{ kind: "library", songId, revisionId }}
+        />
+      )}
     </main>
   );
 }

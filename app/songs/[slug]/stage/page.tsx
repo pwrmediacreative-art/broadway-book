@@ -19,5 +19,14 @@ export default async function StagePage({ params }: PageProps<"/songs/[slug]/sta
   if (!song) return movedOrNotFound(slug, "/stage");
   if (!song.chart_text) notFound();
 
-  return <StageView slug={song.slug} title={song.title} chartText={song.chart_text} neighbors={neighbors} />;
+  return (
+    <StageView
+      slug={song.slug}
+      title={song.title}
+      artist={song.artist}
+      chartText={song.chart_text}
+      neighbors={neighbors}
+      edit={{ kind: "library", songId: song.id, revisionId: song.current_revision_id }}
+    />
+  );
 }

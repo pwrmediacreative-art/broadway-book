@@ -4,9 +4,11 @@
 // writes bars into the selected section; the normal chart view previews it the whole time.
 // Every change is saved on its own a moment later (our normal chart text, checked by the
 // server). Private until "Send to library"; while it waits for votes it is read-only.
+// The Full song pop-up (Q17) opens it too, with `popup`: nothing saves on its own there; the
+// pop-up draws its own save choices under the sections (app/songs/[slug]/FullEdit.tsx).
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Chart from "@/app/songs/[slug]/Chart";
 import { DisplayControls, KeyInfo } from "@/app/songs/[slug]/controls";
 import { FONTS, useChartState } from "@/app/songs/[slug]/hooks";
@@ -64,7 +66,15 @@ type SheetState =
   | { kind: "note"; pid: string; at: number }
   | { kind: "more" }
   | { kind: "submit" }
-  | { kind: "delete" };
+  | { kind: "delete" }
+  | { kind: "discard" };
+
+/** Editing from the Full song pop-up: no autosave; `save` draws the save choices for the
+ *  current text (`changed`: differs from the chart it opened with). */
+export interface BuilderPopup {
+  onClose: () => void;
+  save: (text: string, changed: boolean) => ReactNode;
+}
 
 const replaceAt = (items: RowItem[], at: number, it: RowItem) => items.map((x, i) => (i === at ? it : x));
 
@@ -76,6 +86,7 @@ export default function Builder({
   proposalId: proposalAtLoad,
   setlist,
   setlistError,
+  popup,
 }: {
   id: string;
   slug: string;
@@ -84,6 +95,7 @@ export default function Builder({
   proposalId: string | null;
   setlist: string | null;
   setlistError: boolean;
+  popup?: BuilderPopup;
 }) {
   const router = useRouter();
   const offline = useOffline();
@@ -95,7 +107,10 @@ export default function Builder({
   const [sheet, setSheet] = useState<SheetState>(() => (fromText(initialText).parts.length || lockedAtLoad ? null : { kind: "add" }));
   const [clip, setClip] = useState<RowItem | null>(null);
   const [undo, setUndo] = useState<{ made: Made; what: string } | null>(null);
-  const [savedText, setSavedText] = useState(initialText);
+  // In the pop-up, "changed" is measured against the chart as the editor writes it (a library
+  // chart's own spacing may differ from the editor's), so opening and closing changes nothing.
+  const [savedText, setSavedText] = useState(() => (popup ? toText(fromText(initialText)) : initialText));
+  const inPopup = !!popup;
   const [status, setStatus] = useState<"saved" | "saving" | "error">("saved");
   const [err, setErr] = useState<string | null>(null);
   const [locked, setLocked] = useState(lockedAtLoad);
@@ -108,7 +123,7 @@ export default function Builder({
 
   // Autosave a moment after the last change (never while locked or offline).
   useEffect(() => {
-    if (locked || !dirty || offline) return;
+    if (inPopup || locked || !dirty || offline) return;
     const t = window.setTimeout(async () => {
       setStatus("saving");
       try {
@@ -127,7 +142,7 @@ export default function Builder({
       }
     }, 1200);
     return () => window.clearTimeout(t);
-  }, [id, text, dirty, locked, offline]);
+  }, [id, text, dirty, locked, offline, inPopup]);
 
   // Leaving with changes not saved yet: ask first.
   useEffect(() => {
@@ -285,8 +300,23 @@ export default function Builder({
           ? "Saving…"
           : "Saved";
 
+  const Root = popup ? "div" : "main";
   return (
-    <main className={`mx-auto w-full max-w-3xl px-4 pt-2 lg:max-w-7xl lg:px-8 ${sel && !locked ? "pb-[22rem]" : "pb-16"}`}>
+    <Root className={`mx-auto w-full max-w-3xl px-4 pt-2 lg:max-w-7xl lg:px-8 ${sel && !locked ? "pb-[22rem]" : "pb-16"}`}>
+      {popup ? (
+        <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => (dirty ? setSheet({ kind: "discard" }) : popup.onClose())}
+            className="inline-flex h-12 items-center text-lg text-bb-cue-gray active:text-bb-chart-white"
+          >
+            ← Full song
+          </button>
+          <p className="text-base text-bb-cue-gray" aria-live="polite">
+            {dirty ? "Not saved yet" : ""}
+          </p>
+        </div>
+      ) : (
       <div className="flex items-center justify-between gap-2">
         <Link href={doneHref} className="inline-flex h-12 items-center text-lg text-bb-cue-gray active:text-bb-chart-white">
           ← {setlist ? "Setlist" : "Done"}
@@ -295,6 +325,7 @@ export default function Builder({
           {statusText}
         </p>
       </div>
+      )}
 
       <h1 className="text-3xl font-bold tracking-tight">{made.header.title || "Untitled"}</h1>
       <p className="flex flex-wrap items-center gap-x-3 text-lg text-bb-cue-gray">
@@ -428,7 +459,8 @@ export default function Builder({
               + Add section
             </button>
           )}
-          {!locked && (
+          {popup && <div className="mt-4 border-t border-bb-rule-gray pt-4">{popup.save(text, dirty)}</div>}
+          {!locked && !popup && (
             <div className="mt-4 flex flex-col gap-2 border-t border-bb-rule-gray pt-4">
               <button type="button" disabled={busy || offline || !made.parts.length} onClick={() => setSheet({ kind: "submit" })} className="bb-btn bb-btn-secondary h-12 w-full text-lg font-semibold">
                 Send to library
@@ -446,11 +478,20 @@ export default function Builder({
           {s.view ? (
             <>
               <div className="mb-2 flex flex-wrap items-center gap-2">
-                <DisplayControls s={s} />
+                <DisplayControls s={s} layout={inPopup ? false : undefined} />
               </div>
               <KeyInfo s={s} />
               <div className="mt-3">
-                <Chart view={s.view} chords={s.chords} fontFamily={FONTS[s.font].css} fontWeight={FONTS[s.font].weight} style={{ fontSize: "clamp(1.4rem, 6vw, 2.2rem)" }} />
+                <Chart
+                  view={s.view}
+                  chords={s.chords}
+                  fontFamily={FONTS[s.font].css}
+                  fontWeight={FONTS[s.font].weight}
+                  style={{ fontSize: "clamp(1.4rem, 6vw, 2.2rem)" }}
+                  // From the Full song pop-up the preview reads like the paper chart it came from.
+                  columns={inPopup ? {} : undefined}
+                  paper={inPopup}
+                />
               </div>
               {!made.parts.length && <p className="text-lg text-bb-cue-gray">Add a section to start.</p>}
             </>
@@ -701,7 +742,28 @@ export default function Builder({
           </button>
         </Sheet>
       )}
-    </main>
+
+      {sheet?.kind === "discard" && popup && (
+        <Sheet title="Leave without saving?" onClose={() => setSheet(null)}>
+          <p className="mb-4 text-lg">Your changes to this chart are not saved.</p>
+          <div className="flex flex-col gap-2">
+            <button type="button" className="bb-btn bb-btn-secondary h-12 w-full text-lg font-semibold" onClick={() => setSheet(null)}>
+              Keep editing
+            </button>
+            <button
+              type="button"
+              className="bb-btn bb-btn-danger h-12 w-full text-lg font-semibold"
+              onClick={() => {
+                setSavedText(text); // so leaving doesn't ask the browser too
+                popup.onClose();
+              }}
+            >
+              Leave without saving
+            </button>
+          </div>
+        </Sheet>
+      )}
+    </Root>
   );
 }
 

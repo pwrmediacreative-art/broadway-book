@@ -121,10 +121,11 @@ export interface Gesture {
   onSwipe: (dir: -1 | 1) => void; // swipe left = next (+1)
   onTap?: (x?: number) => void; // x = where the tap was (clientX)
   onDown?: () => void;
+  onSwipeDown?: () => void; // Full song pop-up: swipe down closes it (needs touch-none on the element)
 }
 
 /** Pointer handlers: horizontal swipe -> song change, short still press -> tap. */
-export function useGesture({ onSwipe, onTap, onDown }: Gesture) {
+export function useGesture({ onSwipe, onTap, onDown, onSwipeDown }: Gesture) {
   const start = useRef<{ x: number; y: number; t: number; id: number } | null>(null);
   return {
     onPointerDown: (e: React.PointerEvent) => {
@@ -142,6 +143,7 @@ export function useGesture({ onSwipe, onTap, onDown }: Gesture) {
       const dx = e.clientX - s.x;
       const dy = e.clientY - s.y;
       if (Math.abs(dx) > 60 && Math.abs(dx) > 1.5 * Math.abs(dy)) onSwipe(dx < 0 ? 1 : -1);
+      else if (onSwipeDown && dy > 80 && dy > 1.5 * Math.abs(dx)) onSwipeDown();
       else if (Math.abs(dx) < 10 && Math.abs(dy) < 10 && performance.now() - s.t < 500) onTap?.(e.clientX);
     },
     onPointerCancel: () => {

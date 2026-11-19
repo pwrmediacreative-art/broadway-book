@@ -155,3 +155,8 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - check:offline compares against an anon songs list capped at 1000 rows; the library now has 2365 published songs, so 3 checks fail (script limit, not the database).
 - check:verify looks for its new test song in the first 20 bulk cards (oldest Unverified first); with 2360 Unverified songs it is never there (script limit, not the database).
 - /make: the "Tap tempo" button is squeezed at 375px (its two-line label overflows the box).
+- Q17 Full song: one split bar too wide for a column forces a single column, so long songs page a lot in landscape (Scenes From an Italian Restaurant: 14 pages at 812x375).
+- Q17 Full song: stage shows "Next: …" twice on the last page (header and page footer), carried over from Whole song.
+- Q17: /mine/[id], /upload/[id] and /c/ pages show the Scrolling | Full song switch but always scroll (only the song page and stage lay out Full song).
+- Q17: players who picked Scroll before Q17 had nothing stored, so stage now opens them in Full song once (they pick Scrolling again).
+- Q17: setlist play mode has no Edit in Full song (the play bundle carries no song id).

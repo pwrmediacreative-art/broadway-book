@@ -1,15 +1,17 @@
 "use client";
 
-// Whole song (stage mode): the whole chart on one screen. Sections flow top to bottom into as
-// many columns as fit and are never split; the text is as large as possible (up to the stage
-// cap) while everything still fits. Below the smallest readable size it stops shrinking and
-// turns into pages instead (columns that don't fit sit to the right). Never scrolls.
-import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
+// Full song (stage mode and the Full song pop-up, Q17; was Whole song, Q9): the whole chart on
+// one screen, laid out like a paper chart (PaperHead on top). Sections flow top to bottom into
+// as many columns as fit, left then right, and are never split; the text is as large as
+// possible (up to the stage cap) while everything still fits. Below the smallest readable size
+// it stops shrinking and turns into pages instead (columns that don't fit sit to the right).
+// Never scrolls.
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import type { ChartView } from "@/lib/chart";
 import { MAX_STAGE_SIZE } from "@/lib/chart/layout";
 import Chart, { type HoldMarks } from "./Chart";
 
-export const WHOLE_MIN_DEFAULT = 24;
+export const FULL_MIN_DEFAULT = 24;
 const GAP_EM = 1.2; // Chart's column gap
 const FOOT = 28; // px kept free at the bottom for "Page 1 of 2" / "Next: …"
 
@@ -20,7 +22,7 @@ export interface Pager {
 
 type Fit = { size: number; cols: number; pages: number; w: number };
 
-export default function WholeChart({
+export default function FullChart({
   view,
   chords,
   fontFamily,
@@ -29,6 +31,7 @@ export default function WholeChart({
   minPx,
   next,
   pagerRef,
+  head,
 }: {
   view: ChartView;
   chords: boolean;
@@ -38,6 +41,8 @@ export default function WholeChart({
   minPx: number;
   next: string | null;
   pagerRef: RefObject<Pager | null>;
+  /** Drawn above the columns (the paper header); the chart fits the space left under it. */
+  head?: ReactNode;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const root = useRef<HTMLDivElement>(null);
@@ -138,7 +143,9 @@ export default function WholeChart({
   const shift = fit ? page * (fit.w + GAP_EM * fit.size) : 0;
   const last = fit ? page === fit.pages - 1 : true;
   return (
-    <div ref={box} className="relative h-full w-full overflow-hidden">
+    <div className="flex h-full w-full flex-col">
+    {head}
+    <div ref={box} className="relative min-h-0 w-full flex-1 overflow-hidden">
       <div style={{ transform: `translateX(${-shift}px)` }}>
         <Chart
           rootRef={root}
@@ -149,6 +156,7 @@ export default function WholeChart({
           style={{ fontSize: fit?.size ?? minPx }}
           hold={hold}
           columns={{ count: fit?.cols ?? 1, height: size.h > FOOT ? size.h - FOOT : undefined, innerRef: inner }}
+          paper
         />
       </div>
       {fit && (fit.pages > 1 || next) && (
@@ -161,6 +169,7 @@ export default function WholeChart({
           )}
         </div>
       )}
+    </div>
     </div>
   );
 }

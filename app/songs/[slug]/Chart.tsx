@@ -98,9 +98,21 @@ function Beat({ b, chords, marks, spot }: { b: BeatView; chords: boolean; marks:
   );
 }
 
-function Bar({ cell, chords, marks, spot }: { cell: BarCell; chords: boolean; marks: boolean; spot?: { id: string; hold: HoldMarks } | null }) {
+function Bar({
+  cell,
+  chords,
+  marks,
+  spot,
+  paper,
+}: {
+  cell: BarCell;
+  chords: boolean;
+  marks: boolean;
+  spot?: { id: string; hold: HoldMarks } | null;
+  paper?: boolean;
+}) {
   const beats = cell.beats.map((b, i) => (
-    <span key={i} className={i ? "border-l-[0.05em] border-bb-chart-white/45" : ""}>
+    <span key={i} className={i && !paper ? "border-l-[0.05em] border-bb-chart-white/45" : ""}>
       <Beat b={b} chords={chords} marks={marks} spot={spot && { id: `${spot.id}.${i}`, hold: spot.hold }} />
     </span>
   ));
@@ -108,6 +120,11 @@ function Bar({ cell, chords, marks, spot }: { cell: BarCell; chords: boolean; ma
     <div style={{ fontSize: `${barScale(cell, chords)}em` }}>
       {cell.beats.length === 1 ? (
         beats
+      ) : paper ? (
+        // Paper chart: the chords sharing a bar are underlined together ("4 1").
+        <span className="inline-flex items-end gap-[0.12em] border-b-[0.07em] border-bb-chart-white pb-[0.04em]" title="Split bar">
+          {beats}
+        </span>
       ) : (
         <span className="inline-flex items-end rounded-[0.14em] border-[0.06em] border-bb-chart-white/75 px-[0.06em]" title="Split bar">
           {beats}
@@ -197,7 +214,7 @@ function barIds(view: ChartView, hold: HoldMarks | undefined, play?: PlayMarks):
   return { ids, hold, play };
 }
 
-function Line({ line, chords, bars }: { line: GridLine; chords: boolean; bars?: BarIds }) {
+function Line({ line, chords, bars, paper }: { line: GridLine; chords: boolean; bars?: BarIds; paper?: boolean }) {
   if (!line.bars.length) {
     return (
       <div className="flex flex-wrap items-center gap-[0.25em]">
@@ -219,7 +236,7 @@ function Line({ line, chords, bars }: { line: GridLine; chords: boolean; bars?: 
       ))}
       {line.bars.map((x) => {
         const id = bars?.ids.get(x.cell);
-        const plain = <Bar cell={x.cell} chords={chords} marks={marks} spot={bars?.hold && id ? { id, hold: bars.hold } : null} />;
+        const plain = <Bar cell={x.cell} chords={chords} marks={marks} spot={bars?.hold && id ? { id, hold: bars.hold } : null} paper={paper} />;
         const bar =
           x.open || x.close !== null ? (
             <div className="flex flex-col">
@@ -283,6 +300,7 @@ export default function Chart({
   hold,
   play,
   columns,
+  paper,
 }: {
   view: ChartView;
   chords: boolean;
@@ -296,10 +314,13 @@ export default function Chart({
   hold?: HoldMarks;
   /** Upload player: bar marker + tap a bar to jump the audio there. */
   play?: PlayMarks;
-  /** Whole song view: sections flow into columns and are never split. `count` + `height`
+  /** Full song view: sections flow into columns and are never split. `count` + `height`
    *  (stage mode) fills a fixed box, extra columns overflow to the right as pages; without
    *  them (song page) the browser makes as many ~13em columns as fit. */
   columns?: { count?: number; height?: number; innerRef?: Ref<HTMLDivElement> };
+  /** Full song: drawn like a paper chart. Real section names underlined ("Verse 2"), split
+   *  bars underlined instead of boxed. */
+  paper?: boolean;
 }) {
   const bars = barIds(view, hold, play);
   return (
@@ -323,14 +344,27 @@ export default function Chart({
           <section
             key={i}
             data-section={i}
-            className={columns ? "mb-[0.65em] flex break-inside-avoid flex-col gap-[0.2em]" : "flex flex-col gap-[0.2em] @md:flex-row @md:gap-[0.35em]"}
+            className={
+              columns
+                ? `${paper ? "mb-[0.9em] gap-[0.3em]" : "mb-[0.65em] gap-[0.2em]"} flex break-inside-avoid flex-col`
+                : "flex flex-col gap-[0.2em] @md:flex-row @md:gap-[0.35em]"
+            }
           >
+            {paper ? (
+              <h2 className="shrink-0 pb-[0.1em]">
+                <span className="inline-flex max-w-full flex-wrap items-baseline gap-[0.2em] break-words text-[0.7em] leading-tight text-bb-downbeat-amber underline decoration-[0.08em] underline-offset-[0.2em]">
+                  {s.name}
+                  {s.repeat > 1 && <span className="text-[0.85em]">×{s.repeat}</span>}
+                </span>
+              </h2>
+            ) : (
             <h2 className={columns ? "shrink-0" : "shrink-0 @md:w-[2.2em] @md:pt-[0.3em]"}>
               <span className="inline-flex max-w-full flex-wrap items-baseline gap-[0.15em] break-words rounded-[0.15em] border-[0.06em] border-bb-downbeat-amber px-[0.3em] py-[0.12em] text-[0.55em] leading-none text-bb-downbeat-amber">
                 {s.label.replace(/ x\d+$/, "")}
                 {s.repeat > 1 && <span className="text-[0.85em]">×{s.repeat}</span>}
               </span>
             </h2>
+            )}
             <div className="flex min-w-0 flex-1 flex-col gap-[0.3em]">
               {marks
                 ? s.rows.map((row, j) => {
@@ -353,7 +387,7 @@ export default function Chart({
                     );
                   })
                 : s.rows.flatMap((row, j) =>
-                    layoutRow(row).map((line, k) => <Line key={`${j}-${k}`} line={line} chords={chords} bars={bars} />),
+                    layoutRow(row).map((line, k) => <Line key={`${j}-${k}`} line={line} chords={chords} bars={bars} paper={paper} />),
                   )}
             </div>
           </section>

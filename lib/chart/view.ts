@@ -13,7 +13,7 @@ import {
   shiftKey,
   type Key,
 } from "./transpose";
-import type { BeatItem, ChartDoc, Degree, ChartMeta, NumberStyle, Row, RowItem, Tag } from "./types";
+import type { BeatItem, ChartDoc, Degree, ChartMeta, NumberStyle, Row, RowItem, SectionLabel, Tag } from "./types";
 
 /** Everything the song page needs to draw a chart in any key / numbering style. */
 /** A chord split for drawing: root, quality (superscript part), slash bass. No modifiers. */
@@ -42,6 +42,7 @@ export type CellView =
   | { kind: "repeatSign"; side: "start" | "end"; text: string };
 export interface SectionView {
   label: string; // "V2", "C x2", "Big ending"
+  name: string; // the real name players read: "Verse 2", "Chorus", "Big ending" (no repeat count)
   repeat: number; // [C x2] -> 2
   rows: CellView[][];
 }
@@ -64,6 +65,20 @@ export interface ViewOptions {
 
 /** How minor chords show in Numbers view: "6-" or "6m". The stored chart text always uses "-". */
 export type MinorSymbol = "-" | "m";
+
+const FULL_NAME: Record<string, string> = {
+  V: "Verse",
+  Pre: "Pre-chorus",
+  C: "Chorus",
+  B: "Bridge",
+  Turn: "Turnaround",
+};
+
+/** A section's real name for the Full song view: "Verse 2", "Chorus", "Big ending". */
+export function sectionName({ name, custom, number }: SectionLabel): string {
+  const base = custom ? name : (FULL_NAME[name] ?? name);
+  return number != null ? `${base} ${number}` : base;
+}
 
 const minorQual = (q: string, sym: MinorSymbol) => (sym === "m" && q.startsWith("-") ? "m" + q.slice(1) : q);
 
@@ -180,6 +195,7 @@ export function buildView(doc: ChartDoc, opts: ViewOptions = {}): ChartView {
     if (line.kind === "section") {
       sections.push({
         label: labelShown(line.section),
+        name: sectionName(line.section),
         repeat: line.section.repeat ?? 1,
         rows: [...pending, ...line.rows.map(rowCells)],
       });

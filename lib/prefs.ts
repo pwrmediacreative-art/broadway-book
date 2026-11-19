@@ -55,8 +55,9 @@ export function usePref(key: string, area: Area = "local"): string | null {
 export const PREF = {
   display: "bb.display", // "numbers" | "chords"
   displayAt: "bb.display.at", // ISO time the Numbers/Chords choice last changed on this device
-  layout: "bb.layout", // "whole" = Whole song view; unset = Scroll
-  wholeMin: "bb.wholeMin", // Whole song: smallest text size in px before it pages (default 24)
+  layout: "bb.layout", // "whole" = Full song, "scroll" = Scrolling, unset = never picked (see stageFull / pageFull)
+  fullPeek: "bb.fullPeek", // sessionStorage: "1" = Full song opened over a Scrolling stage (stays across setlist songs)
+  wholeMin: "bb.wholeMin", // Full song: smallest text size in px before it pages (default 24)
   lyrics: "bb.lyrics", // "1" = show lyrics (when the /admin audience allows this player); off by default
   lyricsFull: "bb.lyrics.full", // sessionStorage: "1" = phone drawer at full height
   minorSymbol: "bb.minor", // "-" | "m" (default "m"): how minor numbers are drawn
@@ -73,3 +74,9 @@ export const PREF = {
   flagsLater: "bb.flags.later", // sessionStorage: "1" = "Not now" on moving this phone's flags to the account
   nav: "bb.nav", // sessionStorage: [{slug,title}] list the player opened a song from
 } as const;
+
+/** Stage mode shows Full song unless the player picked Scrolling (Q17: the default for anyone
+ *  who never picked). Before Q17 picking Scroll removed the setting, so it can't be told apart. */
+export const stageFull = (layout: string | null) => layout !== "scroll";
+/** The song page shows Full song only when the player picked it; it scrolls otherwise. */
+export const pageFull = (layout: string | null) => layout === "whole";

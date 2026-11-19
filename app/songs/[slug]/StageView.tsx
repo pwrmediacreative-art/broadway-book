@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { clampSpeed, clampStageSize, MAX_SPEED, MAX_STAGE_SIZE, pretty, SPEEDS, suggestSpeed } from "@/lib/chart";
-import { PREF, setPref, usePref } from "@/lib/prefs";
+import { PREF, setPref, stageFull, usePref } from "@/lib/prefs";
 import Chart from "./Chart";
 import { btn, BpmToggle, DisplayControls, off, on } from "./controls";
 import { usePickedChart } from "@/lib/personal/versions";
@@ -14,8 +14,9 @@ import CheatSheet from "@/app/upload/CheatSheet";
 import { HoldSheet, useHold, useHoldMarks, withHold, type Spot } from "./Hold";
 import ReadChoice from "@/app/ReadChoice";
 import Lyrics from "./Lyrics";
-import RoadMap from "./RoadMap";
-import WholeChart, { WHOLE_MIN_DEFAULT, type Pager } from "./WholeChart";
+import FullChart, { FULL_MIN_DEFAULT, type Pager } from "./FullChart";
+import PaperHead from "./PaperHead";
+import FullEdit, { useCanEdit, type EditTarget } from "./FullEdit";
 import { useFullScreenPage } from "@/lib/nav/full";
 
 const FIT_MIN = 30; // px: smallest size we shrink to so the whole chart fits without scrolling
@@ -69,6 +70,9 @@ export default function StageView({
   neighbors,
   set,
   mine,
+  popup,
+  artist,
+  edit,
 }: {
   slug: string;
   title: string;
@@ -77,6 +81,11 @@ export default function StageView({
   set?: StageSet;
   /** One of the player's own uploaded charts: exits to /mine/<id>, adds Song details. */
   mine?: { id: string | null };
+  /** Full song pop-up over a page (Q17): always Full song; ✕, Escape or a swipe down closes it. */
+  popup?: { onClose: () => void };
+  artist?: string | null;
+  /** What the Edit button saves to (Full song only; no Edit without it or when signed out). */
+  edit?: EditTarget;
 }) {
   // The player's own version, if they have one (one tap on the chip flips to public).
   const pick = usePickedChart(slug, chartText);
@@ -89,10 +98,18 @@ export default function StageView({
   const goTo = useGo();
   const local = useLocalNav();
   const scroller = useRef<HTMLDivElement>(null);
-  // Whole song: the chart fits one screen in columns (pages below WHOLE_MIN), never scrolls.
-  const whole = usePref(PREF.layout) === "whole";
+  // Full song: the chart fits one screen in columns like a paper chart (pages below the
+  // smallest size), never scrolls. Stage opens in it unless the player picked Scrolling; from
+  // Scrolling, "Full song" opens it for this visit (peek, kept across a setlist's songs).
+  const layout = usePref(PREF.layout);
+  const peekPref = usePref(PREF.fullPeek, "session") === "1";
+  const peek = !popup && !stageFull(layout) && peekPref;
+  const whole = !!popup || stageFull(layout) || peek;
+  const setPeek = (v: boolean) => setPref(PREF.fullPeek, v ? "1" : null, "session");
+  const [editing, setEditing] = useState(false);
+  const canEdit = useCanEdit(edit);
   const minPref = Number(usePref(PREF.wholeMin));
-  const wholeMin = Number.isFinite(minPref) && minPref >= 16 && minPref <= 48 ? minPref : WHOLE_MIN_DEFAULT;
+  const wholeMin = Number.isFinite(minPref) && minPref >= 16 && minPref <= 48 ? minPref : FULL_MIN_DEFAULT;
   const pager = useRef<Pager | null>(null);
   const chartEl = useRef<HTMLDivElement>(null);
   useWakeLock();
@@ -167,7 +184,7 @@ export default function StageView({
 
   // --- scrolling ------------------------------------------------------------------------
   const [scrollable, setScrollable] = useState(false);
-  const scroll = scrollable && !whole; // auto-scroll is off in Whole song
+  const scroll = scrollable && !whole; // auto-scroll is off in Full song
   const [suggested, setSuggested] = useState<number | null>(null);
   useLayoutEffect(() => {
     const box = scroller.current;
@@ -200,7 +217,7 @@ export default function StageView({
   // Always start paused (also covers prefers-reduced-motion). Never auto-advances songs.
   const [playing, setPlaying] = useState(false);
   const play = () => {
-    if (whole) return; // nothing to scroll in Whole song
+    if (whole) return; // nothing to scroll in Full song
     const box = scroller.current;
     if (!box || !scrollable) return;
     if (box.scrollTop >= box.scrollHeight - box.clientHeight - 1) box.scrollTop = 0;
@@ -264,6 +281,11 @@ export default function StageView({
   const [sheet, setSheet] = useState(false); // uploaded charts: one-screen Song details
   const go = (d: -1 | 1) => {
     setSpot(null);
+    if (popup) {
+      // The pop-up over a song page shows one song: past its last page there is nothing more.
+      setToast(d > 0 ? "Last page" : "First page");
+      return;
+    }
     if (set) {
       if (!set.go(d)) setToast(d > 0 ? "Last song in the set" : "First song in the set");
       return;
@@ -272,7 +294,7 @@ export default function StageView({
     if (t) goTo(`/songs/${t.slug}/stage`);
     else setToast(d > 0 ? "Last song in the list" : "First song in the list");
   };
-  /** Whole song: turn a page first; past the first/last page, change song as usual. */
+  /** Full song: turn a page first; past the first/last page, change song as usual. */
   const turn = (d: -1 | 1) => {
     if (whole && pager.current?.turn(d)) {
       setSpot(null);
@@ -282,7 +304,8 @@ export default function StageView({
   };
   const exit = () => {
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-    if (set) set.onExit();
+    if (popup) popup.onClose();
+    else if (set) set.onExit();
     else goTo(mine?.id ? `/mine/${mine.id}` : `/songs/${slug}`);
   };
   useEffect(() => {
@@ -290,6 +313,7 @@ export default function StageView({
   }, [set, nav.next, router, local]);
 
   useSongKeys(turn, (e) => {
+    if (editing) return true; // the editor is open on top: keys belong to it
     if (whole && (e.key === " " || e.key === "ArrowUp" || e.key === "ArrowDown")) {
       e.preventDefault();
       turn(e.key === "ArrowUp" ? -1 : 1); // pedals mapped to Space or Up/Down turn pages too
@@ -324,6 +348,8 @@ export default function StageView({
   // Press and hold a chord: opens the sheet over stage mode. A hold is never a tap or a swipe.
   const hold = useHold(s.view, s.chords, setSpot);
   const marks = useHoldMarks(slug, s.view, spot);
+  // Swipe down closes the pop-up (or the Full song opened over a Scrolling stage).
+  const closeFull = popup ? exit : peek ? () => setPeek(false) : null;
   const tapSwipe = useGesture({
     onDown: () => {
       wasPlaying.current = playing;
@@ -335,7 +361,7 @@ export default function StageView({
     onTap: (x) => {
       if (hold.held() || closedPanel.current) return;
       if (whole) {
-        // Whole song: tap the right or left edge to turn the page.
+        // Full song: tap the right or left edge to turn the page.
         const r = scroller.current?.getBoundingClientRect();
         if (!r || x === undefined) return;
         const f = (x - r.left) / r.width;
@@ -346,6 +372,7 @@ export default function StageView({
       if (!wasPlaying.current) play();
     },
     onSwipe: (d) => !hold.held() && turn(d),
+    onSwipeDown: closeFull ? () => !hold.held() && closeFull() : undefined,
   });
   const gesture = withHold(tapSwipe, hold.handlers);
 
@@ -363,17 +390,33 @@ export default function StageView({
     if (a instanceof HTMLButtonElement) a.blur(); // so Space never double-fires a focused button
   };
 
+  const quiet = "h-11 shrink-0 rounded-bb-control px-2 text-sm font-bold active:bg-bb-case-charcoal";
   return (
-    <div className={`bb-stage fixed inset-0 z-50 flex flex-col bg-bb-house-black text-bb-chart-white ${stageLook(light)}`} onPointerDownCapture={poke}>
-      <ReadChoice />
-      <Lyrics slug={slug} stage />
+    <>
+    <div
+      className={`bb-stage fixed inset-0 z-50 flex flex-col bg-bb-house-black text-bb-chart-white ${stageLook(light)}`}
+      onPointerDownCapture={poke}
+      role={popup ? "dialog" : undefined}
+      aria-label={popup ? `Full song: ${title}` : undefined}
+    >
+      {!popup && <ReadChoice />}
+      {!popup && <Lyrics slug={slug} stage />}
       <header className="flex h-12 shrink-0 items-center gap-1 border-b border-bb-rule-gray/60 pl-1 pr-2 text-base">
-        <button onClick={exit} aria-label={set ? "Exit play mode" : "Exit stage mode"} className="grid size-11 shrink-0 place-items-center rounded-bb-control text-2xl text-bb-cue-gray active:bg-bb-case-charcoal">
+        <button
+          onClick={exit}
+          aria-label={popup ? "Close Full song" : set ? "Exit play mode" : "Exit stage mode"}
+          className="grid size-11 shrink-0 place-items-center rounded-bb-control text-2xl text-bb-cue-gray active:bg-bb-case-charcoal"
+        >
           ✕
         </button>
-        <div className="flex min-w-20 flex-1 items-baseline gap-1">
-          <b className="truncate">{title}</b>
-          {view.keyShort && <span className="shrink-0 whitespace-nowrap text-bb-cue-gray">· {pretty(view.keyShort)}</span>}
+        {/* Full song: the paper header under this bar carries the title and key. */}
+        <div className={`flex flex-1 items-baseline gap-1 ${whole ? "min-w-0" : "min-w-20"}`}>
+          {!whole && (
+            <>
+              <b className="truncate">{title}</b>
+              {view.keyShort && <span className="shrink-0 whitespace-nowrap text-bb-cue-gray">· {pretty(view.keyShort)}</span>}
+            </>
+          )}
         </div>
         {pick.mine && (
           <button
@@ -385,6 +428,16 @@ export default function StageView({
           </button>
         )}
         <BpmToggle s={s} className="shrink-0 text-sm text-bb-cue-gray" />
+        {whole && canEdit && (
+          <button onClick={() => setEditing(true)} className={`${quiet} text-bb-chart-white`}>
+            Edit
+          </button>
+        )}
+        {!popup && (peek || !whole) && (
+          <button onClick={() => setPeek(!peek)} aria-pressed={peek} className={`${quiet} text-bb-chart-white`}>
+            {peek ? "Scrolling" : "Full song"}
+          </button>
+        )}
         {mine && (
           <button onClick={() => setSheet(true)} className="h-11 shrink-0 rounded-bb-control px-2 text-sm font-bold text-bb-downbeat-amber active:bg-bb-case-charcoal">
             Song details
@@ -421,23 +474,23 @@ export default function StageView({
       )}
       {set?.note && <p className="shrink-0 truncate border-b border-bb-downbeat-amber/40 bg-bb-downbeat-amber/15 px-4 py-1.5 text-xl font-bold text-bb-downbeat-amber">{set.note}</p>}
 
-      {whole && <RoadMap view={view} className="pl-[max(var(--bb-space-6),env(safe-area-inset-left))] pr-[max(var(--bb-space-6),env(safe-area-inset-right))]" />}
       <div
         ref={scroller}
         {...gesture}
         onWheel={() => playing && setPlaying(false)}
-        className={`relative min-h-0 flex-1 touch-pan-y select-none overflow-x-hidden overscroll-contain py-2 pl-[max(var(--bb-space-6),env(safe-area-inset-left))] pr-[max(var(--bb-space-6),env(safe-area-inset-right))] ${whole ? "overflow-y-hidden" : "overflow-y-auto"}`}
+        className={`relative min-h-0 flex-1 ${closeFull ? "touch-none" : "touch-pan-y"} select-none overflow-x-hidden overscroll-contain py-2 pl-[max(var(--bb-space-6),env(safe-area-inset-left))] pr-[max(var(--bb-space-6),env(safe-area-inset-right))] ${whole ? "overflow-y-hidden" : "overflow-y-auto"}`}
       >
         {whole ? (
-          <WholeChart
+          <FullChart
             view={view}
             chords={s.chords}
             fontFamily={FONTS[s.font].css}
             fontWeight={FONTS[s.font].weight}
             hold={marks}
             minPx={wholeMin}
-            next={set ? (set.next ?? null) : (nav.next?.title ?? null)}
+            next={popup ? null : set ? (set.next ?? null) : (nav.next?.title ?? null)}
             pagerRef={pager}
+            head={<PaperHead view={view} title={title} artist={artist} fontFamily={FONTS[s.font].css} className="mb-3" />}
           />
         ) : (
           <>
@@ -462,10 +515,10 @@ export default function StageView({
         {panel && (
           <div className="bb-panel mx-2 mb-2 max-h-[65dvh] overflow-y-auto border border-bb-rule-gray p-4">
             <div className="mb-4 flex flex-wrap items-center gap-2">
-              <DisplayControls s={s} />
+              <DisplayControls s={s} layout={popup ? false : { full: whole, onPick: () => setPeek(false) }} />
             </div>
             {whole ? (
-              <p className="mb-4 text-base text-bb-cue-gray">Whole song sizes the text to fit the screen. Change the smallest size in Settings.</p>
+              <p className="mb-4 text-base text-bb-cue-gray">Full song sizes the text to fit the screen. Change the smallest size in Settings.</p>
             ) : (
             <>
             <div className="mb-1 flex items-center justify-between text-lg">
@@ -615,5 +668,20 @@ export default function StageView({
         </div>
       )}
     </div>
+    {editing && edit && (
+      <FullEdit
+        target={edit}
+        slug={slug}
+        text={pick.text}
+        publicText={chartText}
+        onClose={() => setEditing(false)}
+        onSaved={(msg) => {
+          setEditing(false);
+          setToast(msg);
+          if (edit.kind !== "library") router.refresh();
+        }}
+      />
+    )}
+    </>
   );
 }

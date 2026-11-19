@@ -11,6 +11,7 @@ import Chart from "@/app/songs/[slug]/Chart";
 import { DisplayControls, KeyInfo } from "@/app/songs/[slug]/controls";
 import { FONTS, useChartState } from "@/app/songs/[slug]/hooks";
 import { enterFullscreen } from "@/app/songs/[slug]/SongView";
+import StageView from "@/app/songs/[slug]/StageView";
 import { addSongDetail } from "@/app/upload/actions";
 import CheatSheet from "@/app/upload/CheatSheet";
 import { OFFLINE_MSG, useOffline } from "@/lib/offline/status";
@@ -24,6 +25,7 @@ export default function MineView({ chart, offline = false }: { chart: MineChart;
   const text = saved && saved.from === chart.chart_text ? saved.text : chart.chart_text;
   const s = useChartState(chart.slug, text);
   const [sheet, setSheet] = useState(false);
+  const [pop, setPop] = useState(false); // the Full song pop-up
   useEffect(() => {
     if (!offline) void rememberMine(chart);
   }, [chart, offline]);
@@ -44,6 +46,16 @@ export default function MineView({ chart, offline = false }: { chart: MineChart;
         <Link href={`/mine/${chart.id}/stage`} onClick={enterFullscreen} className="bb-btn bb-btn-primary h-12 px-5 text-lg font-bold">
           Stage mode
         </Link>
+        <button
+          type="button"
+          className={act}
+          onClick={() => {
+            enterFullscreen();
+            setPop(true);
+          }}
+        >
+          Full song
+        </button>
         <button type="button" className={`${act} ${sheet ? "bb-on" : ""}`} onClick={() => setSheet(!sheet)} aria-expanded={sheet}>
           Song details
         </button>
@@ -91,6 +103,19 @@ export default function MineView({ chart, offline = false }: { chart: MineChart;
         </>
       ) : (
         <p className="bb-error px-3 py-2 text-lg">{s.error}</p>
+      )}
+      {pop && (
+        <StageView
+          popup={{ onClose: () => setPop(false) }}
+          slug={chart.slug}
+          title={chart.title}
+          artist={chart.artist}
+          chartText={text}
+          neighbors={{ prev: null, next: null }}
+          mine={{ id: chart.id }}
+          // Your own chart saves straight to it (not another admin's, nor one waiting for votes).
+          edit={chart.mine === false || chart.locked || offline ? undefined : chart.made ? { kind: "made", id: chart.id } : { kind: "upload", songId: chart.id }}
+        />
       )}
     </main>
   );

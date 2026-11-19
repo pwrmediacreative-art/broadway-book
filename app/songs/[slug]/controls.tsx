@@ -15,15 +15,19 @@ import {
 } from "@/lib/chart";
 import { Caret, Fermata } from "./Chart";
 import type { ChartState } from "./hooks";
-import { PREF, setPref, usePref } from "@/lib/prefs";
+import { pageFull, PREF, setPref, usePref } from "@/lib/prefs";
 
 export const btn = "bb-btn h-12 min-w-12 px-4 text-lg font-semibold";
 export const on = "bb-on";
 // Off keeps a solid Case Charcoal ground so stage controls stay readable over the chart.
 export const off = "bb-btn-secondary bg-bb-case-charcoal active:bg-bb-house-black";
 
+/** Where the layout switch sits: the song page (default), stage mode (what it shows now, and
+ *  what to do on a pick), or nowhere (the Full song pop-up is always Full song). */
+export type LayoutAt = { full: boolean; onPick?: () => void } | false;
+
 /** Key picker, Numbers/Chords, minor symbol (6- / 6m) and, for minor keys, Relative / Parallel. */
-export function DisplayControls({ s }: { s: ChartState }) {
+export function DisplayControls({ s, layout }: { s: ChartState; layout?: LayoutAt }) {
   const view = s.view!;
   const { meta } = view;
   const original = meta.key ? parseKey(meta.key) : null;
@@ -33,7 +37,7 @@ export function DisplayControls({ s }: { s: ChartState }) {
   const m = s.minorSymbol;
   return (
     <>
-      <LayoutSwitch />
+      {layout !== false && <LayoutSwitch at={layout} />}
       {original && (
         <select
           value={selected}
@@ -261,17 +265,23 @@ export function BpmToggle({ s, className = "" }: { s: ChartState; className?: st
   );
 }
 
-/** Scroll (the chart in one column) or Whole song (sections in columns; fits the screen in
- *  stage mode). Remembered on this device. */
-export function LayoutSwitch() {
-  const whole = usePref(PREF.layout) === "whole";
+/** Scrolling (the chart in one column) or Full song (laid out like a paper chart: sections in
+ *  columns; fits the screen in stage mode). Remembered on this device. A pick is stored either
+ *  way ("scroll" / "whole"): stage mode opens in Full song for players who never picked. */
+export function LayoutSwitch({ at }: { at?: { full: boolean; onPick?: () => void } }) {
+  const stored = usePref(PREF.layout);
+  const whole = at ? at.full : pageFull(stored);
+  const pick = (v: "scroll" | "whole") => {
+    setPref(PREF.layout, v);
+    at?.onPick?.();
+  };
   return (
     <div className="flex" role="group" aria-label="Layout">
-      <button className={`${btn} rounded-r-none ${whole ? off : on}`} onClick={() => setPref(PREF.layout, null)} aria-pressed={!whole}>
-        Scroll
+      <button className={`${btn} rounded-r-none ${whole ? off : on}`} onClick={() => pick("scroll")} aria-pressed={!whole}>
+        Scrolling
       </button>
-      <button className={`${btn} rounded-l-none ${whole ? on : off}`} onClick={() => setPref(PREF.layout, "whole")} aria-pressed={whole}>
-        Whole song
+      <button className={`${btn} rounded-l-none ${whole ? on : off}`} onClick={() => pick("whole")} aria-pressed={whole}>
+        Full song
       </button>
     </div>
   );

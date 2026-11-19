@@ -6,7 +6,7 @@ import { clampStageSize } from "@/lib/chart";
 import { setDisplay, type Display } from "@/lib/display";
 import { useNavMe } from "@/lib/nav/me";
 import { OFFLINE_MSG, useOffline } from "@/lib/offline/status";
-import { PREF, setPref, usePref } from "@/lib/prefs";
+import { PREF, setPref, stageFull, usePref } from "@/lib/prefs";
 import { useLyricsAllowed } from "./songs/[slug]/Lyrics";
 
 /** The two big "How do you read charts?" buttons (first visit and Settings). */
@@ -167,9 +167,10 @@ function LyricsToggle() {
   );
 }
 
-/** Scroll / Whole song, and the smallest text size Whole song uses before it turns pages. */
+/** Scrolling / Full song, and the smallest text size Full song uses before it turns pages.
+ *  Shows what stage mode opens in: Full song for players who never picked (Q17). */
 function LayoutSetting() {
-  const whole = usePref(PREF.layout) === "whole";
+  const whole = stageFull(usePref(PREF.layout));
   const min = Number(usePref(PREF.wholeMin)) || 24;
   const opt = (on: boolean, label: string, onClick: () => void) => (
     <button type="button" aria-pressed={on} onClick={onClick} className={`bb-btn h-12 flex-1 px-3 text-lg ${on ? "bb-btn-primary" : "bb-btn-secondary"}`}>
@@ -180,10 +181,12 @@ function LayoutSetting() {
     <>
       <h3 className="mb-2 mt-6 text-lg font-semibold">Chart layout</h3>
       <div className="flex gap-3">
-        {opt(!whole, "Scroll", () => setPref(PREF.layout, null))}
-        {opt(whole, "Whole song", () => setPref(PREF.layout, "whole"))}
+        {opt(!whole, "Scrolling", () => setPref(PREF.layout, "scroll"))}
+        {opt(whole, "Full song", () => setPref(PREF.layout, "whole"))}
       </div>
-      <p className="mt-2 text-base text-bb-cue-gray">Whole song puts the chart on one screen in columns. If it can’t fit, it turns pages (pedal, arrows, swipe or tap an edge).</p>
+      <p className="mt-2 text-base text-bb-cue-gray">
+        Full song lays the chart out like a paper chart, on one screen in columns. If it can’t fit, it turns pages (pedal, arrows, swipe or tap an edge). Scrolling shows one column that can scroll by itself.
+      </p>
       {whole && (
         <>
           <p className="mb-2 mt-3 text-base">Smallest text before pages</p>

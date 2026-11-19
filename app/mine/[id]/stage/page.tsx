@@ -21,5 +21,15 @@ async function Inner({ params }: { params: PageProps<"/mine/[id]/stage">["params
   if (!(await getCurrentUser())) redirect(`/login?next=${encodeURIComponent(`/mine/${id}/stage`)}`);
   const chart = await loadMine(id);
   if (!chart) notFound();
-  return <StageView slug={chart.slug} title={chart.title} chartText={chart.chart_text} neighbors={NO_NEIGHBORS} mine={{ id: chart.id }} />;
+  return (
+    <StageView
+      slug={chart.slug}
+      title={chart.title}
+      artist={chart.artist}
+      chartText={chart.chart_text}
+      neighbors={NO_NEIGHBORS}
+      mine={{ id: chart.id }}
+      edit={!chart.mine || chart.locked ? undefined : chart.made ? { kind: "made", id: chart.id } : { kind: "upload", songId: chart.id }}
+    />
+  );
 }
