@@ -160,8 +160,7 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Q17: /mine/[id], /upload/[id] and /c/ pages show the Scrolling | Full song switch but always scroll (only the song page and stage lay out Full song).
 - Q17: players who picked Scroll before Q17 had nothing stored, so stage now opens them in Full song once (they pick Scrolling again).
 - Q17: setlist play mode has no Edit in Full song (the play bundle carries no song id).
-- Q17 Full song Edit: a suggestion carries the tap editor's own layout (header lines, rows of 4, a `{mod:}` moved into its section), so voters see extra changed rows in the bar diff.
 - Q17 Full song Edit: 526 of 2365 library charts have parts the tap editor model can't keep (comments after the last section, bars or tags before the first), so Edit sends them to the text editor (`editorKeeps`).
-- Q17 Full song pop-up: not in browser history, so Android back leaves the song page (and drops unsaved Edit changes without asking).
 - Q17 stage: before prefs load, the server HTML shows Full song, so players who picked Scrolling see it flash on first paint (Whole song pickers had the reverse before).
 - Q17 removed the road map strip, so the "Whole song: the road map strip has a `current` slot" line above no longer applies.
+- Q17 Full song Edit: about 5% of edits to tap-editable charts (a section added or moved after a last section that ends in `{...}` tag lines, and similar) fall back to the editor's own layout, so the bar diff shows extra rows there.

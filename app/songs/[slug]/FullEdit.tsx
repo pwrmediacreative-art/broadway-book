@@ -7,14 +7,15 @@
 // community approves it; admins decide on the suggestion page as today). Same server actions,
 // same database rules.
 import Link from "next/link";
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition, type RefObject } from "react";
 import Builder from "@/app/make/[id]/Builder";
 import { saveChart } from "@/app/make/actions";
 import { propose, savePersonal } from "@/app/community/actions";
 import { savePrivateChart } from "@/app/upload/actions";
 import { OfflineNote } from "@/app/OfflineRoot";
 import { checkChart, diffDocs, parseChart } from "@/lib/chart";
-import { editorKeeps, fromText, toText } from "@/lib/make/model";
+import { keepLayout } from "@/lib/make/keep";
+import { editorKeeps } from "@/lib/make/model";
 import { useNavMe } from "@/lib/nav/me";
 import { useOffline } from "@/lib/offline/status";
 import { loadMyVersions } from "@/lib/personal/versions";
@@ -38,6 +39,8 @@ export default function FullEdit({
   publicText,
   onClose,
   onSaved,
+  backRef,
+  onLeave,
 }: {
   target: EditTarget;
   slug: string;
@@ -47,6 +50,9 @@ export default function FullEdit({
   publicText: string;
   onClose: () => void;
   onSaved: (message: string) => void;
+  /** From the Full song pop-up: browser back asks before dropping unsaved changes, then leaves. */
+  backRef?: RefObject<(() => boolean) | null>;
+  onLeave?: () => void;
 }) {
   // The editor model only keeps charts shaped like its own; anything else (bars or comments
   // outside a section, say) would lose parts on save, so those open the text editor instead.
@@ -60,7 +66,8 @@ export default function FullEdit({
             ← Full song
           </button>
           <p className="mt-3 text-lg">This chart has parts the tap editor can&apos;t keep yet. Change it in the text editor instead.</p>
-          <Link href={textEditor} className="bb-btn bb-btn-primary mt-4 h-12 px-5 text-lg font-bold">
+          {/* From the pop-up this takes the place of its history entry, so back returns to the page. */}
+          <Link href={textEditor} replace={!!onLeave} className="bb-btn bb-btn-primary mt-4 h-12 px-5 text-lg font-bold">
             Open the text editor
           </Link>
         </div>
@@ -73,9 +80,13 @@ export default function FullEdit({
           proposalId={null}
           setlist={null}
           setlistError={false}
+          backRef={backRef}
           popup={{
             onClose,
-            save: (t, changed) => <SaveChoices target={target} slug={slug} text={t} changed={changed} publicText={publicText} onSaved={onSaved} />,
+            onLeave,
+            save: (t, changed) => (
+              <SaveChoices target={target} slug={slug} base={text} edited={t} changed={changed} publicText={publicText} onSaved={onSaved} />
+            ),
           }}
         />
       )}
@@ -88,14 +99,17 @@ type Msg = { text: string } | null;
 function SaveChoices({
   target,
   slug,
-  text,
+  base,
+  edited,
   changed,
   publicText,
   onSaved,
 }: {
   target: EditTarget;
   slug: string;
-  text: string;
+  /** The chart as it opened in the editor, and as the editor holds it now. */
+  base: string;
+  edited: string;
   changed: boolean;
   publicText: string;
   onSaved: (message: string) => void;
@@ -105,12 +119,13 @@ function SaveChoices({
   const [msg, setMsg] = useState<Msg>(null);
   const [note, setNote] = useState("");
   const [noteMissing, setNoteMissing] = useState(false);
+  // What gets saved: the edit written in the chart's own layout (rows, header lines), so a
+  // suggestion's bar diff shows only the bars the player changed (lib/make/keep.ts).
+  const text = useMemo(() => keepLayout(base, edited), [base, edited]);
   const check = useMemo(() => checkChart(text), [text]);
-  // Compared as the editor writes it (header lines, rows of 4), so opening the editor and
-  // changing nothing never counts as a suggestion.
   const publicDoc = useMemo(() => {
     try {
-      return parseChart(toText(fromText(publicText))).doc;
+      return parseChart(publicText).doc;
     } catch {
       return null;
     }

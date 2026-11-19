@@ -8,7 +8,7 @@
 // pop-up draws its own save choices under the sections (app/songs/[slug]/FullEdit.tsx).
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode, type RefObject } from "react";
 import Chart from "@/app/songs/[slug]/Chart";
 import { DisplayControls, KeyInfo } from "@/app/songs/[slug]/controls";
 import { FONTS, useChartState } from "@/app/songs/[slug]/hooks";
@@ -67,13 +67,15 @@ type SheetState =
   | { kind: "more" }
   | { kind: "submit" }
   | { kind: "delete" }
-  | { kind: "discard" };
+  | { kind: "discard"; all?: boolean }; // all: leave the whole Full song pop-up (browser back)
 
 /** Editing from the Full song pop-up: no autosave; `save` draws the save choices for the
  *  current text (`changed`: differs from the chart it opened with). */
 export interface BuilderPopup {
   onClose: () => void;
   save: (text: string, changed: boolean) => ReactNode;
+  /** Close the whole pop-up after "Leave without saving" from a browser back. */
+  onLeave?: () => void;
 }
 
 const replaceAt = (items: RowItem[], at: number, it: RowItem) => items.map((x, i) => (i === at ? it : x));
@@ -87,6 +89,7 @@ export default function Builder({
   setlist,
   setlistError,
   popup,
+  backRef,
 }: {
   id: string;
   slug: string;
@@ -96,6 +99,9 @@ export default function Builder({
   setlist: string | null;
   setlistError: boolean;
   popup?: BuilderPopup;
+  /** Full song pop-up, browser back while editing: filled in here; true when it asked "Leave
+   *  without saving?" (the pop-up then stays), false when nothing is unsaved (it closes). */
+  backRef?: RefObject<(() => boolean) | null>;
 }) {
   const router = useRouter();
   const offline = useOffline();
@@ -143,6 +149,19 @@ export default function Builder({
     }, 1200);
     return () => window.clearTimeout(t);
   }, [id, text, dirty, locked, offline, inPopup]);
+
+  // Browser back from the Full song pop-up: ask first when something isn't saved.
+  useEffect(() => {
+    if (!backRef) return;
+    backRef.current = () => {
+      if (!dirty) return false;
+      setSheet({ kind: "discard", all: true });
+      return true;
+    };
+    return () => {
+      backRef.current = null;
+    };
+  }, [backRef, dirty]);
 
   // Leaving with changes not saved yet: ask first.
   useEffect(() => {
@@ -755,7 +774,8 @@ export default function Builder({
               className="bb-btn bb-btn-danger h-12 w-full text-lg font-semibold"
               onClick={() => {
                 setSavedText(text); // so leaving doesn't ask the browser too
-                popup.onClose();
+                if (sheet.all && popup.onLeave) popup.onLeave();
+                else popup.onClose();
               }}
             >
               Leave without saving

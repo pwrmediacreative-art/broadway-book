@@ -89,7 +89,7 @@ export function headerError(h: Pick<Header, "title" | "artist" | "key" | "time">
   return null;
 }
 
-function headerLines(h: Header): string[] {
+export function headerLines(h: Header): string[] {
   const out = [`{title: ${clean(h.title)}}`];
   if (clean(h.artist)) out.push(`{artist: ${clean(h.artist)}}`);
   const bpm = cleanBpm(h.bpm);

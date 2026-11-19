@@ -305,13 +305,45 @@ export default function StageView({
   };
   const exit = () => {
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-    if (popup) popup.onClose();
+    if (popup) leavePopup();
     else if (set) set.onExit();
     else goTo(mine?.id ? `/mine/${mine.id}` : `/songs/${slug}`);
   };
   useEffect(() => {
     if (!set && !isPopup && nav.next && !local) router.prefetch(`/songs/${nav.next.slug}/stage`);
   }, [set, isPopup, nav.next, router, local]);
+
+  // The pop-up has its own history entry, so a phone's back button closes it instead of
+  // leaving the page. ✕ / Escape / swipe down go back through that entry (none is left over);
+  // back while editing asks first when changes aren't saved.
+  const closeRef = useRef(popup?.onClose);
+  useEffect(() => {
+    closeRef.current = popup?.onClose;
+  });
+  const closing = useRef(false);
+  const editBackRef = useRef<(() => boolean) | null>(null);
+  useEffect(() => {
+    if (!isPopup) return;
+    if (!history.state?.bbFullSong) history.pushState({ bbFullSong: true }, "");
+    const onPop = () => {
+      if (!closing.current && editBackRef.current?.()) {
+        history.pushState({ bbFullSong: true }, ""); // it asked first: stay open
+        return;
+      }
+      closing.current = false;
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+      closeRef.current?.();
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [isPopup]);
+  const leavePopup = () => {
+    if (closing.current) return; // already on its way out
+    if (history.state?.bbFullSong) {
+      closing.current = true;
+      history.back(); // the popstate above closes it
+    } else popup?.onClose();
+  };
 
   // The pop-up is a dialog over the page: focus moves into it (so Space or Enter never reach
   // the button that opened it) and goes back to that button when it closes.
@@ -362,7 +394,7 @@ export default function StageView({
   const hold = useHold(s.view, s.chords, setSpot);
   const marks = useHoldMarks(slug, s.view, spot);
   // Swipe down closes the pop-up (or the Full song opened over a Scrolling stage).
-  const closeFull = popup ? exit : peek ? () => setPeek(false) : null;
+  const swipeCloses = isPopup || peek;
   const tapSwipe = useGesture({
     onDown: () => {
       wasPlaying.current = playing;
@@ -385,7 +417,13 @@ export default function StageView({
       if (!wasPlaying.current) play();
     },
     onSwipe: (d) => !hold.held() && turn(d),
-    onSwipeDown: closeFull ? () => !hold.held() && closeFull() : undefined,
+    onSwipeDown: swipeCloses
+      ? () => {
+          if (hold.held()) return;
+          if (popup) exit();
+          else setPeek(false);
+        }
+      : undefined,
   });
   const gesture = withHold(tapSwipe, hold.handlers);
 
@@ -503,7 +541,7 @@ export default function StageView({
         ref={scroller}
         {...gesture}
         onWheel={() => playing && setPlaying(false)}
-        className={`relative min-h-0 flex-1 ${closeFull ? "touch-none" : "touch-pan-y"} select-none overflow-x-hidden overscroll-contain py-2 pl-[max(var(--bb-space-6),env(safe-area-inset-left))] pr-[max(var(--bb-space-6),env(safe-area-inset-right))] ${whole ? "overflow-y-hidden" : "overflow-y-auto"}`}
+        className={`relative min-h-0 flex-1 ${swipeCloses ? "touch-none" : "touch-pan-y"} select-none overflow-x-hidden overscroll-contain py-2 pl-[max(var(--bb-space-6),env(safe-area-inset-left))] pr-[max(var(--bb-space-6),env(safe-area-inset-right))] ${whole ? "overflow-y-hidden" : "overflow-y-auto"}`}
       >
         {whole ? (
           <FullChart
@@ -700,6 +738,8 @@ export default function StageView({
         text={pick.text}
         publicText={chartText}
         onClose={() => setEditing(false)}
+        backRef={popup ? editBackRef : undefined}
+        onLeave={popup ? leavePopup : undefined}
         onSaved={(msg) => {
           setEditing(false);
           setToast(msg);
