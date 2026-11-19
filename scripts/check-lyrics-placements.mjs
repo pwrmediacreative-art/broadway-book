@@ -95,6 +95,10 @@ try {
   refused(await save(A.db, { p_placements: [0, 1, 0, 500] }), "bar row out of range refused");
   refused(await save(A.db, { p_placements: [0, 1, -1, 0] }), "section nth out of range refused");
   refused(await save(A.db, { p_placements: Array.from({ length: 2004 }, () => 0) }), "too many placements refused");
+  refused(await save(A.db, { p_placements: [3, 1, 0, 0, 3, 1, 0, 1] }), "the same line twice refused");
+  refused(await save(A.db, { p_placements: [5, 1, 0, 0, 2, 1, 0, 1] }), "lines out of order refused");
+  refused(await save(A.db, { p_placements: Array.from({ length: 65 }, (_, i) => [i, 1000 + i, 0, 0]).flat() }), "more than 64 section labels refused");
+  ok(await save(A.db, { p_placements: Array.from({ length: 64 }, (_, i) => [i, 1000 + i, 0, 0]).flat() }), "64 section labels allowed");
   refused(await save(A.db, { p_lrclib_id: -5 }), "bad lyrics record id refused");
   refused(await A.db.rpc("lyrics_save_mine", { p_song: draft.data.id, p_shown: true, p_placements: [], p_lrclib_id: null, p_at: null }), "only published songs");
   const cols = Object.keys((await svc.from("lyrics_song_prefs").select("*").eq("song_id", songId).single()).data ?? {});
@@ -106,6 +110,14 @@ try {
   ok(await A.db.from("user_prefs").upsert({ user_id: A.id, lyrics_panel: true, updated_at: new Date().toISOString() }), "admin saves the side panel switch");
   truthy((await A.db.from("user_prefs").select("lyrics_panel").eq("user_id", A.id).single()).data?.lyrics_panel === true, "side panel switch read back");
   truthy(((await B.db.from("user_prefs").select("lyrics_panel").eq("user_id", A.id)).data ?? []).length === 0, "another player can't read it");
+
+  // --- Admin-hidden song: only admins learn it's hidden --------------------------------------
+  await setAudience(2);
+  ok(await A.db.rpc("lyrics_set_hidden", { p_song: songId, p_hidden: true }), "admin hides the song's lyrics");
+  truthy(((await P.db.rpc("lyrics_song", { p_slug: slug })).data ?? []).length === 0, "hidden: a player in the audience gets no row (so it reads as no lyrics)");
+  truthy((await A.db.rpc("lyrics_song", { p_slug: slug })).data?.[0]?.hidden === true, "hidden: admins still see it hidden");
+  ok(await A.db.rpc("lyrics_set_hidden", { p_song: songId, p_hidden: false }), "admin shows it again");
+  truthy(((await P.db.rpc("lyrics_song", { p_slug: slug })).data ?? []).length === 1, "shown again: the player gets the song");
 
   // --- Kill switch --------------------------------------------------------------------------
   await setAudience(0);

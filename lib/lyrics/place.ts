@@ -27,6 +27,7 @@ export interface Placed {
 // Upper bounds the database checks too (lyrics_song_prefs.placements).
 export const MAX_NTH = 49;
 export const MAX_ROW = 199;
+export const MAX_LABELS = 64; // different section labels in one song's placements
 
 export const rowKey = (section: number, row: number) => `${section}.${row}`;
 const baseLabel = (label: string) => label.replace(/ x\d+$/, "");
@@ -131,9 +132,11 @@ export function stepRow(rows: BarRow[], key: string, d: -1 | 1): BarRow | null {
 
 /** Saved form: a flat list of integers, 4 per moved line: line, label hash, nth, bar row. */
 export function encodePlacements(moved: ReadonlyMap<number, RowRef>): number[] {
+  const labels = new Set<number>();
   return [...moved.entries()]
-    .filter(([line, r]) => line >= 0 && line < MAX_LINES && r.n >= 0 && r.n <= MAX_NTH && r.r >= 0 && r.r <= MAX_ROW)
+    .filter(([line, r]) => Number.isInteger(line) && line >= 0 && line < MAX_LINES && r.n >= 0 && r.n <= MAX_NTH && r.r >= 0 && r.r <= MAX_ROW)
     .sort((a, b) => a[0] - b[0])
+    .filter(([, r]) => (labels.has(r.h | 0) || labels.size < MAX_LABELS ? (labels.add(r.h | 0), true) : false))
     .flatMap(([line, r]) => [line, r.h | 0, r.n, r.r]);
 }
 

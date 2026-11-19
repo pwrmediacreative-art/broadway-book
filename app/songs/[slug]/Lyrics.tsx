@@ -24,7 +24,7 @@ import type { ChartLyrics } from "./Chart";
 
 type Source = { provider: string; id: number; title: string; artist: string; album: string | null };
 type Answer =
-  | { status: "ok"; text: string; lines?: LyricLine[]; synced?: boolean; source: Source; admin: boolean; songId: string; pinned: number | null }
+  | { status: "ok"; text: string; lines?: LyricLine[]; synced?: boolean; source: Source; admin: boolean; songId?: string; pinned?: number | null }
   | { status: "none" | "hidden"; admin?: boolean; songId?: string; pinned?: number | null }
   | { status: "off" | "error" };
 type Candidate = { id: number; title: string; artist: string; album: string | null; seconds: number | null; hasLyrics: boolean };
@@ -137,8 +137,8 @@ export function useLyrics(slug: string, view: ChartView | null, { enabled = true
   const [got, setGot] = useState<{ slug: string; a: Answer | null } | null>(null);
   const [nonce, setNonce] = useState(0); // bump to fetch again (admin changes)
 
-  const hasCache = hydrated && !!readCache(slug);
-  const visible = enabled && hydrated && (allowed === true || (allowed === null && offline && hasCache));
+  // The saved copy only matters offline (parsing it on every render would cost stage mode).
+  const visible = enabled && hydrated && (allowed === true || (allowed === null && offline && !!readCache(slug)));
   const on = visible && mine.shown;
 
   // Signed in: the account's choice for this song (and the side panel switch) win when newer.

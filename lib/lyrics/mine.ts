@@ -45,6 +45,8 @@ export function useMine(uid: string | null, slug: string): Mine {
   return useMemo(() => parse(raw), [raw]);
 }
 
+const syncing = new Map<string, Promise<void>>();
+
 async function push(songId: string, m: Mine) {
   const { error } = await browserClient().rpc("lyrics_save_mine", {
     p_song: songId,
@@ -61,11 +63,12 @@ async function push(songId: string, m: Mine) {
 export async function saveMine(uid: string | null, slug: string, patch: Partial<Omit<Mine, "at" | "songId">>): Promise<void> {
   const next = { ...readMine(uid, slug), ...patch, at: new Date().toISOString() };
   writeMine(uid, slug, next);
-  if (uid && next.songId && !isOffline()) await push(next.songId, next);
+  if (!uid) return;
+  if (next.songId && !isOffline()) await push(next.songId, next);
+  else syncing.delete(key(uid, slug)); // sync again once online / once the song's id is known
 }
 
 type MineRow = { song_id: string; shown: boolean | null; placements: number[] | null; lrclib_id: number | null; changed_at: string | null };
-const syncing = new Map<string, Promise<void>>();
 
 /** Signed in: line up this device and the account for one song, newest change wins. Once per
  *  song per page load; never throws. */

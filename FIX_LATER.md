@@ -169,3 +169,6 @@ Smaller issues found along the way. One line each. Blockers never go here.
 - Q18 lyrics: a song's on/off and moved lines are keyed by its slug on the device; after a rename the device copy starts over (the account copy follows the song id).
 - Q18 lyrics: Adjust lyrics is on the song page only (Scrolling and Full song layouts); stage mode and the Full song pop-up show the lines but can't move them.
 - Q18 lyrics: dragging a line doesn't scroll the page near the screen edge; for far moves, tap the line and use ▲ ▼.
+- Q18 lyrics admin: `act` in `AdminTools` (Lyrics.tsx, from Q7) has no try/catch, so a failed Hide / Pick server action leaves its buttons disabled until the page reloads.
+- Q18 lyrics: on desktop with the side panel open, an admin sees the Hide / Pick another tools twice (in the panel and under "Lyrics admin").
+- Q18 lyrics: the per-song Lyrics on/off still changes offline (device copy, sent up on the next sync) rather than showing OFFLINE_MSG; deliberate, like Numbers/Chords, but differs from the "writes disabled offline" rule.

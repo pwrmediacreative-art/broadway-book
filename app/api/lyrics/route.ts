@@ -21,9 +21,13 @@ export async function GET(request: Request) {
   const song = (data as { song_id: string; title: string; artist: string | null; hidden: boolean; lrclib_id: number | null; admin: boolean }[] | null)?.[0];
   if (!song) {
     const { data: allowed } = await db.rpc("lyrics_allowed");
-    return reply({ status: allowed ? "none" : "off" });
+    return reply(allowed ? { status: "none", admin: false } : { status: "off" });
   }
-  const base = { admin: song.admin, songId: song.song_id, pinned: song.lrclib_id };
+  // Song id and pick are for the admin tools only. A song an admin hid reads as "no lyrics"
+  // for everyone else, the same answer as a song LRCLIB doesn't have (lyrics_song already
+  // leaves it out for them; this keeps it so if that ever changes).
+  const base = song.admin ? { admin: true, songId: song.song_id, pinned: song.lrclib_id } : { admin: false };
+  if (song.hidden && !song.admin) return reply({ status: "none", ...base });
   if (url.searchParams.get("candidates") === "1") {
     if (!song.admin) return reply({ status: "off" }, 403);
     try {

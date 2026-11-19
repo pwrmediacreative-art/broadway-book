@@ -100,4 +100,11 @@ describe("placing and moving", () => {
     expect(decodePlacements(flat)).toEqual(moved);
     expect(encodePlacements(new Map([[900, { h: 1, n: 0, r: 0 }]]))).toEqual([]);
   });
+  it("saves lines in order and at most 64 section labels (what the database accepts)", () => {
+    const many = new Map(Array.from({ length: 70 }, (_, i) => [69 - i, { h: 1000 + (69 - i), n: 0, r: 0 }] as const));
+    const flat = encodePlacements(many);
+    expect(flat).toHaveLength(64 * 4);
+    const lines = flat.filter((_, i) => i % 4 === 0);
+    expect(lines).toEqual([...lines].sort((a, b) => a - b));
+  });
 });

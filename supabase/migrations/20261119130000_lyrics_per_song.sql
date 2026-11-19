@@ -11,11 +11,15 @@
 --                                         reference survives sections added or removed elsewhere
 --                   section_nth  0..49   which section with that label (the 2nd "C" = 1)
 --                   bar_row      0..199  bar row inside that section (rows that have bars)
---                 Integers only: the column can't hold words.
+--                 Integers only: the column can't hold words. Lines in increasing order, each
+--                 once; at most 64 different section labels.
 --     lrclib_id   the lyrics record the placements were made against (another record = start over)
 --     changed_at  when the player last changed it (device clock, newest of device/account wins)
 -- * lyrics_mine(slug): the signed-in player's row for one published song (+ its id).
 -- * user_prefs.lyrics_panel: the desktop "Side panel" switch, per player.
+-- * lyrics_song(slug) again: a song an admin hid now gives non-admins no row at all, so they
+--   see the quiet "No lyrics found" and nothing tells them it was hidden. Admins still get it
+--   with hidden = true (Hide / Show again).
 
 create or replace function public._lyrics_placements_ok(p integer[]) returns boolean
 language sql immutable set search_path = '' as $$
@@ -31,6 +35,12 @@ language sql immutable set search_path = '' as $$
           or p[g.i + 2] is null or p[g.i + 2] not between 0 and 49
           or p[g.i + 3] is null or p[g.i + 3] not between 0 and 199
      )
+     -- each line at most once, in order, and only a chart's worth of section labels: no room
+     -- to tuck anything else into the numbers
+     and not exists (
+       select 1 from generate_series(5, coalesce(cardinality(p), 0), 4) as g(i) where p[g.i] <= p[g.i - 4]
+     )
+     and (select count(distinct p[g.i + 1]) from generate_series(1, coalesce(cardinality(p), 0), 4) as g(i)) <= 64
 $$;
 -- (Pure check, also used by the table's CHECK constraint, so it stays callable.)
 
@@ -96,3 +106,18 @@ grant execute on function public.lyrics_save_mine(uuid, boolean, integer[], bigi
 -- Desktop "Side panel" switch (1280px+), per player. Owner-only like the rest of user_prefs.
 alter table public.user_prefs add column lyrics_panel boolean;
 grant update (lyrics_panel) on public.user_prefs to authenticated;
+
+-- Admin-hidden songs read as "no lyrics" for everyone but admins (owner's call, Q18).
+create or replace function public.lyrics_song(p_slug text)
+returns table (song_id uuid, title text, artist text, hidden boolean, lrclib_id bigint, admin boolean)
+language sql stable security definer set search_path = '' as $$
+  select s.id, s.title, s.artist,
+         exists (select 1 from public.lyrics_hidden h where h.song_id = s.id),
+         (select p.lrclib_id from public.lyrics_picks p where p.song_id = s.id),
+         public.is_admin()
+  from public.songs s
+  where s.slug = p_slug and s.status = 'published' and public.lyrics_allowed()
+    and (public.is_admin() or not exists (select 1 from public.lyrics_hidden h where h.song_id = s.id))
+$$;
+revoke all on function public.lyrics_song(text) from public;
+grant execute on function public.lyrics_song(text) to anon, authenticated;
