@@ -295,7 +295,8 @@ export default function SongView({ slug, songId, title, artist, isExample, unver
           artist={artist}
           chartText={chartText}
           neighbors={NO_NEIGHBORS}
-          edit={{ kind: "library", songId, revisionId }}
+          // A suggestion needs the live revision it changes (the saved offline copy has none).
+          edit={revisionId ? { kind: "library", songId, revisionId } : undefined}
         />
       )}
     </main>

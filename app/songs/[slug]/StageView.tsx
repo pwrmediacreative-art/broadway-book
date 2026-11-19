@@ -106,6 +106,7 @@ export default function StageView({
   const peek = !popup && !stageFull(layout) && peekPref;
   const whole = !!popup || stageFull(layout) || peek;
   const setPeek = (v: boolean) => setPref(PREF.fullPeek, v ? "1" : null, "session");
+  const isPopup = !!popup;
   const [editing, setEditing] = useState(false);
   const canEdit = useCanEdit(edit);
   const minPref = Number(usePref(PREF.wholeMin));
@@ -309,8 +310,20 @@ export default function StageView({
     else goTo(mine?.id ? `/mine/${mine.id}` : `/songs/${slug}`);
   };
   useEffect(() => {
-    if (!set && nav.next && !local) router.prefetch(`/songs/${nav.next.slug}/stage`);
-  }, [set, nav.next, router, local]);
+    if (!set && !isPopup && nav.next && !local) router.prefetch(`/songs/${nav.next.slug}/stage`);
+  }, [set, isPopup, nav.next, router, local]);
+
+  // The pop-up is a dialog over the page: focus moves into it (so Space or Enter never reach
+  // the button that opened it) and goes back to that button when it closes.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!isPopup) return;
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    dialogRef.current?.focus({ preventScroll: true });
+    return () => {
+      if (opener?.isConnected) opener.focus({ preventScroll: true });
+    };
+  }, [isPopup]);
 
   useSongKeys(turn, (e) => {
     if (editing) return true; // the editor is open on top: keys belong to it
@@ -378,7 +391,15 @@ export default function StageView({
 
   if (!s.view) {
     return (
-      <div className={`fixed inset-0 grid place-items-center bg-bb-house-black p-6 text-center ${stageLook(theme === "light")}`}>
+      <div className={`fixed inset-0 z-50 grid place-items-center bg-bb-house-black p-6 text-center ${stageLook(theme === "light")}`}>
+        {/* Always a way out (the pop-up covers its page; stage has no other button here). */}
+        <button
+          onClick={exit}
+          aria-label={popup ? "Close Full song" : set ? "Exit play mode" : "Exit stage mode"}
+          className="absolute left-1 top-0.5 grid size-11 place-items-center rounded-bb-control text-2xl text-bb-cue-gray active:bg-bb-case-charcoal"
+        >
+          ✕
+        </button>
         <p className="text-xl">This chart has a format error.</p>
       </div>
     );
@@ -394,9 +415,12 @@ export default function StageView({
   return (
     <>
     <div
-      className={`bb-stage fixed inset-0 z-50 flex flex-col bg-bb-house-black text-bb-chart-white ${stageLook(light)}`}
+      className={`bb-stage fixed inset-0 z-50 flex flex-col bg-bb-house-black text-bb-chart-white outline-none ${stageLook(light)}`}
       onPointerDownCapture={poke}
+      ref={dialogRef}
+      tabIndex={popup ? -1 : undefined}
       role={popup ? "dialog" : undefined}
+      aria-modal={popup ? true : undefined}
       aria-label={popup ? `Full song: ${title}` : undefined}
     >
       {!popup && <ReadChoice />}
@@ -452,7 +476,8 @@ export default function StageView({
             </button>
           </>
         ) : (
-          nav.next && (
+          nav.next &&
+          !popup && (
             <button onClick={() => go(1)} className="h-11 min-w-0 max-w-[36%] shrink truncate text-right text-sm text-bb-cue-gray">
               Next: <span className="text-bb-chart-white">{nav.next.title}</span> ›
             </button>
@@ -500,7 +525,7 @@ export default function StageView({
         )}
       </div>
 
-      {spot && <HoldSheet slug={slug} spot={spot} onMine={pick.usingMine} onClose={() => setSpot(null)} onSwipe={(d) => go(d)} />}
+      {spot && <HoldSheet slug={slug} spot={spot} onMine={pick.usingMine} onClose={() => setSpot(null)} onSwipe={(d) => turn(d)} />}
 
       {toast && (
         <div className="pointer-events-none absolute inset-x-0 top-16 z-20 text-center">

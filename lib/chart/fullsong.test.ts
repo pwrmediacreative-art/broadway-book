@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildView, parseChart } from "./index";
 import { pageFull, stageFull } from "../prefs";
+import { editorKeeps } from "../make/model";
 
 // Full song (Q17): the paper layout reads real section names, in song order, repeats kept.
 describe("Full song section names", () => {
@@ -43,5 +44,17 @@ describe("Full song layout choice", () => {
     expect(pageFull(null)).toBe(false);
     expect(pageFull("scroll")).toBe(false);
     expect(pageFull("whole")).toBe(true);
+  });
+});
+
+describe("Full song Edit: charts the tap editor keeps", () => {
+  const head = "{title: T}\n{key: G} {time: 4/4}\n";
+  it("opens charts shaped like its own", () => {
+    expect(editorKeeps(head + "[V]\n1 4 5 1\n# UNCLEAR: C bar 2\n[C]\n4 5 1 1\n")).toBe(true);
+    expect(editorKeeps("{title: T}\n{key: G}\n[V]\n1 4 5 1 1 4 5 1\n")).toBe(true); // time and row breaks only
+  });
+  it("sends the rest to the text editor rather than lose a part on save", () => {
+    expect(editorKeeps(head + "[V]\n1 4 5 1\n# UNCLEAR: last bar\n")).toBe(false); // comment after the last section
+    expect(editorKeeps(head + "1 1\n[V]\n1 4 5 1\n")).toBe(false); // bars before the first section
   });
 });

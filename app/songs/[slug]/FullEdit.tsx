@@ -6,6 +6,7 @@
 // "Just for me" (your own version, no vote) or "Suggest for everyone" (live after the
 // community approves it; admins decide on the suggestion page as today). Same server actions,
 // same database rules.
+import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import Builder from "@/app/make/[id]/Builder";
 import { saveChart } from "@/app/make/actions";
@@ -13,7 +14,7 @@ import { propose, savePersonal } from "@/app/community/actions";
 import { savePrivateChart } from "@/app/upload/actions";
 import { OfflineNote } from "@/app/OfflineRoot";
 import { checkChart, diffDocs, parseChart } from "@/lib/chart";
-import { fromText } from "@/lib/make/model";
+import { editorKeeps, fromText, toText } from "@/lib/make/model";
 import { useNavMe } from "@/lib/nav/me";
 import { useOffline } from "@/lib/offline/status";
 import { loadMyVersions } from "@/lib/personal/versions";
@@ -47,22 +48,21 @@ export default function FullEdit({
   onClose: () => void;
   onSaved: (message: string) => void;
 }) {
-  const bad = useMemo(() => {
-    try {
-      fromText(text);
-      return null;
-    } catch (e) {
-      return (e as Error).message;
-    }
-  }, [text]);
+  // The editor model only keeps charts shaped like its own; anything else (bars or comments
+  // outside a section, say) would lose parts on save, so those open the text editor instead.
+  const keeps = useMemo(() => editorKeeps(text), [text]);
+  const textEditor = target.kind === "library" ? `/songs/${slug}/edit` : target.kind === "upload" ? `/upload/${target.songId}` : `/make/${target.id}`;
   return (
     <div role="dialog" aria-label="Edit chart" className="fixed inset-0 z-[60] overflow-y-auto overscroll-contain bg-bb-house-black text-bb-chart-white">
-      {bad ? (
+      {!keeps ? (
         <div className="mx-auto max-w-3xl px-4 pt-2">
           <button type="button" onClick={onClose} className="inline-flex h-12 items-center text-lg text-bb-cue-gray active:text-bb-chart-white">
             ← Full song
           </button>
-          <p className="bb-error mt-3 px-3 py-2 text-lg">This chart can&apos;t open in the editor: {bad}</p>
+          <p className="mt-3 text-lg">This chart has parts the tap editor can&apos;t keep yet. Change it in the text editor instead.</p>
+          <Link href={textEditor} className="bb-btn bb-btn-primary mt-4 h-12 px-5 text-lg font-bold">
+            Open the text editor
+          </Link>
         </div>
       ) : (
         <Builder
@@ -106,9 +106,11 @@ function SaveChoices({
   const [note, setNote] = useState("");
   const [noteMissing, setNoteMissing] = useState(false);
   const check = useMemo(() => checkChart(text), [text]);
+  // Compared as the editor writes it (header lines, rows of 4), so opening the editor and
+  // changing nothing never counts as a suggestion.
   const publicDoc = useMemo(() => {
     try {
-      return parseChart(publicText).doc;
+      return parseChart(toText(fromText(publicText))).doc;
     } catch {
       return null;
     }

@@ -5,6 +5,7 @@
 import { getMeta, parseChart } from "../chart/parse";
 import { itemText, serializeChart } from "../chart/serialize";
 import { parseKey } from "../chart/transpose";
+import { buildView, sectionName } from "../chart/view";
 import { MAX_CUE_WORDS } from "../chart/validate";
 import {
   MAX_SECTION_NAME,
@@ -36,13 +37,8 @@ export const SECTION_TYPES: { name: SectionName; label: string }[] = [
   { name: "Tag", label: "Tag" },
   { name: "Outro", label: "Outro" },
 ];
-const FULL = new Map<string, string>(SECTION_TYPES.map((t) => [t.name, t.label]));
-
-/** "Verse 2", "Chorus", "Big ending 2" (repeat not included). */
-export function partName(l: SectionLabel): string {
-  const base = l.custom ? l.name : (FULL.get(l.name) ?? l.name);
-  return l.number != null ? `${base} ${l.number}` : base;
-}
+/** "Verse 2", "Chorus", "Big ending 2" (repeat not included). Same names as Full song. */
+export const partName = (l: SectionLabel): string => sectionName(l);
 
 export interface Header {
   title: string;
@@ -181,6 +177,27 @@ export function fromText(text: string): Made {
     },
     parts,
   };
+}
+
+/** Can the editor open this chart and write it back without changing what players read?
+ *  Same header values, sections, bars, notes and "#" comments. Header line order, row breaks
+ *  and where a comment sits may change; a missing time becomes the 4/4 default. Library charts
+ *  come in many shapes (bars or notes before the first section, comments after the last one)
+ *  that the editor model doesn't keep, so the Full song Edit (Q17) checks this first. */
+export function editorKeeps(text: string): boolean {
+  try {
+    const before = parseChart(text).doc;
+    const after = parseChart(toText(fromText(text))).doc;
+    const look = (doc: ChartDoc) => {
+      const v = buildView(doc);
+      const comments = doc.lines.flatMap((l) => (l.kind === "comment" ? [l.text] : [])).sort();
+      const sections = v.sections.map((s) => [s.label, s.repeat, s.rows.flat()]);
+      return JSON.stringify({ meta: { ...v.meta, time: v.meta.time ?? "4/4" }, sections, comments });
+    };
+    return look(before) === look(after);
+  } catch {
+    return false;
+  }
 }
 
 /** A brand-new chart: just the header. */
